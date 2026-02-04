@@ -25,17 +25,20 @@
 #### ValidateJSONRPCRequest (87.5%)
 **Lines 53-55**: Redundant jsonrpc version check
 - Already enforced by struct tag: `validate:"required,eq=2.0"`
-- Defensive programming that cannot execute
+- Cannot execute in normal flow because struct validation (line 48) runs first and catches invalid versions
+- Defensive programming - would only execute if struct validation was bypassed (not done in this codebase)
 
 #### ValidateExecutionEnvelope (80.0%)
 **Lines 39-44**: Redundant CID format validation
 - Already enforced by struct tags: `validate:"required,cid"`
-- Defensive programming that cannot execute
+- Cannot execute in normal flow because struct validation (line 34) runs first and catches invalid CIDs
+- Defensive programming - would only execute if struct validation was bypassed (not done in this codebase)
 
 #### ValidateExecutionReceipt (75.0%)
 **Lines 63-73**: Redundant CID and status validation
 - Already enforced by struct tags
-- Defensive programming that cannot execute
+- Cannot execute in normal flow because struct validation (line 58) runs first
+- Defensive programming - would only execute if struct validation was bypassed (not done in this codebase)
 
 #### ValidateUCANToken (76.9%)
 **Lines 70, 77**: json.Marshal error handling
@@ -75,14 +78,15 @@
 
 The uncovered lines fall into two categories:
 
-### 1. Redundant Validation (Can Never Execute)
+### 1. Redundant Validation (Cannot Execute in Normal Flow)
 These lines duplicate validation already performed by go-playground/validator struct tags:
 - JSONRPC version check (line 53-55 in base_mcp.go)
 - CID format checks (lines 39-44 in cid_artifacts.go, lines 63-68 in cid_artifacts.go)
 - Status validation (lines 71-73 in cid_artifacts.go)
 
-**Why they exist**: Defensive programming, documentation, and fail-safe behavior
-**Why they're uncovered**: Struct validation catches errors first
+**Why they exist**: Defensive programming, documentation, and fail-safe behavior in case struct validation is bypassed
+**Why they're uncovered**: In normal code flow, struct validation always runs first and catches these errors
+**Could they execute?**: Only if someone bypasses the struct validation step (not done in this codebase)
 
 ### 2. json.Marshal Error Paths (Unreachable with Normal Data)
 These lines check for json.Marshal failures, which only occur with:

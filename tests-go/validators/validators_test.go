@@ -977,7 +977,7 @@ func TestUCANValidator_UCANToken(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "missing capabilities - empty array",
+			name: "empty capabilities array",
 			input: `{
 				"iss":"did:key:123",
 				"aud":"did:key:456",
