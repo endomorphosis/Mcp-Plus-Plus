@@ -1,0 +1,243 @@
+# MCP++: CID-Native, Contract-Driven Execution Profiles for MCP
+
+**Status:** Draft (Non-Normative / Discussion)
+
+---
+
+## 1. Introduction
+
+This document defines **MCP++**, a set of *optional, backward-compatible execution profiles* for the Model Context Protocol (MCP). MCP++ is designed to support federated, multi-agent, and parallel execution environments while preserving MCP message semantics and incremental adoptability.
+
+MCP++ addresses two practical pressures observed in production deployments:
+1. **Extension fragmentation** and uncertain compatibility across clients and servers.
+2. **Context and toolset constraints** that prevent reliable utilization of large or evolving tool ecosystems.
+
+MCP++ introduces modernized solutions inspired by historical distributed systems (e.g., interface repositories and brokers), implemented in a content-addressed, capability-secure, and policy-aware manner suitable for AI-native systems.
+
+## 1.1 Spec Chapters
+
+This draft is the top-level profile registry. The component details live in these chapters:
+
+- [Profile A: MCP-IDL (CID-Addressed Interface Contracts)](mcp-idl.md)
+- [Profile B: CID-Native Execution Artifacts](cid-native-artifacts.md)
+- [Profile C: Capability Delegation (UCAN)](ucan-delegation.md)
+- [Profile D: Temporal Deontic Policy Evaluation](temporal-deontic-policy.md)
+- [Event DAG, Concurrency, and Ordering](event-dag-ordering.md)
+- [Risk Scoring, Neighborhood Consensus, and Scheduling](risk-scheduling.md)
+- [Profile E: `mcp+p2p` Transport Binding](transport-mcp-p2p.md)
+
+---
+
+## 2. Terminology
+
+- **CID**: Content Identifier (immutable, hash-addressed reference to canonicalized content).
+- **Profile**: An optional, negotiable MCP capability that adds semantics without changing core MCP messages.
+- **Interface Descriptor**: A canonical, content-addressed contract describing a tool/resource interface.
+- **Execution Envelope**: A CID-native wrapper around an MCP invocation.
+- **Event DAG**: A directed acyclic graph of execution events linked by causal references.
+- **Policy CID**: A content-addressed representation of time-bounded permissions, prohibitions, and obligations.
+
+Normative keywords **MUST**, **SHOULD**, and **MAY** are used as described in RFC 2119.
+
+---
+
+## 3. Compatibility Model
+
+MCP++ profiles are negotiated during MCP initialization using existing capability negotiation mechanisms. Implementations that do not support MCP++ MUST continue to interoperate using baseline MCP semantics.
+
+No MCP++ profile modifies or invalidates existing MCP JSON-RPC message formats.
+
+---
+
+## 4. Profile A: MCP-IDL (CID-Addressed Interface Contracts)
+
+### 4.1 Overview
+
+The MCP-IDL profile defines a runtime-discoverable, content-addressed interface contract system inspired by historical Interface Repository concepts, adapted for modern distributed AI systems.
+
+See: [docs/spec/mcp-idl.md](mcp-idl.md)
+
+### 4.2 Interface Descriptor Object (Normative)
+
+An Interface Descriptor MUST be canonicalized and content-addressed to produce an `interface_cid`.
+
+**Required Fields:**
+- `name`
+- `namespace`
+- `version`
+- `methods[]` (input/output schemas)
+- `errors[]`
+- `compatibility` (supersedes / compatible_with)
+- `requires[]` (capabilities)
+
+**Optional Fields:**
+- semantic tags
+- observability hooks
+- resource cost hints
+
+### 4.3 Interface Repository APIs (Normative)
+
+Servers supporting MCP-IDL MUST expose the following endpoints:
+- `interfaces/list`
+- `interfaces/get(interface_cid)`
+- `interfaces/compat(interface_cid)`
+
+### 4.4 Toolset Slicing (Optional)
+
+Servers MAY expose `interfaces/select(task_hint_cid, budget)` to recommend interface subsets compatible with client context constraints.
+
+---
+
+## 5. Profile B: CID-Native Execution Envelopes
+
+### 5.1 Envelope Structure (Normative)
+
+An execution envelope MAY wrap any MCP invocation and includes:
+- `interface_cid`
+- `input_cid`
+- `intent_cid`
+- `policy_cid` (optional)
+- `proof_cid` (optional)
+- `parents[]`
+
+### 5.2 Output and Receipts
+
+Executions produce:
+- `output_cid`
+- `receipt_cid`
+
+Receipts MUST be content-addressed and MAY be signed.
+
+See: [docs/spec/cid-native-artifacts.md](cid-native-artifacts.md)
+
+---
+
+## 6. Profile C: Capability Delegation (UCAN)
+
+### 6.1 Delegation Chains
+
+MCP++ uses capability tokens to represent delegable authority. Execution-time validation is REQUIRED.
+
+See: [docs/spec/ucan-delegation.md](ucan-delegation.md)
+
+### 6.2 Invocation and Receipts
+
+Invocations MUST reference a valid delegation chain. Receipts attest execution outcomes and bind them to immutable execution artifacts.
+
+---
+
+## 7. Profile D: Temporal Deontic Policy Evaluation
+
+### 7.1 Policy Representation
+
+Policies MUST be content-addressed (`policy_cid`) and express:
+- Permissions
+- Prohibitions
+- Obligations
+- Temporal constraints
+
+### 7.2 Runtime Evaluation
+
+At execution-time, implementations MUST:
+1. Validate delegation proofs
+2. Evaluate policy constraints
+3. Emit a `decision_cid`
+
+Decisions MAY spawn obligations with deadlines.
+
+See: [docs/spec/temporal-deontic-policy.md](temporal-deontic-policy.md)
+
+---
+
+## 8. Profile E: P2P Transport Binding (Optional)
+
+### 8.1 Transport Semantics
+
+The `mcp+p2p` transport profile defines carriage of MCP JSON-RPC messages over a peer-to-peer substrate. Message semantics remain unchanged.
+
+### 8.2 Eventing
+
+Implementations MAY support bidirectional streams and event publication for receipts, interface descriptors, and coordination signals.
+
+See: [docs/spec/transport-mcp-p2p.md](transport-mcp-p2p.md)
+
+---
+
+## 9. Event DAG and Provenance
+
+### 9.1 Event Structure (Normative)
+
+Each event CID MUST commit to:
+- intent
+- interface
+- proofs
+- decision
+- outputs
+- parents
+
+### 9.2 Unrolling and Audit
+
+Causal traversal of the Event DAG enables deterministic replay, rollback, and attribution.
+
+See: [docs/spec/event-dag-ordering.md](event-dag-ordering.md)
+
+---
+
+## 10. Concurrency, Ordering, and Scheduling
+
+### 10.1 Partial Ordering
+
+Events reference parents to establish causal order without requiring global consensus.
+
+### 10.2 Neighborhood Coordination
+
+Implementations MAY cluster events or peers using similarity metrics and coordinate ordering locally.
+
+### 10.3 Scheduling
+
+Risk-adjusted prioritization MAY be implemented using priority queues. Scheduling behavior is non-normative.
+
+See: [docs/spec/risk-scheduling.md](risk-scheduling.md)
+
+---
+
+## 11. Risk Scoring (Non-Normative)
+
+Risk metrics MAY be computed from immutable history, including:
+- policy violations
+- missed obligations
+- disputed receipts
+
+---
+
+## 12. Security Considerations
+
+- All authority validation MUST occur at execution-time.
+- Content-addressed artifacts MUST be canonicalized to avoid ambiguity.
+- Implementations SHOULD isolate policy evaluation environments.
+
+---
+
+## 13. Incremental Adoption Strategy
+
+Implementations MAY adopt MCP++ profiles independently:
+1. MCP-IDL
+2. CID-native envelopes
+3. Delegation
+4. Policy evaluation
+5. P2P transport
+
+---
+
+## 14. Open Questions
+
+- Canonicalization standards for interface descriptors
+- Policy language interoperability
+- Registry vs. gossip-based discovery tradeoffs
+
+---
+
+## 15. Conclusion
+
+MCP++ extends MCP into federated, multi-agent domains by introducing contract clarity, immutable provenance, explicit delegation, and policy-aware execution—without deprecating or breaking existing MCP deployments.
+
