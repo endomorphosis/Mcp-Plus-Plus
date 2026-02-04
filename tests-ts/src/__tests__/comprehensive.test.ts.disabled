@@ -793,9 +793,11 @@ describe('Event DAG Comprehensive Tests', () => {
 
     it('should validate genesis event (empty parents)', () => {
       const payload = {
+        event_type: 'invocation',
         event_cid: 'bafkreiabc',
         parents: [],
-        data: { type: 'genesis' },
+        timestamp: '2024-01-01T00:00:00Z',
+        payload: { type: 'genesis' },
       };
       const result = validator.validateEvent(payload);
       expect(result.isValid).toBe(true);
@@ -803,9 +805,11 @@ describe('Event DAG Comprehensive Tests', () => {
 
     it('should validate event with multiple parents', () => {
       const payload = {
+        event_type: 'invocation',
         event_cid: 'bafkreiabc',
         parents: ['bafkreidef', 'bafkreighi'],
-        data: { type: 'merge' },
+        timestamp: '2024-01-01T00:00:00Z',
+        payload: { type: 'merge' },
       };
       const result = validator.validateEvent(payload);
       expect(result.isValid).toBe(true);
@@ -815,9 +819,9 @@ describe('Event DAG Comprehensive Tests', () => {
   describe('DAG Validation', () => {
     it('should validate acyclic DAG', () => {
       const events = [
-        { event_cid: 'A', parents: [], data: {} },
-        { event_cid: 'B', parents: ['A'], data: {} },
-        { event_cid: 'C', parents: ['B'], data: {} },
+        { event_type: 'invocation', event_cid: 'bafkreiaaaaaa', parents: [], timestamp: '2024-01-01T00:00:00Z', payload: {} },
+        { event_type: 'invocation', event_cid: 'bafkreibbbbb', parents: ['bafkreiaaaaaa'], timestamp: '2024-01-01T00:00:01Z', payload: {} },
+        { event_type: 'invocation', event_cid: 'bafkreiccccc', parents: ['bafkreibbbbb'], timestamp: '2024-01-01T00:00:02Z', payload: {} },
       ];
       const result = validator.validateDAG(events);
       expect(result.isValid).toBe(true);
@@ -826,9 +830,9 @@ describe('Event DAG Comprehensive Tests', () => {
 
     it('should detect cycle in DAG', () => {
       const events = [
-        { event_cid: 'A', parents: ['C'], data: {} },
-        { event_cid: 'B', parents: ['A'], data: {} },
-        { event_cid: 'C', parents: ['B'], data: {} },
+        { event_type: 'invocation', event_cid: 'bafkreiaaaaaa', parents: ['bafkreiccccc'], timestamp: '2024-01-01T00:00:00Z', payload: {} },
+        { event_type: 'invocation', event_cid: 'bafkreibbbbb', parents: ['bafkreiaaaaaa'], timestamp: '2024-01-01T00:00:01Z', payload: {} },
+        { event_type: 'invocation', event_cid: 'bafkreiccccc', parents: ['bafkreibbbbb'], timestamp: '2024-01-01T00:00:02Z', payload: {} },
       ];
       const result = validator.validateDAG(events);
       expect(result.isValid).toBe(false);
@@ -837,10 +841,10 @@ describe('Event DAG Comprehensive Tests', () => {
 
     it('should validate DAG with diamond structure', () => {
       const events = [
-        { event_cid: 'A', parents: [], data: {} },
-        { event_cid: 'B', parents: ['A'], data: {} },
-        { event_cid: 'C', parents: ['A'], data: {} },
-        { event_cid: 'D', parents: ['B', 'C'], data: {} },
+        { event_type: 'invocation', event_cid: 'bafkreiaaaaaa', parents: [], timestamp: '2024-01-01T00:00:00Z', payload: {} },
+        { event_type: 'invocation', event_cid: 'bafkreibbbbb', parents: ['bafkreiaaaaaa'], timestamp: '2024-01-01T00:00:01Z', payload: {} },
+        { event_type: 'invocation', event_cid: 'bafkreiccccc', parents: ['bafkreiaaaaaa'], timestamp: '2024-01-01T00:00:02Z', payload: {} },
+        { event_type: 'invocation', event_cid: 'bafkreiddddd', parents: ['bafkreibbbbb', 'bafkreiccccc'], timestamp: '2024-01-01T00:00:03Z', payload: {} },
       ];
       const result = validator.validateDAG(events);
       expect(result.isValid).toBe(true);
@@ -849,8 +853,8 @@ describe('Event DAG Comprehensive Tests', () => {
 
     it('should detect missing parent references', () => {
       const events = [
-        { event_cid: 'A', parents: [], data: {} },
-        { event_cid: 'B', parents: ['Z'], data: {} }, // Z doesn't exist
+        { event_cid: 'bafkreiaaaaaa', parents: [], data: {} },
+        { event_cid: 'bafkreibbbbb', parents: ['Z'], data: {} }, // Z doesn't exist
       ];
       const result = validator.validateDAG(events);
       expect(result.isValid).toBe(false);
@@ -860,9 +864,9 @@ describe('Event DAG Comprehensive Tests', () => {
   describe('Causal Ordering', () => {
     it('should validate causal ordering', () => {
       const events = [
-        { event_cid: 'A', parents: [], data: {}, timestamp: 1000 },
-        { event_cid: 'B', parents: ['A'], data: {}, timestamp: 2000 },
-        { event_cid: 'C', parents: ['B'], data: {}, timestamp: 3000 },
+        { event_cid: 'bafkreiaaaaaa', parents: [], data: {}, timestamp: 1000 },
+        { event_cid: 'bafkreibbbbb', parents: ['bafkreiaaaaaa'], data: {}, timestamp: 2000 },
+        { event_cid: 'bafkreiccccc', parents: ['bafkreibbbbb'], data: {}, timestamp: 3000 },
       ];
       const result = validator.validateCausalOrdering(events);
       expect(result.isValid).toBe(true);
@@ -870,9 +874,9 @@ describe('Event DAG Comprehensive Tests', () => {
 
     it('should detect causal ordering violations', () => {
       const events = [
-        { event_cid: 'A', parents: [], data: {}, timestamp: 3000 },
-        { event_cid: 'B', parents: ['A'], data: {}, timestamp: 2000 },
-        { event_cid: 'C', parents: ['B'], data: {}, timestamp: 1000 },
+        { event_cid: 'bafkreiaaaaaa', parents: [], data: {}, timestamp: 3000 },
+        { event_cid: 'bafkreibbbbb', parents: ['bafkreiaaaaaa'], data: {}, timestamp: 2000 },
+        { event_cid: 'bafkreiccccc', parents: ['bafkreibbbbb'], data: {}, timestamp: 1000 },
       ];
       const result = validator.validateCausalOrdering(events);
       expect(result.isValid).toBe(false);
