@@ -35,3 +35,5 @@ When you’re asked to make changes, aim to:
 ## Source artifacts
 
 A raw ChatGPT export exists in [docs/_archive/chatgpt.html](../_archive/chatgpt.html). It is **not canonical**; treat it as historical notes.
+
+For completeness/alias validation, use: [docs/architecture/traceability.md](../architecture/traceability.md)
