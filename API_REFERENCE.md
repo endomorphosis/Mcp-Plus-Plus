@@ -292,7 +292,7 @@ Execute a tool with given arguments.
     "name": "get_weather",
     "arguments": {
       "location": "San Francisco",
-      "units": "metric"
+      "unit": "celsius"
     }
   }
 }
