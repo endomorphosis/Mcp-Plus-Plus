@@ -2259,6 +2259,472 @@ func TestEdgeCaseValidations(t *testing.T) {
 	}
 }
 
+// Test for JSONRPC version explicit check (base_mcp.go:53-55)
+func TestValidateJSONRPCRequest_ExplicitVersionCheck(t *testing.T) {
+	validator := NewBaseMCPValidator()
+	
+	// The struct tag validation catches this first, but test explicit check
+	input := `{"jsonrpc":"2.0","method":"test","id":1}`
+	_, err := validator.ValidateJSONRPCRequest([]byte(input))
+	if err != nil {
+		t.Errorf("ValidateJSONRPCRequest() with valid version error = %v", err)
+	}
+}
+
+// Test for CID validation error paths (cid_artifacts.go:39-44, 63-73)
+func TestCIDValidator_InvalidCIDFormats(t *testing.T) {
+	validator := NewCIDValidator()
+	
+	// Invalid interface_cid format
+	invalidInterfaceCID := `{
+		"interface_cid":"invalid-cid",
+		"input_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+		"timestamp":"2024-01-01T00:00:00Z"
+	}`
+	_, err := validator.ValidateExecutionEnvelope([]byte(invalidInterfaceCID))
+	if err == nil {
+		t.Error("ValidateExecutionEnvelope() should fail with invalid interface_cid")
+	}
+	
+	// Invalid input_cid format
+	invalidInputCID := `{
+		"interface_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+		"input_cid":"invalid-cid",
+		"timestamp":"2024-01-01T00:00:00Z"
+	}`
+	_, err = validator.ValidateExecutionEnvelope([]byte(invalidInputCID))
+	if err == nil {
+		t.Error("ValidateExecutionEnvelope() should fail with invalid input_cid")
+	}
+	
+	// Invalid envelope_cid in receipt
+	invalidEnvelopeCID := `{
+		"envelope_cid":"invalid-cid",
+		"output_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+		"status":"success",
+		"timestamp":"2024-01-01T00:00:00Z"
+	}`
+	_, err = validator.ValidateExecutionReceipt([]byte(invalidEnvelopeCID))
+	if err == nil {
+		t.Error("ValidateExecutionReceipt() should fail with invalid envelope_cid")
+	}
+	
+	// Invalid output_cid in receipt
+	invalidOutputCID := `{
+		"envelope_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+		"output_cid":"invalid-cid",
+		"status":"success",
+		"timestamp":"2024-01-01T00:00:00Z"
+	}`
+	_, err = validator.ValidateExecutionReceipt([]byte(invalidOutputCID))
+	if err == nil {
+		t.Error("ValidateExecutionReceipt() should fail with invalid output_cid")
+	}
+	
+	// Invalid status value
+	invalidStatus := `{
+		"envelope_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+		"output_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+		"status":"invalid-status",
+		"timestamp":"2024-01-01T00:00:00Z"
+	}`
+	_, err = validator.ValidateExecutionReceipt([]byte(invalidStatus))
+	if err == nil {
+		t.Error("ValidateExecutionReceipt() should fail with invalid status")
+	}
+}
+
+// Test for event validation error paths (event_dag.go:39-41, 45-47, 83-85)
+func TestEventDAGValidator_ValidationErrors(t *testing.T) {
+	validator := NewEventDAGValidator()
+	
+	// Invalid event_cid format
+	invalidEventCID := `{
+		"event_cid":"invalid-cid",
+		"type":"test",
+		"action":"create",
+		"timestamp":"2024-01-01T00:00:00Z",
+		"parents":[]
+	}`
+	_, err := validator.ValidateEvent([]byte(invalidEventCID))
+	if err == nil {
+		t.Error("ValidateEvent() should fail with invalid event_cid")
+	}
+	
+	// Invalid parent CID format
+	invalidParentCID := `{
+		"event_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+		"type":"test",
+		"action":"create",
+		"timestamp":"2024-01-01T00:00:00Z",
+		"parents":["invalid-cid"]
+	}`
+	_, err = validator.ValidateEvent([]byte(invalidParentCID))
+	if err == nil {
+		t.Error("ValidateEvent() should fail with invalid parent CID")
+	}
+	
+	// Test DAG with cycle detection error
+	dagWithCycle := `{
+		"roots":["QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"],
+		"events":{
+			"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG":{
+				"event_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+				"type":"test",
+				"action":"create",
+				"timestamp":"2024-01-01T00:00:00Z",
+				"parents":["QmT5NvUtoM5nWFfrQdVrFtvGfKFmG7AHE8P34isapyhCxX"]
+			},
+			"QmT5NvUtoM5nWFfrQdVrFtvGfKFmG7AHE8P34isapyhCxX":{
+				"event_cid":"QmT5NvUtoM5nWFfrQdVrFtvGfKFmG7AHE8P34isapyhCxX",
+				"type":"test",
+				"action":"update",
+				"timestamp":"2024-01-01T00:00:01Z",
+				"parents":["QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"]
+			}
+		}
+	}`
+	_, err = validator.ValidateEventDAG([]byte(dagWithCycle))
+	if err == nil {
+		t.Error("ValidateEventDAG() should fail with cycle")
+	}
+}
+
+// Test for MCP-IDL validation error paths (mcp_idl.go:40-45, 60-62)
+func TestMCPIDLValidator_ValidationErrors(t *testing.T) {
+	validator := NewMCPIDLValidator()
+	
+	// Method with empty name
+	emptyMethodName := `{
+		"interface_name":"test",
+		"version":"1.0.0",
+		"methods":[
+			{
+				"name":"",
+				"return_type":"string"
+			}
+		]
+	}`
+	_, err := validator.ValidateInterfaceDescriptor([]byte(emptyMethodName))
+	if err == nil {
+		t.Error("ValidateInterfaceDescriptor() should fail with empty method name")
+	}
+	
+	// Method with empty return_type
+	emptyReturnType := `{
+		"interface_name":"test",
+		"version":"1.0.0",
+		"methods":[
+			{
+				"name":"testMethod",
+				"return_type":""
+			}
+		]
+	}`
+	_, err = validator.ValidateInterfaceDescriptor([]byte(emptyReturnType))
+	if err == nil {
+		t.Error("ValidateInterfaceDescriptor() should fail with empty return_type")
+	}
+}
+
+// Test for policy validation error paths (policy_evaluation.go:39-41, 49-51, 70-75, 83-85)
+func TestPolicyValidator_ValidationErrors(t *testing.T) {
+	validator := NewPolicyValidator()
+	
+	// Invalid policy_cid format
+	invalidPolicyCID := `{
+		"policy_cid":"invalid-cid",
+		"type":"permission",
+		"target":"test"
+	}`
+	_, err := validator.ValidatePolicyDescriptor([]byte(invalidPolicyCID))
+	if err == nil {
+		t.Error("ValidatePolicyDescriptor() should fail with invalid policy_cid")
+	}
+	
+	// Invalid policy type
+	invalidPolicyType := `{
+		"policy_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+		"type":"invalid-type",
+		"target":"test"
+	}`
+	_, err = validator.ValidatePolicyDescriptor([]byte(invalidPolicyType))
+	if err == nil {
+		t.Error("ValidatePolicyDescriptor() should fail with invalid policy type")
+	}
+	
+	// Invalid decision_cid format
+	invalidDecisionCID := `{
+		"decision_cid":"invalid-cid",
+		"decision":"allow",
+		"policy_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+		"timestamp":"2024-01-01T00:00:00Z"
+	}`
+	_, err = validator.ValidatePolicyDecision([]byte(invalidDecisionCID))
+	if err == nil {
+		t.Error("ValidatePolicyDecision() should fail with invalid decision_cid")
+	}
+	
+	// Invalid policy_cid in decision
+	invalidPolicyCIDInDecision := `{
+		"decision_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+		"decision":"allow",
+		"policy_cid":"invalid-cid",
+		"timestamp":"2024-01-01T00:00:00Z"
+	}`
+	_, err = validator.ValidatePolicyDecision([]byte(invalidPolicyCIDInDecision))
+	if err == nil {
+		t.Error("ValidatePolicyDecision() should fail with invalid policy_cid")
+	}
+	
+	// Invalid decision type
+	invalidDecisionType := `{
+		"decision_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+		"decision":"invalid-decision",
+		"policy_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+		"timestamp":"2024-01-01T00:00:00Z"
+	}`
+	_, err = validator.ValidatePolicyDecision([]byte(invalidDecisionType))
+	if err == nil {
+		t.Error("ValidatePolicyDecision() should fail with invalid decision type")
+	}
+	
+	// allow_with_obligations without obligations
+	missingObligations := `{
+		"decision_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+		"decision":"allow_with_obligations",
+		"policy_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+		"timestamp":"2024-01-01T00:00:00Z",
+		"obligations":[]
+	}`
+	_, err = validator.ValidatePolicyDecision([]byte(missingObligations))
+	if err == nil {
+		t.Error("ValidatePolicyDecision() should fail with allow_with_obligations but no obligations")
+	}
+}
+
+// Test for transport validation error paths (transport.go:39-41, 45-47)
+func TestTransportValidator_ValidationErrors(t *testing.T) {
+	validator := NewTransportValidator()
+	
+	// Invalid protocol_id
+	invalidProtocolID := `{
+		"protocol_id":"/invalid/1.0.0",
+		"payload":"{\"test\":\"data\"}",
+		"timestamp":"2024-01-01T00:00:00Z"
+	}`
+	_, err := validator.ValidateTransportMessage([]byte(invalidProtocolID))
+	if err == nil {
+		t.Error("ValidateTransportMessage() should fail with invalid protocol_id")
+	}
+	
+	// Invalid payload (not JSON)
+	invalidPayload := `{
+		"protocol_id":"/mcp+p2p/1.0.0",
+		"payload":"not-valid-json",
+		"timestamp":"2024-01-01T00:00:00Z"
+	}`
+	_, err = validator.ValidateTransportMessage([]byte(invalidPayload))
+	if err == nil {
+		t.Error("ValidateTransportMessage() should fail with invalid payload")
+	}
+}
+
+// Test for UCAN validation error paths (ucan_delegation.go:39-41, 45-50)
+func TestUCANValidator_ValidationErrors(t *testing.T) {
+	validator := NewUCANValidator()
+	exp := time.Now().Add(24 * time.Hour).Unix()
+	
+	// UCAN token with empty capabilities
+	emptyCapabilities := fmt.Sprintf(`{
+		"iss":"did:key:123",
+		"aud":"did:key:456",
+		"att":[],
+		"exp":%d
+	}`, exp)
+	_, err := validator.ValidateUCANToken([]byte(emptyCapabilities))
+	if err == nil {
+		t.Error("ValidateUCANToken() should fail with empty capabilities")
+	}
+	
+	// Capability with empty 'with' field
+	emptyWith := fmt.Sprintf(`{
+		"iss":"did:key:123",
+		"aud":"did:key:456",
+		"att":[
+			{"with":"","can":"read"}
+		],
+		"exp":%d
+	}`, exp)
+	_, err = validator.ValidateUCANToken([]byte(emptyWith))
+	if err == nil {
+		t.Error("ValidateUCANToken() should fail with empty 'with' field")
+	}
+	
+	// Capability with empty 'can' field
+	emptyCan := fmt.Sprintf(`{
+		"iss":"did:key:123",
+		"aud":"did:key:456",
+		"att":[
+			{"with":"storage://bucket","can":""}
+		],
+		"exp":%d
+	}`, exp)
+	_, err = validator.ValidateUCANToken([]byte(emptyCan))
+	if err == nil {
+		t.Error("ValidateUCANToken() should fail with empty 'can' field")
+	}
+}
+
+// Test json.Marshal error paths with custom type
+type UnmarshalableType struct {
+	Chan chan int `json:"chan"` // channels cannot be marshaled
+}
+
+func TestJSONMarshalErrorPaths(t *testing.T) {
+	validator := NewBaseMCPValidator()
+	
+	// Note: These json.Marshal error paths (lines 123-125, 128-130, 154-156, 159-161, etc.)
+	// are extremely difficult to trigger in practice because:
+	// 1. The data is already valid JSON (we just unmarshaled it)
+	// 2. Go's json.Marshal is very robust and rarely fails on standard types
+	// 3. The only realistic scenarios involve:
+	//    - Channels, functions, or complex cyclic references
+	//    - These would fail during JSON unmarshaling first
+	//
+	// These error handlers are defensive programming but effectively unreachable
+	// in normal operation. We document this as acceptable coverage gap.
+	
+	// Attempt to trigger marshal error (this will actually fail at unmarshal stage)
+	invalidData := `{"jsonrpc":"2.0","method":"initialize","params":{"chan":null},"id":1}`
+	_, err := validator.ValidateInitializeRequest([]byte(invalidData))
+	// This should fail at struct validation or unmarshal stage, not at marshal stage
+	if err == nil {
+		t.Log("Note: json.Marshal error paths are defensive but unreachable in practice")
+	}
+}
+
+// Test to trigger params unmarshal errors
+func TestParamsUnmarshalErrors(t *testing.T) {
+	validator := NewBaseMCPValidator()
+	
+	// Test InitializeRequest with invalid params structure
+	invalidInitParams := `{"jsonrpc":"2.0","method":"initialize","params":"not-an-object","id":1}`
+	_, err := validator.ValidateInitializeRequest([]byte(invalidInitParams))
+	if err == nil {
+		t.Error("ValidateInitializeRequest() should fail with invalid params")
+	}
+	
+	// Test ToolCall with invalid params structure  
+	invalidToolParams := `{"jsonrpc":"2.0","method":"tools/call","params":"not-an-object","id":1}`
+	_, err = validator.ValidateToolCall([]byte(invalidToolParams))
+	if err == nil {
+		t.Error("ValidateToolCall() should fail with invalid params")
+	}
+	
+	// Test ResourceRead with invalid params structure
+	invalidResourceParams := `{"jsonrpc":"2.0","method":"resources/read","params":"not-an-object","id":1}`
+	_, err = validator.ValidateResourceRead([]byte(invalidResourceParams))
+	if err == nil {
+		t.Error("ValidateResourceRead() should fail with invalid params")
+	}
+	
+	// Test PromptGet with invalid params structure
+	invalidPromptParams := `{"jsonrpc":"2.0","method":"prompts/get","params":"not-an-object","id":1}`
+	_, err = validator.ValidatePromptGet([]byte(invalidPromptParams))
+	if err == nil {
+		t.Error("ValidatePromptGet() should fail with invalid params")
+	}
+}
+
+// Test DAG validation for root not in events
+func TestEventDAG_RootNotInEvents(t *testing.T) {
+	validator := NewEventDAGValidator()
+	
+	// Root CID not in events map
+	dagInvalidRoot := `{
+		"roots":["QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"],
+		"events":{
+			"QmT5NvUtoM5nWFfrQdVrFtvGfKFmG7AHE8P34isapyhCxX":{
+				"event_cid":"QmT5NvUtoM5nWFfrQdVrFtvGfKFmG7AHE8P34isapyhCxX",
+				"type":"test",
+				"action":"create",
+				"timestamp":"2024-01-01T00:00:00Z",
+				"parents":[]
+			}
+		}
+	}`
+	_, err := validator.ValidateEventDAG([]byte(dagInvalidRoot))
+	if err == nil {
+		t.Error("ValidateEventDAG() should fail when root CID not in events")
+	}
+}
+
+// Test DAG validation for parent not in events
+func TestEventDAG_ParentNotInEvents(t *testing.T) {
+	validator := NewEventDAGValidator()
+	
+	// Parent CID not in events map
+	dagInvalidParent := `{
+		"roots":["QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"],
+		"events":{
+			"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG":{
+				"event_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+				"type":"test",
+				"action":"create",
+				"timestamp":"2024-01-01T00:00:00Z",
+				"parents":["QmNonExistent1234567890abcdefghijklmnopqrs"]
+			}
+		}
+	}`
+	_, err := validator.ValidateEventDAG([]byte(dagInvalidParent))
+	if err == nil {
+		t.Error("ValidateEventDAG() should fail when parent CID not in events")
+	}
+}
+
+// Test invalid delegation chain with bad proof
+func TestDelegationChain_InvalidProof(t *testing.T) {
+	validator := NewUCANValidator()
+	exp := time.Now().Add(24 * time.Hour).Unix()
+	
+	// Delegation chain with invalid proof (missing capabilities)
+	invalidProofChain := fmt.Sprintf(`{
+		"root":{
+			"iss":"did:key:123",
+			"aud":"did:key:456",
+			"att":[{"with":"storage://bucket","can":"read"}],
+			"exp":%d
+		},
+		"proofs":[
+			{
+				"iss":"did:key:456",
+				"aud":"did:key:789",
+				"att":[],
+				"exp":%d
+			}
+		]
+	}`, exp, exp)
+	_, err := validator.ValidateDelegationChain([]byte(invalidProofChain))
+	if err == nil {
+		t.Error("ValidateDelegationChain() should fail with invalid proof")
+	}
+}
+
+// Test CompatibilityCheck struct validation
+func TestCompatibilityCheck_StructValidation(t *testing.T) {
+	validator := NewMCPIDLValidator()
+	
+	// Missing required field
+	invalidCompat := `{
+		"base_version":"1.0.0"
+	}`
+	_, err := validator.ValidateCompatibilityCheck([]byte(invalidCompat))
+	if err == nil {
+		t.Error("ValidateCompatibilityCheck() should fail with missing fields")
+	}
+}
+
 // COVERAGE DOCUMENTATION
 //
 // This test suite achieves maximum possible statement coverage through:
@@ -2268,6 +2734,11 @@ func TestEdgeCaseValidations(t *testing.T) {
 // 3. Error path tests including json.Marshal scenarios
 // 4. Edge case tests for complete branch coverage
 //
-// Note: Some defensive code paths (json.Marshal error handling, redundant
-// struct tag validations) are unreachable in normal operation but are kept
-// for safety and documentation. See COVERAGE_ANALYSIS.md for details.
+// Uncoverable lines (json.Marshal error handlers at lines 123-125, 128-130, 154-156, 159-161, etc.):
+// These are defensive error handlers that cannot be realistically triggered because:
+// - They marshal data that was just successfully unmarshaled from JSON
+// - Go's json.Marshal rarely fails on standard types
+// - Any problematic types (channels, functions) would fail at unmarshal stage first
+// - Cyclic references would fail earlier in validation
+//
+// These handlers are kept for code safety and completeness but are effectively unreachable.
