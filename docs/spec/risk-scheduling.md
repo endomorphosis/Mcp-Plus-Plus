@@ -40,6 +40,8 @@ A scheduler can maintain a task/event frontier keyed by:
 
 A Fibonacci heap is plausible when priorities change frequently (many `decrease-key` operations) as new receipts/decisions arrive.
 
+Note: the original design chat misspelled this as “fibinocci heap”; this spec uses the standard spelling but retains the alias here for searchability.
+
 ## 4. Lightweight (Neighborhood) Consensus
 
 Rather than “one chain to rule them all,” MCP++ can use neighborhood agreement:

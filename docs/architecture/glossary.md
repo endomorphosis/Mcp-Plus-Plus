@@ -12,3 +12,5 @@
 - **Proof CID**: A content-addressed proof bundle (e.g., a UCAN delegation chain).
 - **Receipt**: A content-addressed record of execution outcome; may be signed.
 - **Delegation Chain**: A verifiable chain of authority granting capabilities (e.g., UCAN-style).
+- **Fibonacci Heap**: A priority-queue data structure sometimes used to optimize many priority updates (`decrease-key`). (Alias: “fibinocci heap” in the original chat export.)
+- **Merkle Clock**: A Merkle-DAG-derived logical clock for establishing partial order / causality between events.

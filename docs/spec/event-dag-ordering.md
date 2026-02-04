@@ -38,6 +38,8 @@ A common approach in Merkle-DAG-based systems is to construct a “Merkle-clock-
 
 MCP++ does not require CRDT semantics initially; it only requires that events and dependencies are recorded as CIDs.
 
+Note: the archived design chat used the phrase “meekly clock”; this spec uses the standard term “Merkle clock”.
+
 ## 5. Conflict Detection and Resolution
 
 Implementations SHOULD support:
