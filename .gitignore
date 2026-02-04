@@ -60,3 +60,5 @@ tests-ts/coverage/
 tests-ts/node_modules/
 **/*.test.ts.disabled
 **/*.test.ts.bak
+coverage.out
+coverage.html
