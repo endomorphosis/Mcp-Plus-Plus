@@ -31,16 +31,6 @@ impl TransportValidator {
             return Ok(result);
         }
         
-        // Check protocol ID
-        if !message.protocol_id.starts_with("/mcp+p2p/") {
-            result.add_error("Protocol ID must start with '/mcp+p2p/'".to_string());
-        }
-        
-        // Check length is positive
-        if message.length == 0 {
-            result.add_error("Message length must be positive".to_string());
-        }
-        
         Ok(result)
     }
     
@@ -232,5 +222,51 @@ mod tests {
         
         let result = validator.validate_session(&payload).unwrap();
         assert!(result.is_valid);
+    }
+    
+    #[test]
+    fn test_transport_message_invalid_protocol_id_prefix() {
+        // Test invalid protocol ID (not starting with "/mcp+p2p/")
+        let validator = TransportValidator::new();
+        let payload = json!({
+            "protocol_id": "/other/1.0.0",
+            "length": 256,
+            "payload": {"jsonrpc": "2.0", "method": "test"}
+        });
+        
+        let result = validator.validate_transport_message(&payload).unwrap();
+        assert!(!result.is_valid, "Should fail due to invalid protocol_id");
+        // Error comes from serde_valid validation
+        assert!(!result.errors.is_empty());
+    }
+    
+    #[test]
+    fn test_transport_message_length_zero() {
+        // Test message with length == 0
+        let validator = TransportValidator::new();
+        let payload = json!({
+            "protocol_id": "/mcp+p2p/1.0.0",
+            "length": 0,
+            "payload": {"jsonrpc": "2.0", "method": "test"}
+        });
+        
+        let result = validator.validate_transport_message(&payload).unwrap();
+        assert!(!result.is_valid, "Should fail due to zero length");
+        // Error comes from serde_valid validation
+        assert!(!result.errors.is_empty());
+    }
+    
+    #[test]
+    fn test_session_empty_session_id_triggers_serde_valid_error() {
+        // Test session with empty session_id that triggers serde_valid early return
+        let validator = TransportValidator::new();
+        let payload = json!({
+            "session_id": "",
+            "peer_addr": "/ip4/127.0.0.1/tcp/8080"
+        });
+        
+        let result = validator.validate_session(&payload).unwrap();
+        assert!(!result.is_valid, "Empty session_id should trigger validation error");
+        assert!(!result.errors.is_empty());
     }
 }

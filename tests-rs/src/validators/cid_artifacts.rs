@@ -164,7 +164,7 @@ mod tests {
         // Should fail validation due to invalid CID format
         match result {
             Ok(r) => assert!(!r.is_valid, "Invalid CID format should fail"),
-            Err(_) => {} // Also acceptable
+            Err(_) => {} // Deserialization error is also acceptable
         }
     }
     
@@ -265,7 +265,7 @@ mod tests {
         // Should fail validation due to invalid CID format
         match result {
             Ok(r) => assert!(!r.is_valid, "Invalid CID format should fail"),
-            Err(_) => {} // Also acceptable
+            Err(_) => {} // Deserialization error is also acceptable
         }
     }
     
@@ -281,5 +281,40 @@ mod tests {
         
         let result = validator.validate_envelope(&payload).unwrap();
         assert!(result.is_valid);
+    }
+    
+    #[test]
+    fn test_envelope_deserializes_but_fails_serde_valid() {
+        // Test envelope that deserializes but fails serde_valid validation
+        let validator = CIDArtifactsValidator::new();
+        let payload = json!({
+            "interface_cid": "invalid",
+            "input_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "parents": ["QmPreviousEvent"],
+            "timestamp": "2024-01-01T00:00:00Z"
+        });
+        
+        let result = validator.validate_envelope(&payload);
+        // Invalid CID should fail at deserialization or validation
+        match result {
+            Ok(r) => assert!(!r.is_valid, "Invalid CID should fail validation"),
+            Err(_) => {} // Deserialization error is also acceptable
+        }
+    }
+    
+    #[test]
+    fn test_envelope_empty_parents_genesis_warning() {
+        // Test envelope with empty parents array triggering genesis warning
+        let validator = CIDArtifactsValidator::new();
+        let payload = json!({
+            "interface_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "input_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "parents": [],
+            "timestamp": "2024-01-01T00:00:00Z"
+        });
+        
+        let result = validator.validate_envelope(&payload).unwrap();
+        assert!(result.is_valid);
+        assert!(result.warnings.iter().any(|w| w.contains("genesis")));
     }
 }

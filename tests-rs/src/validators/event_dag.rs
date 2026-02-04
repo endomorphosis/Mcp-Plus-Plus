@@ -204,7 +204,7 @@ mod tests {
         let result = validator.validate_event(&payload);
         match result {
             Ok(r) => assert!(!r.is_valid, "Invalid CID format should fail"),
-            Err(_) => {} // Also acceptable
+            Err(_) => {} // Deserialization error is also acceptable
         }
     }
     
@@ -315,5 +315,109 @@ mod tests {
         
         let result = validator.validate_event(&payload).unwrap();
         assert!(result.is_valid);
+    }
+    
+    #[test]
+    fn test_acyclicity_self_referencing_cycle() {
+        // Test self-referencing cycle (event with itself in parents)
+        let validator = EventDAGValidator::new();
+        let events = vec![
+            Event {
+                event_cid: "event1".to_string(),
+                parents: vec!["event1".to_string()],
+                payload: json!({}),
+                timestamp: "2024-01-01T00:00:00Z".to_string(),
+            },
+        ];
+        
+        let is_acyclic = validator.check_acyclicity(&events).unwrap();
+        assert!(!is_acyclic, "Should detect self-referencing cycle");
+    }
+    
+    #[test]
+    fn test_acyclicity_unvisited_node_with_cycle() {
+        // Test cycle starting from an unvisited node
+        let validator = EventDAGValidator::new();
+        let events = vec![
+            Event {
+                event_cid: "event1".to_string(),
+                parents: vec![],
+                payload: json!({}),
+                timestamp: "2024-01-01T00:00:00Z".to_string(),
+            },
+            Event {
+                event_cid: "event2".to_string(),
+                parents: vec!["event3".to_string()],
+                payload: json!({}),
+                timestamp: "2024-01-01T00:00:01Z".to_string(),
+            },
+            Event {
+                event_cid: "event3".to_string(),
+                parents: vec!["event2".to_string()],
+                payload: json!({}),
+                timestamp: "2024-01-01T00:00:02Z".to_string(),
+            },
+        ];
+        
+        let is_acyclic = validator.check_acyclicity(&events).unwrap();
+        assert!(!is_acyclic, "Should detect cycle in unvisited branch");
+    }
+    
+    #[test]
+    fn test_acyclicity_indirect_cycle_three_nodes() {
+        // Test indirect cycle (A → B → C → A)
+        let validator = EventDAGValidator::new();
+        let events = vec![
+            Event {
+                event_cid: "eventA".to_string(),
+                parents: vec!["eventC".to_string()],
+                payload: json!({}),
+                timestamp: "2024-01-01T00:00:00Z".to_string(),
+            },
+            Event {
+                event_cid: "eventB".to_string(),
+                parents: vec!["eventA".to_string()],
+                payload: json!({}),
+                timestamp: "2024-01-01T00:00:01Z".to_string(),
+            },
+            Event {
+                event_cid: "eventC".to_string(),
+                parents: vec!["eventB".to_string()],
+                payload: json!({}),
+                timestamp: "2024-01-01T00:00:02Z".to_string(),
+            },
+        ];
+        
+        let is_acyclic = validator.check_acyclicity(&events).unwrap();
+        assert!(!is_acyclic, "Should detect indirect cycle");
+    }
+    
+    #[test]
+    fn test_acyclicity_rec_stack_contains_parent() {
+        // Test cycle with rec_stack contains parent branch
+        let validator = EventDAGValidator::new();
+        let events = vec![
+            Event {
+                event_cid: "event1".to_string(),
+                parents: vec!["event3".to_string()],
+                payload: json!({}),
+                timestamp: "2024-01-01T00:00:00Z".to_string(),
+            },
+            Event {
+                event_cid: "event2".to_string(),
+                parents: vec!["event1".to_string()],
+                payload: json!({}),
+                timestamp: "2024-01-01T00:00:01Z".to_string(),
+            },
+            Event {
+                event_cid: "event3".to_string(),
+                parents: vec!["event2".to_string()],
+                payload: json!({}),
+                timestamp: "2024-01-01T00:00:02Z".to_string(),
+            },
+        ];
+        
+        let is_acyclic = validator.check_acyclicity(&events).unwrap();
+        assert!(!is_acyclic, "Should detect cycle with recursion stack");
     }
 }

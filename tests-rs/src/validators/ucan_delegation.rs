@@ -31,14 +31,6 @@ impl UCANDelegationValidator {
             return Ok(result);
         }
         
-        // Check DIDs start with "did:"
-        if !token.iss.starts_with("did:") {
-            result.add_error("Issuer must be a DID".to_string());
-        }
-        if !token.aud.starts_with("did:") {
-            result.add_error("Audience must be a DID".to_string());
-        }
-        
         // Check attenuations are not empty
         if token.att.is_empty() {
             result.add_error("UCAN must have at least one attenuation".to_string());
@@ -326,8 +318,8 @@ mod tests {
         let result = validator.validate_delegation_chain(&payload);
         // Might fail validation or return invalid result
         match result {
-            Ok(r) => assert!(!r.is_valid || !r.errors.is_empty()),
-            Err(_) => {} // Also acceptable
+            Ok(r) => assert!(!r.is_valid || !r.errors.is_empty(), "Should detect invalid DID"),
+            Err(_) => {} // Deserialization error is also acceptable
         }
     }
     
@@ -346,5 +338,89 @@ mod tests {
         
         let result = validator.validate_ucan_token(&payload).unwrap();
         assert!(result.is_valid);
+    }
+    
+    #[test]
+    fn test_ucan_token_iss_not_starting_with_did() {
+        // Test token with iss not starting with "did:"
+        let validator = UCANDelegationValidator::new();
+        let payload = json!({
+            "iss": "key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+            "aud": "did:key:z6Mkhg5BZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+            "att": [{
+                "resource": "mcp://tools/*",
+                "ability": "execute"
+            }],
+            "exp": 1735689600
+        });
+        
+        let result = validator.validate_ucan_token(&payload).unwrap();
+        assert!(!result.is_valid, "Should fail due to invalid issuer format");
+        // Error comes from serde_valid validation
+        assert!(!result.errors.is_empty());
+    }
+    
+    #[test]
+    fn test_ucan_token_aud_not_starting_with_did() {
+        // Test token with aud not starting with "did:"
+        let validator = UCANDelegationValidator::new();
+        let payload = json!({
+            "iss": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+            "aud": "key:z6Mkhg5BZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+            "att": [{
+                "resource": "mcp://tools/*",
+                "ability": "execute"
+            }],
+            "exp": 1735689600
+        });
+        
+        let result = validator.validate_ucan_token(&payload).unwrap();
+        assert!(!result.is_valid, "Should fail due to invalid audience format");
+        // Error comes from serde_valid validation
+        assert!(!result.errors.is_empty());
+    }
+    
+    #[test]
+    fn test_delegation_chain_multiple_invalid_tokens() {
+        // Test delegation chain with multiple invalid tokens
+        let validator = UCANDelegationValidator::new();
+        let payload = json!({
+            "chain": [
+                {
+                    "iss": "key:invalid1",
+                    "aud": "did:key:z6Mkhg5BZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+                    "att": [{
+                        "resource": "mcp://tools/*",
+                        "ability": "execute"
+                    }],
+                    "exp": 1735689600
+                },
+                {
+                    "iss": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+                    "aud": "key:invalid2",
+                    "att": [{
+                        "resource": "mcp://tools/*",
+                        "ability": "execute"
+                    }],
+                    "exp": 1735689600
+                }
+            ]
+        });
+        
+        let result = validator.validate_delegation_chain(&payload).unwrap();
+        assert!(!result.is_valid || !result.errors.is_empty(), "Should detect invalid tokens in chain");
+    }
+    
+    #[test]
+    fn test_delegation_chain_empty_chain_triggers_serde_valid_error() {
+        // Test delegation chain with empty chain that triggers serde_valid early return
+        let validator = UCANDelegationValidator::new();
+        let payload = json!({
+            "chain": []
+        });
+        
+        let result = validator.validate_delegation_chain(&payload).unwrap();
+        assert!(!result.is_valid, "Empty chain should trigger validation error");
+        assert!(!result.errors.is_empty());
     }
 }
