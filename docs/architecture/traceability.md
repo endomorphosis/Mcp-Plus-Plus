@@ -44,6 +44,20 @@ Each row is: **archive phrase → canonical concept → canonical location(s)**.
 | callbacks / event streams | Declared streaming/eventing interface patterns (avoid polling) | [docs/spec/mcp-idl.md](../spec/mcp-idl.md), [docs/spec/transport-mcp-p2p.md](../spec/transport-mcp-p2p.md) |
 | mandatory observability hooks (trace IDs, provenance metadata) | Trace/provenance propagation as a first-class, declared capability | [docs/spec/mcp-idl.md](../spec/mcp-idl.md), [docs/spec/cid-native-artifacts.md](../spec/cid-native-artifacts.md) |
 | deterministic canonicalization pipeline | Canonicalization requirements for CID computation | [docs/spec/cid-native-artifacts.md](../spec/cid-native-artifacts.md), [docs/spec/mcp-idl.md](../spec/mcp-idl.md) |
+| Canonical JSON / CBOR encoding | Deterministic canonical encoding choice for CID computation | [docs/spec/cid-native-artifacts.md](../spec/cid-native-artifacts.md), [docs/spec/mcp-idl.md](../spec/mcp-idl.md) |
+| nonce / correlation_id | Correlation hook carried through intent/receipt artifacts | [docs/spec/cid-native-artifacts.md](../spec/cid-native-artifacts.md), [docs/architecture/glossary.md](glossary.md) |
+| signatures[] | Signature array on decisions/receipts | [docs/spec/cid-native-artifacts.md](../spec/cid-native-artifacts.md), [docs/architecture/glossary.md](glossary.md) |
+| return decision_cid (content addressed + optionally signed) | Decision emission is CID-native and may be signed | [docs/spec/temporal-deontic-policy.md](../spec/temporal-deontic-policy.md), [docs/spec/cid-native-artifacts.md](../spec/cid-native-artifacts.md) |
+| forbidden to call tool X after revocation | Prohibition example tied to revocation semantics | [docs/spec/temporal-deontic-policy.md](../spec/temporal-deontic-policy.md) |
+| Count forbidden attempts | Risk scoring signal derived from denied/forbidden intents | [docs/spec/risk-scheduling.md](../spec/risk-scheduling.md) |
+| number of forbidden-attempt intents | Risk scoring signal derived from denied/forbidden intents | [docs/spec/risk-scheduling.md](../spec/risk-scheduling.md), [docs/architecture/glossary.md](glossary.md) |
+| This is a coordination optimization, not a consensus requirement. | Neighborhood agreement is optional coordination, not global consensus | [docs/spec/risk-scheduling.md](../spec/risk-scheduling.md) |
+| NAT traversal / connectivity across hostile networks | P2P connectivity expectations (NAT traversal/relays/hole punching) | [docs/spec/transport-mcp-p2p.md](../spec/transport-mcp-p2p.md), [docs/architecture/glossary.md](glossary.md) |
+| resilient routing | Transport resiliency behaviors without semantic changes | [docs/spec/transport-mcp-p2p.md](../spec/transport-mcp-p2p.md), [docs/architecture/glossary.md](glossary.md) |
+| hub-and-spoke | Centralized topology contrast case | [docs/architecture/glossary.md](glossary.md), [docs/architecture/overview.md](overview.md) |
+| federated agent swarms | Decentralized multi-agent topology (federated/cross-org) | [docs/architecture/glossary.md](glossary.md), [docs/architecture/overview.md](overview.md) |
+| a capability ledger + immutable audit trail | Capability + provenance record enabling auditability | [docs/architecture/glossary.md](glossary.md), [docs/architecture/overview.md](overview.md) |
+| incident response and blast-radius control | Operational security framing enabled by ledger/audit trail | [docs/architecture/overview.md](overview.md), [docs/architecture/glossary.md](glossary.md) |
 
 ## How to extend
 

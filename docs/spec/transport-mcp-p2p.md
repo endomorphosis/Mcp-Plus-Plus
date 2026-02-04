@@ -17,6 +17,7 @@ This profile is intentionally **carriage-only**: it defines how to move MCP mess
 - Support multi-agent, cross-org deployments (no fixed client↔server topology).
 - Use secure, multiplexed streams for concurrent tool calls.
 - Support bidirectional communication patterns (events/receipts/descriptor dissemination).
+- Support connectivity features commonly expected of P2P deployments (e.g., NAT traversal, relays, resilient routing), without making any single strategy mandatory.
 
 ## 2.1 Non-goals
 
@@ -66,6 +67,10 @@ Implementations MAY use:
 - rendezvous/relay services
 - LAN-local discovery (e.g., mDNS)
 - pubsub topics for announcements
+
+Implementations MAY additionally support “**NAT traversal / connectivity across hostile networks**” (archive phrase) using techniques available in their libp2p stack (e.g., relays, rendezvous, hole punching). This binding does not mandate a particular NAT traversal strategy.
+
+Implementations MAY implement routing behaviors that improve availability in dynamic peer sets (“resilient routing” in the archive phrasing). Any such behavior MUST remain transparent to MCP JSON-RPC semantics.
 
 ## 5. Message Framing
 

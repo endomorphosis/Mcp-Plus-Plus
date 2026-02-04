@@ -27,6 +27,7 @@ Transport is a primary **trust and failure boundary**: it shapes identity, conne
 - Auditability and replay (event DAG)
 - Least-privilege delegation across multi-hop workflows (capabilities)
 - Explicit policy evaluation and decision receipts (deontic/temporal)
+- Operational leverage: a **capability ledger + immutable audit trail** makes **incident response** and **blast-radius control** more feasible in complex agent graphs (archive framing).
 
 ## Non-goals (for now)
 

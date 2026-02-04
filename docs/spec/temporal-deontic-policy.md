@@ -40,6 +40,8 @@ A compiled policy may encode clauses such as:
 - Prohibition: $F(actor, action(resource), condition)$
 - Obligation: $O(actor, produce(receipt\_cid), deadline)$
 
+Archive example clause (literal phrasing): “forbidden to call tool X after revocation”.
+
 ## 4. Prompt → Policy Extraction → Delegation
 
 Given a prompt like:
@@ -71,6 +73,8 @@ Evaluators MUST:
    - proofs checked
    - policy version
    - obligations spawned
+
+Archive phrasing (literal): return decision_cid (content addressed + optionally signed)
 
 Decisions SHOULD be signed by evaluators.
 

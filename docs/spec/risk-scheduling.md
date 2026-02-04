@@ -9,6 +9,7 @@ This document expands MCP++’s “systems layer”: how immutable history can d
 Peers MAY accumulate reputation/risk based on immutable evidence such as:
 
 - attempted capability/policy violations
+- Count forbidden attempts (archive phrasing: “number of forbidden-attempt intents”)
 - anomaly rates
 - divergence from predicted outcomes
 - frequency of rollbacks/disputes in their event subgraph
@@ -43,6 +44,8 @@ A Fibonacci heap is plausible when priorities change frequently (many `decrease-
 Note: the original design chat misspelled this as “fibinocci heap”; this spec uses the standard spelling but retains the alias here for searchability.
 
 ## 4. Lightweight (Neighborhood) Consensus
+
+Archive framing note (literal phrasing): “This is a coordination optimization, not a consensus requirement.”
 
 Rather than “one chain to rule them all,” MCP++ can use neighborhood agreement:
 

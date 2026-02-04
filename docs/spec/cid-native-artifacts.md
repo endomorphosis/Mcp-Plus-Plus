@@ -15,7 +15,7 @@ This document specifies the CID-native artifacts used by MCP++ profiles: inputs,
 Implementations MUST define deterministic canonicalization for any content that is turned into a CID.
 
 A canonicalization pipeline SHOULD include:
-- stable encoding (canonical JSON or CBOR family)
+- stable encoding (canonical JSON or CBOR family; archive phrasing: “Canonical JSON / CBOR encoding”)
 - sorted keys and normalized numeric representations
 - explicit schema/version markers
 
@@ -51,6 +51,7 @@ The intent object is the minimal, immutable “what I plan to do” description 
 ```
 
 - `constraints_policy_cid` MAY equal the active `policy_cid`, or refer to a narrower policy for the specific action.
+- `correlation_id` is a non-normative correlation hook described in the archive as `nonce / correlation_id`.
 
 ## 5. Decision Object (CID’d)
 
@@ -78,6 +79,8 @@ A decision is produced by evaluators after verifying proofs and evaluating polic
 - `decision` SHOULD support at least: `allow`, `deny`, `allow_with_obligations`.
 
 `evaluation_witness_cid` is OPTIONAL. When present, it SHOULD commit to a deterministic, replayable “why” record (e.g., evaluator inputs, rule IDs fired, or a policy-evaluation transcript) without requiring the ecosystem to standardize one proof format immediately.
+
+Alias note: the archived notes refer to the signature array as `signatures[]`.
 
 ## 6. Receipt Object (CID’d)
 
