@@ -81,7 +81,7 @@ The uncovered lines fall into two categories:
 ### 1. Redundant Validation (Cannot Execute in Normal Flow)
 These lines duplicate validation already performed by go-playground/validator struct tags:
 - JSONRPC version check (line 53-55 in base_mcp.go)
-- CID format checks (lines 39-44 in cid_artifacts.go, lines 63-68 in cid_artifacts.go)
+- CID format checks (lines 39-44 and 63-68 in cid_artifacts.go)
 - Status validation (lines 71-73 in cid_artifacts.go)
 
 **Why they exist**: Defensive programming, documentation, and fail-safe behavior in case struct validation is bypassed
