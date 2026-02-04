@@ -2,11 +2,12 @@
 
 ## Overview
 
-The MCP++ testing framework now includes **three implementations** with advanced type safety:
+The MCP++ testing framework now includes **four implementations** with advanced type safety:
 
 1. **Python with Pydantic v2 + mypy**: Runtime validation with strict static type checking
 2. **TypeScript with Zod + TypeScript 5.x**: Runtime validation with compile-time type safety
 3. **Rust with serde + serde_valid**: Zero-cost compile-time and runtime validation
+4. **Go with validator + struct tags**: Strong compile-time typing with runtime validation
 
 ## Statistics
 
@@ -28,13 +29,22 @@ The MCP++ testing framework now includes **three implementations** with advanced
 - **Type Checking**: ✅ tsc success, 0 errors
 - **Coverage**: Base MCP, MCP-IDL, CID, UCAN, Policy, Transport, DAG
 
-### Rust Implementation (NEW)
+### Rust Implementation
 - **Lines of Code**: ~3,500
 - **Test Files**: 1 integration test module + unit tests in validators
 - **Validators**: 7 profile validators
 - **Models**: 40+ Rust structs/enums with serde
 - **Tests**: 39 passing tests (19 unit + 19 integration + 1 doc)
 - **Type Checking**: ✅ cargo build success, ✅ clippy clean
+- **Coverage**: Base MCP, MCP-IDL, CID, UCAN, Policy, Transport, DAG
+
+### Go Implementation (NEW)
+- **Lines of Code**: ~3,200
+- **Test Files**: 1 comprehensive test module
+- **Validators**: 7 profile validators
+- **Models**: 40+ Go structs with JSON and validation tags
+- **Tests**: 17 passing tests
+- **Type Checking**: ✅ go build success, ✅ go vet clean
 - **Coverage**: Base MCP, MCP-IDL, CID, UCAN, Policy, Transport, DAG
 
 ## Directory Structure
@@ -87,7 +97,7 @@ Mcp-Plus-Plus/
 │   ├── vitest.config.ts
 │   └── README.md
 │
-└── tests-rs/                  # NEW: Rust testing framework
+└── tests-rs/                  # Rust testing framework
     ├── src/
     │   ├── models.rs          # Type definitions (40+ structs/enums)
     │   ├── validators/
@@ -104,6 +114,20 @@ Mcp-Plus-Plus/
     │   └── integration_test.rs
     ├── Cargo.toml             # Dependencies & config
     ├── rustfmt.toml           # Code formatting
+    └── README.md
+
+└── tests-go/                  # NEW: Go testing framework
+    ├── validators/
+    │   ├── base_mcp.go        # Base MCP validator
+    │   ├── mcp_idl.go         # Profile A
+    │   ├── cid_artifacts.go   # Profile B
+    │   ├── ucan_delegation.go # Profile C
+    │   ├── policy_evaluation.go # Profile D
+    │   ├── transport.go       # Profile E
+    │   ├── event_dag.go       # Event graph
+    │   └── validators_test.go # Comprehensive tests
+    ├── models.go              # Type definitions (40+ structs)
+    ├── go.mod                 # Go module
     └── README.md
 ```
 
@@ -155,7 +179,7 @@ npm run type-check  # 0 type errors
 npm test            # 23/23 tests passed
 ```
 
-### Rust (serde + serde_valid) (NEW)
+### Rust (serde + serde_valid)
 
 **Compile-Time Safety (Rust Type System):**
 - Strong static typing with zero-cost abstractions
@@ -187,9 +211,42 @@ cargo clippy       # Lint code
 cargo fmt          # Format code
 ```
 
+### Go (validator + struct tags) (NEW)
+
+**Compile-Time Safety (Go Type System):**
+- Strong static typing with compile-time checks
+- No implicit type conversions
+- Interface-based polymorphism
+- Explicit error handling (no exceptions)
+- Fast compilation with excellent tooling
+
+**Runtime Validation (go-playground/validator):**
+- Struct tags for declarative validation
+- Field constraints (`required`, `min`, `max`, `oneof`)
+- Custom validators for complex rules (CID format)
+- Regex pattern matching
+- Clean, descriptive error messages
+
+**Key Features:**
+- **Simple Syntax**: Easy to read and write
+- **Fast Compilation**: Near-instant builds
+- **Goroutines**: Built-in concurrency primitives
+- **Standard Library**: Excellent built-in packages
+- **Nil Safety**: Use pointers for optional fields
+- **Tooling**: go fmt, go vet, gopls (language server)
+
+**Commands:**
+```bash
+cd tests-go
+go build ./...     # Compile-time checks
+go test -v ./...   # 17/17 tests passed
+go vet ./...       # Static analysis
+go fmt ./...       # Format code
+```
+
 ## Validation Coverage
 
-All three implementations validate:
+All four implementations validate:
 
 1. **Base MCP Protocol**
    - JSON-RPC 2.0 structure
@@ -349,6 +406,18 @@ cargo test
 # test result: ok. 1 passed; 0 failed
 ```
 
+### Go Tests (NEW)
+```bash
+cd tests-go
+go test -v ./...
+# === RUN   TestBaseMCPValidator_JSONRPCRequest
+# === RUN   TestBaseMCPValidator_JSONRPCResponse
+# === RUN   TestBaseMCPValidator_Notification
+# ... (17 tests)
+# PASS
+# ok  	github.com/endomorphosis/Mcp-Plus-Plus/tests-go/validators	0.006s
+```
+
 ## Documentation
 
 - **tests/README.md** - Python testing framework overview
@@ -356,20 +425,21 @@ cargo test
 - **tests/SPEC_COMPLIANCE.md** - Spec-to-test mapping matrix
 - **tests/VERIFICATION.md** - Test execution summary
 - **tests-ts/README.md** - TypeScript validators guide
-- **tests-rs/README.md** - Rust validators guide (NEW)
+- **tests-rs/README.md** - Rust validators guide
+- **tests-go/README.md** - Go validators guide (NEW)
 
 ## Conclusion
 
 The MCP++ testing framework now provides:
 
-✅ **Triple Implementation**: Python (Pydantic/mypy), TypeScript (Zod/tsc), and Rust (serde/serde_valid)  
-✅ **Advanced Type Safety**: Strictest settings in all three languages  
+✅ **Quad Implementation**: Python (Pydantic/mypy), TypeScript (Zod/tsc), Rust (serde/serde_valid), and Go (validator/tags)  
+✅ **Advanced Type Safety**: Strictest settings in all four languages  
 ✅ **Runtime + Compile-time**: Errors caught at multiple stages  
-✅ **136 Total Tests**: 74 Python + 23 TypeScript + 39 Rust  
+✅ **153 Total Tests**: 74 Python + 23 TypeScript + 39 Rust + 17 Go  
 ✅ **0 Type Errors**: Clean static analysis in all languages  
 ✅ **100% Spec Coverage**: All MCP++ profiles validated  
 ✅ **Cross-Language Compatible**: Identical validation logic  
 ✅ **Production Ready**: CI/CD integration, comprehensive docs  
-✅ **Zero-Cost Abstractions**: Rust provides native performance with type safety
+✅ **Performance**: From Python (interpreted) to Rust/Go (native compiled)
 
 This ensures MCP++ network payloads are validated with the highest level of type safety available across the most popular systems programming languages.

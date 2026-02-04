@@ -53,3 +53,6 @@ target/
 Cargo.lock
 **/*.rs.bk
 *.pdb
+
+# Go
+tests-go/go.sum
