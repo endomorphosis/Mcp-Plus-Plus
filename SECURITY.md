@@ -990,4 +990,4 @@ If you discover a security vulnerability, please report it to:
 
 ---
 
-Previous: [API Reference](API_REFERENCE.md) | Next: [Contributing](CONTRIBUTING.md)
+Previous: [API Reference](docs/API_REFERENCE.md) | Next: [Contributing](CONTRIBUTING.md)

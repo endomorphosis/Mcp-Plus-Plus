@@ -379,10 +379,9 @@ Now that you have a basic MCP server and client running, you can:
 
 ### Learn More
 
-- [Architecture Guide](ARCHITECTURE.md) - Understand MCP's design
-- [API Reference](API_REFERENCE.md) - Complete API documentation
-- [Best Practices](BEST_PRACTICES.md) - Production deployment tips
-- [Examples](examples/) - More complex examples
+- [Architecture Guide](docs/ARCHITECTURE.md) - Understand MCP's design
+- [API Reference](docs/API_REFERENCE.md) - Complete API documentation
+- [Best Practices](docs/BEST_PRACTICES.md) - Production deployment tips
 
 ## Troubleshooting
 
@@ -433,4 +432,4 @@ const server = new Server({
 
 ---
 
-Ready to build something amazing? Check out our [Examples](examples/) directory for more complex use cases!
+Ready to build something amazing? Check out the [test implementations](tests-py/) and [specification docs](docs/) for more complex use cases!

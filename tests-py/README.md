@@ -87,7 +87,7 @@ tests/
 ├── fixtures/                    # Test data and examples
 │   ├── valid/                  # Valid payloads
 │   ├── invalid/                # Invalid payloads for negative testing
-│   └── examples/               # Example payloads from specs
+│   └── fixtures/               # Test fixtures and payloads
 └── requirements.txt            # Test dependencies
 ```
 
