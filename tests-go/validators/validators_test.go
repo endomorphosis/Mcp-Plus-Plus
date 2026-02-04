@@ -2726,7 +2726,7 @@ func TestCompatibilityCheck_StructValidation(t *testing.T) {
 }
 
 // ============================================================================
-// COMPREHENSIVE COVERAGE TESTS FOR 100% COVERAGE
+// COMPREHENSIVE COVERAGE TESTS FOR 97.6% COVERAGE
 // ============================================================================
 
 // Test base_mcp.go:53-55 - JSONRPC version check with raw JSON that passes struct validation
@@ -2868,8 +2868,8 @@ func TestCIDValidator_ExecutionEnvelopeInvalidCIDs(t *testing.T) {
 	if err == nil {
 		t.Error("ValidateExecutionEnvelope() should fail with invalid interface_cid")
 	}
-	if err != nil && err.Error() != "invalid interface_cid format: Key: '' Error:Field validation for '' failed on the 'cid' tag" {
-		t.Logf("Got error: %v", err)
+	if err != nil {
+		t.Logf("Got expected error: %v", err)
 	}
 	
 	// Test invalid input_cid (line 42-44)
@@ -3239,7 +3239,7 @@ func TestValidators_ComprehensiveCoverage(t *testing.T) {
 		
 		_, err := validator.ValidateExecutionEnvelope([]byte(whitespaceInput))
 		if err == nil {
-			t.Log("CID with whitespace should fail validation")
+			t.Error("CID with whitespace should fail validation")
 		}
 	})
 	
