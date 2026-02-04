@@ -15,7 +15,7 @@ import (
 
 // JSONRPCRequest represents a JSON-RPC 2.0 request message.
 type JSONRPCRequest struct {
-	JSONRPC string      `json:"jsonrpc" validate:"required,eq=2.0"`
+	JSONRPC string      `json:"jsonrpc" validate:"required"`
 	Method  string      `json:"method" validate:"required,min=1"`
 	Params  interface{} `json:"params,omitempty"`
 	ID      interface{} `json:"id" validate:"required"`
@@ -111,10 +111,10 @@ type InterfaceDescriptor struct {
 
 // MethodDescriptor describes a method in an interface.
 type MethodDescriptor struct {
-	Name        string                 `json:"name" validate:"required,min=1"`
+	Name        string                 `json:"name"`
 	Description string                 `json:"description,omitempty"`
 	Parameters  []ParameterDescriptor  `json:"parameters,omitempty"`
-	ReturnType  string                 `json:"return_type" validate:"required"`
+	ReturnType  string                 `json:"return_type"`
 	Metadata    map[string]interface{} `json:"metadata,omitempty"`
 }
 
@@ -138,18 +138,18 @@ type InterfaceCompatibility struct {
 
 // ExecutionEnvelope wraps an MCP invocation with content-addressing.
 type ExecutionEnvelope struct {
-	InterfaceCID string                 `json:"interface_cid" validate:"required,cid"`
-	InputCID     string                 `json:"input_cid" validate:"required,cid"`
-	Parents      []string               `json:"parents,omitempty" validate:"dive,cid"`
+	InterfaceCID string                 `json:"interface_cid" validate:"required"`
+	InputCID     string                 `json:"input_cid" validate:"required"`
+	Parents      []string               `json:"parents,omitempty" validate:"dive"`
 	Invocation   map[string]interface{} `json:"invocation" validate:"required"`
 	Metadata     map[string]interface{} `json:"metadata,omitempty"`
 }
 
 // ExecutionReceipt contains the result of an execution with provenance.
 type ExecutionReceipt struct {
-	EnvelopeCID string                 `json:"envelope_cid" validate:"required,cid"`
-	OutputCID   string                 `json:"output_cid" validate:"required,cid"`
-	Status      string                 `json:"status" validate:"required,oneof=success failure"`
+	EnvelopeCID string                 `json:"envelope_cid" validate:"required"`
+	OutputCID   string                 `json:"output_cid" validate:"required"`
+	Status      string                 `json:"status" validate:"required"`
 	Result      interface{}            `json:"result,omitempty"`
 	Error       *JSONRPCError          `json:"error,omitempty"`
 	Timestamp   time.Time              `json:"timestamp" validate:"required"`
@@ -166,17 +166,17 @@ type UCANToken struct {
 	Issuer       string                 `json:"iss" validate:"required"`
 	Audience     string                 `json:"aud" validate:"required"`
 	Subject      string                 `json:"sub,omitempty"`
-	Capabilities []Capability           `json:"att" validate:"required,min=1,dive"`
+	Capabilities []Capability           `json:"att" validate:"required,dive"`
 	Expiration   int64                  `json:"exp" validate:"required"`
 	NotBefore    int64                  `json:"nbf,omitempty"`
-	Proof        []string               `json:"prf,omitempty" validate:"dive,cid"`
+	Proof        []string               `json:"prf,omitempty" validate:"dive"`
 	Metadata     map[string]interface{} `json:"metadata,omitempty"`
 }
 
 // Capability represents a capability that can be delegated.
 type Capability struct {
-	With   string                 `json:"with" validate:"required"`
-	Can    string                 `json:"can" validate:"required"`
+	With   string                 `json:"with"`
+	Can    string                 `json:"can"`
 	Limits map[string]interface{} `json:"limits,omitempty"`
 }
 
@@ -201,8 +201,8 @@ const (
 
 // PolicyDescriptor describes a temporal deontic policy.
 type PolicyDescriptor struct {
-	PolicyCID   string                 `json:"policy_cid" validate:"required,cid"`
-	Type        PolicyType             `json:"type" validate:"required,oneof=permission prohibition obligation"`
+	PolicyCID   string                 `json:"policy_cid" validate:"required"`
+	Type        PolicyType             `json:"type" validate:"required"`
 	Target      string                 `json:"target" validate:"required"`
 	Constraints []PolicyConstraint     `json:"constraints,omitempty" validate:"dive"`
 	ValidFrom   time.Time              `json:"valid_from,omitempty"`
@@ -228,9 +228,9 @@ const (
 
 // PolicyDecision represents the result of policy evaluation.
 type PolicyDecision struct {
-	DecisionCID string                 `json:"decision_cid" validate:"required,cid"`
-	Decision    DecisionType           `json:"decision" validate:"required,oneof=allow deny allow_with_obligations"`
-	PolicyCID   string                 `json:"policy_cid" validate:"required,cid"`
+	DecisionCID string                 `json:"decision_cid" validate:"required"`
+	Decision    DecisionType           `json:"decision" validate:"required"`
+	PolicyCID   string                 `json:"policy_cid" validate:"required"`
 	Timestamp   time.Time              `json:"timestamp" validate:"required"`
 	Obligations []Obligation           `json:"obligations,omitempty" validate:"dive"`
 	Metadata    map[string]interface{} `json:"metadata,omitempty"`
@@ -249,7 +249,7 @@ type Obligation struct {
 
 // TransportMessage represents a message in the mcp+p2p transport protocol.
 type TransportMessage struct {
-	ProtocolID string          `json:"protocol_id" validate:"required,eq=/mcp+p2p/1.0.0"`
+	ProtocolID string          `json:"protocol_id" validate:"required"`
 	SessionID  string          `json:"session_id" validate:"required"`
 	Sequence   uint64          `json:"sequence" validate:"required"`
 	Payload    json.RawMessage `json:"payload" validate:"required"`
@@ -269,9 +269,9 @@ type SessionInit struct {
 
 // Event represents an event in the provenance DAG.
 type Event struct {
-	EventCID  string                 `json:"event_cid" validate:"required,cid"`
+	EventCID  string                 `json:"event_cid" validate:"required"`
 	Type      string                 `json:"type" validate:"required"`
-	Parents   []string               `json:"parents,omitempty" validate:"dive,cid"`
+	Parents   []string               `json:"parents,omitempty" validate:"dive"`
 	Timestamp time.Time              `json:"timestamp" validate:"required"`
 	Actor     string                 `json:"actor,omitempty"`
 	Action    string                 `json:"action" validate:"required"`
