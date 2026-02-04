@@ -12,13 +12,13 @@ This folder is the canonical documentation set for the MCP++ project.
 ## Spec chapters (work in progress)
 
 - [MCP++ Profiles (Draft)](spec/mcp++-profiles-draft.md)
+- [`mcp+p2p` Transport Binding](spec/transport-mcp-p2p.md)
 - [MCP-IDL: CID-Addressed Interface Contracts](spec/mcp-idl.md)
 - [CID-Native Execution Artifacts](spec/cid-native-artifacts.md)
 - [Capability Delegation (UCAN)](spec/ucan-delegation.md)
 - [Temporal Deontic Policy Evaluation](spec/temporal-deontic-policy.md)
 - [Event DAG, Concurrency, and Ordering](spec/event-dag-ordering.md)
 - [Risk Scoring, Consensus, and Scheduling](spec/risk-scheduling.md)
-- [`mcp+p2p` Transport Binding](spec/transport-mcp-p2p.md)
 
 ## Folder map
 

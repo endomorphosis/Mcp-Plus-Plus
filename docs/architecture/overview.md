@@ -19,6 +19,8 @@ MCP++’s core design stance:
 - **Delegation and policy**: Capability chains (e.g., UCAN) and temporal deontic policies (permissions/prohibitions/obligations).
 - **Transport binding (optional)**: e.g., `mcp+p2p` for carriage of MCP messages over a P2P substrate.
 
+Transport is a primary **trust and failure boundary**: it shapes identity, connectivity, multiplexing, and abuse resistance. MCP++ keeps it optional to preserve incremental adoptability, but treats it as a first-class profile because federation and cross-org execution quickly run into transport limitations.
+
 ## Intended outcomes
 
 - Reliable tool interoperability at scale (contracts + compatibility)

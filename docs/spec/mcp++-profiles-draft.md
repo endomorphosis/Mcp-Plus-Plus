@@ -153,7 +153,7 @@ See: [docs/spec/temporal-deontic-policy.md](temporal-deontic-policy.md)
 
 ### 8.1 Transport Semantics
 
-The `mcp+p2p` transport profile defines carriage of MCP JSON-RPC messages over a peer-to-peer substrate. Message semantics remain unchanged.
+The `mcp+p2p` transport profile defines carriage of MCP JSON-RPC messages over a peer-to-peer substrate (specifically, a libp2p binding in this draft). Message semantics remain unchanged.
 
 ### 8.2 Eventing
 
