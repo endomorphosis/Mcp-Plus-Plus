@@ -60,4 +60,9 @@ export class PolicyValidator {
 
     return result;
   }
+
+  validatePolicyDescriptor(descriptor: Record<string, unknown>): ValidationResult {
+    // Alias for validatePolicy
+    return this.validatePolicy(descriptor);
+  }
 }

@@ -60,4 +60,57 @@ export class TransportValidator {
 
     return result;
   }
+
+  validateProtocolID(protocolID: string): ValidationResult {
+    const result: ValidationResult = {
+      isValid: true,
+      messageType: 'protocol_id',
+      errors: [],
+      warnings: [],
+      metadata: {},
+    };
+
+    const expectedPattern = /^\/mcp\+p2p\/\d+\.\d+\.\d+$/;
+    if (!expectedPattern.test(protocolID)) {
+      result.isValid = false;
+      result.errors.push(
+        `Invalid protocol ID format. Expected /mcp+p2p/X.Y.Z, got: ${protocolID}`
+      );
+    }
+
+    return result;
+  }
+
+  validateFrame(frame: Record<string, unknown>): ValidationResult {
+    const result: ValidationResult = {
+      isValid: true,
+      messageType: 'transport_frame',
+      errors: [],
+      warnings: [],
+      metadata: {},
+    };
+
+    if (!frame.length) {
+      result.isValid = false;
+      result.errors.push('Missing length field');
+    }
+
+    if (!frame.message) {
+      result.isValid = false;
+      result.errors.push('Missing message field');
+    }
+
+    // Check length matches message size
+    if (frame.message && frame.length) {
+      const messageStr = JSON.stringify(frame.message);
+      const actualLength = messageStr.length;
+      if (actualLength !== frame.length) {
+        result.warnings.push(
+          `Length mismatch: declared ${frame.length}, actual ${actualLength}`
+        );
+      }
+    }
+
+    return result;
+  }
 }

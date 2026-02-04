@@ -1,0 +1,881 @@
+/**
+ * Comprehensive tests for MCP++ TypeScript Validators
+ * Mirrors Python test coverage for 100% validation
+ */
+
+import { describe, it, expect } from 'vitest';
+import {
+  MCPTypedValidator,
+  validateMCPRequest,
+  validateMCPResponse,
+  validateMCPNotification,
+} from '../validators/baseMCP.js';
+import { MCPIDLValidator } from '../validators/mcpIDL.js';
+import { CIDValidator } from '../validators/cidArtifacts.js';
+import { UCANValidator } from '../validators/ucanDelegation.js';
+import { PolicyValidator } from '../validators/policyEvaluation.js';
+import { TransportValidator } from '../validators/transport.js';
+import { EventDAGValidator } from '../validators/eventDAG.js';
+
+describe('Base MCP Comprehensive Tests', () => {
+  const validator = new MCPTypedValidator();
+
+  describe('Request Validation Edge Cases', () => {
+    it('should reject request with invalid jsonrpc version', () => {
+      const payload = {
+        jsonrpc: '1.0',
+        method: 'ping',
+        id: 1,
+      };
+      const result = validator.validateRequest(payload);
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should reject request with non-string method', () => {
+      const payload = {
+        jsonrpc: '2.0',
+        method: 123,
+        id: 1,
+      };
+      const result = validator.validateRequest(payload);
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should reject request with missing id', () => {
+      const payload = {
+        jsonrpc: '2.0',
+        method: 'ping',
+      };
+      const result = validator.validateRequest(payload);
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should validate request with string id', () => {
+      const payload = {
+        jsonrpc: '2.0',
+        method: 'ping',
+        id: 'test-id',
+      };
+      const result = validator.validateRequest(payload);
+      expect(result.isValid).toBe(true);
+    });
+
+    it('should validate request with null params', () => {
+      const payload = {
+        jsonrpc: '2.0',
+        method: 'ping',
+        params: null,
+        id: 1,
+      };
+      const result = validator.validateRequest(payload);
+      expect(result.isValid).toBe(true);
+    });
+  });
+
+  describe('Response Validation Edge Cases', () => {
+    it('should reject response with missing jsonrpc', () => {
+      const payload = {
+        id: 1,
+        result: {},
+      };
+      const result = validator.validateResponse(payload);
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should reject response with missing id', () => {
+      const payload = {
+        jsonrpc: '2.0',
+        result: {},
+      };
+      const result = validator.validateResponse(payload);
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should reject response with both result and error', () => {
+      const payload = {
+        jsonrpc: '2.0',
+        id: 1,
+        result: {},
+        error: { code: -32600, message: 'Invalid Request' },
+      };
+      const result = validator.validateResponse(payload);
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should reject response with neither result nor error', () => {
+      const payload = {
+        jsonrpc: '2.0',
+        id: 1,
+      };
+      const result = validator.validateResponse(payload);
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should validate error response with all fields', () => {
+      const payload = {
+        jsonrpc: '2.0',
+        id: 1,
+        error: {
+          code: -32600,
+          message: 'Invalid Request',
+          data: { details: 'Additional error info' },
+        },
+      };
+      const result = validator.validateResponse(payload);
+      expect(result.isValid).toBe(true);
+    });
+
+    it('should validate result response with null id', () => {
+      const payload = {
+        jsonrpc: '2.0',
+        id: null,
+        result: {},
+      };
+      const result = validator.validateResponse(payload);
+      expect(result.isValid).toBe(true);
+    });
+  });
+
+  describe('Notification Validation Edge Cases', () => {
+    it('should reject notification with id field', () => {
+      const payload = {
+        jsonrpc: '2.0',
+        method: 'notifications/progress',
+        params: {},
+        id: 1,
+      };
+      const result = validator.validateNotification(payload);
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should warn for notification method without notifications/ prefix', () => {
+      const payload = {
+        jsonrpc: '2.0',
+        method: 'progress',
+        params: {},
+      };
+      const result = validator.validateNotification(payload);
+      expect(result.warnings).toBeDefined();
+      expect(result.warnings.length).toBeGreaterThan(0);
+    });
+
+    it('should validate notification without params', () => {
+      const payload = {
+        jsonrpc: '2.0',
+        method: 'notifications/cancelled',
+      };
+      const result = validator.validateNotification(payload);
+      expect(result.isValid).toBe(true);
+    });
+  });
+
+  describe('Method-Specific Validation', () => {
+    it('should validate tools/list request', () => {
+      const payload = {
+        jsonrpc: '2.0',
+        method: 'tools/list',
+        id: 1,
+      };
+      const result = validator.validateRequest(payload);
+      expect(result.isValid).toBe(true);
+    });
+
+    it('should validate resources/read request', () => {
+      const payload = {
+        jsonrpc: '2.0',
+        method: 'resources/read',
+        params: { uri: 'file:///test.txt' },
+        id: 1,
+      };
+      const result = validator.validateRequest(payload);
+      expect(result.isValid).toBe(true);
+    });
+
+    it('should validate prompts/get request', () => {
+      const payload = {
+        jsonrpc: '2.0',
+        method: 'prompts/get',
+        params: { name: 'test_prompt', arguments: {} },
+        id: 1,
+      };
+      const result = validator.validateRequest(payload);
+      expect(result.isValid).toBe(true);
+    });
+
+    it('should validate initialize request', () => {
+      const payload = {
+        jsonrpc: '2.0',
+        method: 'initialize',
+        params: {
+          protocolVersion: '2024-11-05',
+          capabilities: {},
+          clientInfo: { name: 'test', version: '1.0' },
+        },
+        id: 1,
+      };
+      const result = validator.validateRequest(payload);
+      expect(result.isValid).toBe(true);
+    });
+  });
+});
+
+describe('MCP-IDL Comprehensive Tests', () => {
+  const validator = new MCPIDLValidator();
+
+  describe('Interface Descriptor Validation', () => {
+    it('should reject descriptor with missing name', () => {
+      const payload = {
+        version: '1.0.0',
+        methods: [],
+      };
+      const result = validator.validateDescriptor(payload);
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should reject descriptor with missing version', () => {
+      const payload = {
+        name: 'test',
+        methods: [],
+      };
+      const result = validator.validateDescriptor(payload);
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should reject descriptor with non-array methods', () => {
+      const payload = {
+        name: 'test',
+        version: '1.0.0',
+        methods: 'not-an-array',
+      };
+      const result = validator.validateDescriptor(payload);
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should validate descriptor with optional fields', () => {
+      const payload = {
+        name: 'test',
+        version: '1.0.0',
+        description: 'Test interface',
+        methods: [],
+        dependencies: {},
+      };
+      const result = validator.validateDescriptor(payload);
+      expect(result.isValid).toBe(true);
+    });
+  });
+
+  describe('CID Computation', () => {
+    it('should compute deterministic CID for descriptor', () => {
+      const descriptor = {
+        name: 'test',
+        version: '1.0.0',
+        methods: [],
+      };
+      const cid1 = validator.computeCID(descriptor);
+      const cid2 = validator.computeCID(descriptor);
+      expect(cid1).toBe(cid2);
+    });
+
+    it('should compute different CIDs for different descriptors', () => {
+      const desc1 = { name: 'test1', version: '1.0.0', methods: [] };
+      const desc2 = { name: 'test2', version: '1.0.0', methods: [] };
+      const cid1 = validator.computeCID(desc1);
+      const cid2 = validator.computeCID(desc2);
+      expect(cid1).not.toBe(cid2);
+    });
+  });
+
+  describe('Interface Request Validation', () => {
+    it('should validate interfaces/list request', () => {
+      const payload = {
+        jsonrpc: '2.0',
+        method: 'interfaces/list',
+        id: 1,
+      };
+      const result = validator.validateInterfaceListRequest(payload);
+      expect(result.isValid).toBe(true);
+    });
+
+    it('should validate interfaces/get request', () => {
+      const payload = {
+        jsonrpc: '2.0',
+        method: 'interfaces/get',
+        params: { interface_cid: 'bafkreiabcd1234' },
+        id: 1,
+      };
+      const result = validator.validateInterfaceGetRequest(payload);
+      expect(result.isValid).toBe(true);
+    });
+
+    it('should reject interfaces/get without interface_cid', () => {
+      const payload = {
+        jsonrpc: '2.0',
+        method: 'interfaces/get',
+        params: {},
+        id: 1,
+      };
+      const result = validator.validateInterfaceGetRequest(payload);
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should validate interfaces/compat request', () => {
+      const payload = {
+        jsonrpc: '2.0',
+        method: 'interfaces/compat',
+        params: {
+          client_cid: 'bafkreiabc',
+          server_cid: 'bafkreidef',
+        },
+        id: 1,
+      };
+      const result = validator.validateInterfaceCompatRequest(payload);
+      expect(result.isValid).toBe(true);
+    });
+  });
+});
+
+describe('CID Artifacts Comprehensive Tests', () => {
+  const validator = new CIDValidator();
+
+  describe('Execution Envelope Validation', () => {
+    it('should reject envelope with missing interface_cid', () => {
+      const payload = {
+        input_cid: 'bafkreiabc',
+        parents: [],
+      };
+      const result = validator.validateEnvelope(payload);
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should reject envelope with missing input_cid', () => {
+      const payload = {
+        interface_cid: 'bafkreiabc',
+        parents: [],
+      };
+      const result = validator.validateEnvelope(payload);
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should reject envelope with non-array parents', () => {
+      const payload = {
+        interface_cid: 'bafkreiabc',
+        input_cid: 'bafkreidef',
+        parents: 'not-an-array',
+      };
+      const result = validator.validateEnvelope(payload);
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should validate envelope with optional envelope_cid', () => {
+      const payload = {
+        interface_cid: 'bafkreiabc',
+        input_cid: 'bafkreidef',
+        parents: [],
+        envelope_cid: 'bafkreighi',
+      };
+      const result = validator.validateEnvelope(payload);
+      expect(result.isValid).toBe(true);
+    });
+
+    it('should validate envelope with empty parents', () => {
+      const payload = {
+        interface_cid: 'bafkreiabc',
+        input_cid: 'bafkreidef',
+        parents: [],
+      };
+      const result = validator.validateEnvelope(payload);
+      expect(result.isValid).toBe(true);
+    });
+
+    it('should validate envelope with multiple parents', () => {
+      const payload = {
+        interface_cid: 'bafkreiabc',
+        input_cid: 'bafkreidef',
+        parents: ['bafkreighi', 'bafkreijkl'],
+      };
+      const result = validator.validateEnvelope(payload);
+      expect(result.isValid).toBe(true);
+    });
+  });
+
+  describe('Execution Receipt Validation', () => {
+    it('should reject receipt with missing envelope_cid', () => {
+      const payload = {
+        output_cid: 'bafkreiabc',
+        output: { result: 'success' },
+      };
+      const result = validator.validateReceipt(payload);
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should reject receipt with missing output_cid', () => {
+      const payload = {
+        envelope_cid: 'bafkreiabc',
+        output: { result: 'success' },
+      };
+      const result = validator.validateReceipt(payload);
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should validate receipt with optional decision_cid', () => {
+      const payload = {
+        envelope_cid: 'bafkreiabc',
+        output_cid: 'bafkreidef',
+        output: { result: 'success' },
+        decision_cid: 'bafkreighi',
+      };
+      const result = validator.validateReceipt(payload);
+      expect(result.isValid).toBe(true);
+    });
+
+    it('should validate receipt with optional receipt_cid', () => {
+      const payload = {
+        envelope_cid: 'bafkreiabc',
+        output_cid: 'bafkreidef',
+        output: { result: 'success' },
+        receipt_cid: 'bafkreighi',
+      };
+      const result = validator.validateReceipt(payload);
+      expect(result.isValid).toBe(true);
+    });
+  });
+});
+
+describe('UCAN Delegation Comprehensive Tests', () => {
+  const validator = new UCANValidator();
+
+  describe('UCAN Token Validation', () => {
+    it('should reject token with missing iss', () => {
+      const payload = {
+        aud: 'did:key:receiver',
+        att: [{ can: 'msg/send' }],
+        exp: Math.floor(Date.now() / 1000) + 3600,
+      };
+      const result = validator.validateToken(payload);
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should reject token with missing aud', () => {
+      const payload = {
+        iss: 'did:key:sender',
+        att: [{ can: 'msg/send' }],
+        exp: Math.floor(Date.now() / 1000) + 3600,
+      };
+      const result = validator.validateToken(payload);
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should reject token with missing att', () => {
+      const payload = {
+        iss: 'did:key:sender',
+        aud: 'did:key:receiver',
+        exp: Math.floor(Date.now() / 1000) + 3600,
+      };
+      const result = validator.validateToken(payload);
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should reject token with missing exp', () => {
+      const payload = {
+        iss: 'did:key:sender',
+        aud: 'did:key:receiver',
+        att: [{ can: 'msg/send' }],
+      };
+      const result = validator.validateToken(payload);
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should validate token with optional prf', () => {
+      const payload = {
+        iss: 'did:key:sender',
+        aud: 'did:key:receiver',
+        att: [{ can: 'msg/send' }],
+        exp: Math.floor(Date.now() / 1000) + 3600,
+        prf: ['bafkreiabc'],
+      };
+      const result = validator.validateToken(payload);
+      expect(result.isValid).toBe(true);
+    });
+  });
+
+  describe('Delegation Chain Validation', () => {
+    it('should validate delegation chain with nested proofs', () => {
+      const chain = [
+        {
+          iss: 'did:key:root',
+          aud: 'did:key:intermediate',
+          att: [{ can: 'msg/*' }],
+          exp: Math.floor(Date.now() / 1000) + 7200,
+        },
+        {
+          iss: 'did:key:intermediate',
+          aud: 'did:key:leaf',
+          att: [{ can: 'msg/send' }],
+          exp: Math.floor(Date.now() / 1000) + 3600,
+          prf: ['bafkreiabc'],
+        },
+      ];
+      const result = validator.validateDelegationChain(chain);
+      expect(result.isValid).toBe(true);
+    });
+
+    it('should reject delegation chain with broken links', () => {
+      const chain = [
+        {
+          iss: 'did:key:root',
+          aud: 'did:key:different',
+          att: [{ can: 'msg/*' }],
+          exp: Math.floor(Date.now() / 1000) + 3600,
+        },
+        {
+          iss: 'did:key:intermediate',
+          aud: 'did:key:leaf',
+          att: [{ can: 'msg/send' }],
+          exp: Math.floor(Date.now() / 1000) + 3600,
+        },
+      ];
+      const result = validator.validateDelegationChain(chain);
+      expect(result.isValid).toBe(false);
+    });
+  });
+
+  describe('Invocation Validation', () => {
+    it('should reject invocation without proof_cid', () => {
+      const payload = {
+        interface_cid: 'bafkreiabc',
+        input_cid: 'bafkreidef',
+        parents: [],
+      };
+      const result = validator.validateInvocation(payload);
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should validate invocation with proof_cid', () => {
+      const payload = {
+        interface_cid: 'bafkreiabc',
+        input_cid: 'bafkreidef',
+        parents: [],
+        proof_cid: 'bafkreighi',
+      };
+      const result = validator.validateInvocation(payload);
+      expect(result.isValid).toBe(true);
+    });
+  });
+});
+
+describe('Policy Evaluation Comprehensive Tests', () => {
+  const validator = new PolicyValidator();
+
+  describe('Policy Descriptor Validation', () => {
+    it('should validate permission policy', () => {
+      const payload = {
+        policy_cid: 'bafkreiabc',
+        policy_type: 'permission',
+        target: { action: 'read' },
+      };
+      const result = validator.validatePolicyDescriptor(payload);
+      expect(result.isValid).toBe(true);
+    });
+
+    it('should validate prohibition policy', () => {
+      const payload = {
+        policy_cid: 'bafkreiabc',
+        policy_type: 'prohibition',
+        target: { action: 'delete' },
+      };
+      const result = validator.validatePolicyDescriptor(payload);
+      expect(result.isValid).toBe(true);
+    });
+
+    it('should validate obligation policy', () => {
+      const payload = {
+        policy_cid: 'bafkreiabc',
+        policy_type: 'obligation',
+        target: { action: 'audit' },
+      };
+      const result = validator.validatePolicyDescriptor(payload);
+      expect(result.isValid).toBe(true);
+    });
+
+    it('should reject policy with invalid type', () => {
+      const payload = {
+        policy_cid: 'bafkreiabc',
+        policy_type: 'invalid',
+        target: { action: 'read' },
+      };
+      const result = validator.validatePolicyDescriptor(payload);
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should validate policy with temporal constraints', () => {
+      const payload = {
+        policy_cid: 'bafkreiabc',
+        policy_type: 'permission',
+        target: { action: 'read' },
+        temporal: {
+          not_before: Math.floor(Date.now() / 1000),
+          not_after: Math.floor(Date.now() / 1000) + 3600,
+        },
+      };
+      const result = validator.validatePolicyDescriptor(payload);
+      expect(result.isValid).toBe(true);
+    });
+  });
+
+  describe('Policy Decision Validation', () => {
+    it('should validate allow decision', () => {
+      const payload = {
+        decision: 'allow',
+        policy_cid: 'bafkreiabc',
+      };
+      const result = validator.validateDecision(payload);
+      expect(result.isValid).toBe(true);
+    });
+
+    it('should validate deny decision', () => {
+      const payload = {
+        decision: 'deny',
+        policy_cid: 'bafkreiabc',
+        reason: 'Access denied',
+      };
+      const result = validator.validateDecision(payload);
+      expect(result.isValid).toBe(true);
+    });
+
+    it('should validate allow_with_obligations decision', () => {
+      const payload = {
+        decision: 'allow_with_obligations',
+        policy_cid: 'bafkreiabc',
+        obligations: [
+          {
+            action: 'log_access',
+            deadline: Math.floor(Date.now() / 1000) + 60,
+          },
+        ],
+      };
+      const result = validator.validateDecision(payload);
+      expect(result.isValid).toBe(true);
+    });
+
+    it('should reject decision with invalid type', () => {
+      const payload = {
+        decision: 'maybe',
+        policy_cid: 'bafkreiabc',
+      };
+      const result = validator.validateDecision(payload);
+      expect(result.isValid).toBe(false);
+    });
+  });
+});
+
+describe('Transport Protocol Comprehensive Tests', () => {
+  const validator = new TransportValidator();
+
+  describe('Protocol ID Validation', () => {
+    it('should validate correct protocol ID', () => {
+      const result = validator.validateProtocolID('/mcp+p2p/1.0.0');
+      expect(result.isValid).toBe(true);
+    });
+
+    it('should reject incorrect protocol ID', () => {
+      const result = validator.validateProtocolID('/http/1.1');
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should reject protocol ID without version', () => {
+      const result = validator.validateProtocolID('/mcp+p2p');
+      expect(result.isValid).toBe(false);
+    });
+  });
+
+  describe('Message Framing Validation', () => {
+    it('should reject frame with missing length', () => {
+      const payload = {
+        message: { jsonrpc: '2.0', method: 'ping', id: 1 },
+      };
+      const result = validator.validateFrame(payload);
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should reject frame with missing message', () => {
+      const payload = {
+        length: 100,
+      };
+      const result = validator.validateFrame(payload);
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should validate frame with correct length', () => {
+      const message = { jsonrpc: '2.0', method: 'ping', id: 1 };
+      const payload = {
+        length: JSON.stringify(message).length,
+        message,
+      };
+      const result = validator.validateFrame(payload);
+      expect(result.isValid).toBe(true);
+    });
+
+    it('should warn on length mismatch', () => {
+      const payload = {
+        length: 50,
+        message: { jsonrpc: '2.0', method: 'ping', id: 1 },
+      };
+      const result = validator.validateFrame(payload);
+      expect(result.warnings).toBeDefined();
+      expect(result.warnings.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Session Lifecycle Validation', () => {
+    it('should reject session with missing connection', () => {
+      const payload = {
+        stream: 'stream-id',
+        initialization: {},
+      };
+      const result = validator.validateSession(payload);
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should reject session with missing stream', () => {
+      const payload = {
+        connection: 'conn-id',
+        initialization: {},
+      };
+      const result = validator.validateSession(payload);
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should reject session with missing initialization', () => {
+      const payload = {
+        connection: 'conn-id',
+        stream: 'stream-id',
+      };
+      const result = validator.validateSession(payload);
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should validate complete session', () => {
+      const payload = {
+        connection: 'conn-id',
+        stream: 'stream-id',
+        initialization: {
+          protocolVersion: '2024-11-05',
+          capabilities: {},
+        },
+      };
+      const result = validator.validateSession(payload);
+      expect(result.isValid).toBe(true);
+    });
+  });
+});
+
+describe('Event DAG Comprehensive Tests', () => {
+  const validator = new EventDAGValidator();
+
+  describe('Event Validation', () => {
+    it('should reject event with missing event_cid', () => {
+      const payload = {
+        parents: [],
+        data: {},
+      };
+      const result = validator.validateEvent(payload);
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should reject event with missing parents', () => {
+      const payload = {
+        event_cid: 'bafkreiabc',
+        data: {},
+      };
+      const result = validator.validateEvent(payload);
+      expect(result.isValid).toBe(false);
+    });
+
+    it('should validate genesis event (empty parents)', () => {
+      const payload = {
+        event_cid: 'bafkreiabc',
+        parents: [],
+        data: { type: 'genesis' },
+      };
+      const result = validator.validateEvent(payload);
+      expect(result.isValid).toBe(true);
+    });
+
+    it('should validate event with multiple parents', () => {
+      const payload = {
+        event_cid: 'bafkreiabc',
+        parents: ['bafkreidef', 'bafkreighi'],
+        data: { type: 'merge' },
+      };
+      const result = validator.validateEvent(payload);
+      expect(result.isValid).toBe(true);
+    });
+  });
+
+  describe('DAG Validation', () => {
+    it('should validate acyclic DAG', () => {
+      const events = [
+        { event_cid: 'A', parents: [], data: {} },
+        { event_cid: 'B', parents: ['A'], data: {} },
+        { event_cid: 'C', parents: ['B'], data: {} },
+      ];
+      const result = validator.validateDAG(events);
+      expect(result.isValid).toBe(true);
+      expect(result.hasCycle).toBe(false);
+    });
+
+    it('should detect cycle in DAG', () => {
+      const events = [
+        { event_cid: 'A', parents: ['C'], data: {} },
+        { event_cid: 'B', parents: ['A'], data: {} },
+        { event_cid: 'C', parents: ['B'], data: {} },
+      ];
+      const result = validator.validateDAG(events);
+      expect(result.isValid).toBe(false);
+      expect(result.hasCycle).toBe(true);
+    });
+
+    it('should validate DAG with diamond structure', () => {
+      const events = [
+        { event_cid: 'A', parents: [], data: {} },
+        { event_cid: 'B', parents: ['A'], data: {} },
+        { event_cid: 'C', parents: ['A'], data: {} },
+        { event_cid: 'D', parents: ['B', 'C'], data: {} },
+      ];
+      const result = validator.validateDAG(events);
+      expect(result.isValid).toBe(true);
+      expect(result.hasCycle).toBe(false);
+    });
+
+    it('should detect missing parent references', () => {
+      const events = [
+        { event_cid: 'A', parents: [], data: {} },
+        { event_cid: 'B', parents: ['Z'], data: {} }, // Z doesn't exist
+      ];
+      const result = validator.validateDAG(events);
+      expect(result.isValid).toBe(false);
+    });
+  });
+
+  describe('Causal Ordering', () => {
+    it('should validate causal ordering', () => {
+      const events = [
+        { event_cid: 'A', parents: [], data: {}, timestamp: 1000 },
+        { event_cid: 'B', parents: ['A'], data: {}, timestamp: 2000 },
+        { event_cid: 'C', parents: ['B'], data: {}, timestamp: 3000 },
+      ];
+      const result = validator.validateCausalOrdering(events);
+      expect(result.isValid).toBe(true);
+    });
+
+    it('should detect causal ordering violations', () => {
+      const events = [
+        { event_cid: 'A', parents: [], data: {}, timestamp: 3000 },
+        { event_cid: 'B', parents: ['A'], data: {}, timestamp: 2000 },
+        { event_cid: 'C', parents: ['B'], data: {}, timestamp: 1000 },
+      ];
+      const result = validator.validateCausalOrdering(events);
+      expect(result.isValid).toBe(false);
+    });
+  });
+});

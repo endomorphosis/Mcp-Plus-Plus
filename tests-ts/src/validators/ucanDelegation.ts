@@ -60,4 +60,66 @@ export class UCANValidator {
 
     return result;
   }
+
+  validateDelegationChain(tokens: Record<string, unknown>[]): ValidationResult {
+    const result: ValidationResult = {
+      isValid: true,
+      messageType: 'delegation_chain',
+      errors: [],
+      warnings: [],
+      metadata: { chainLength: tokens.length },
+    };
+
+    // Validate each token
+    for (let i = 0; i < tokens.length; i++) {
+      const tokenResult = this.validateToken(tokens[i]);
+      if (!tokenResult.isValid) {
+        result.isValid = false;
+        result.errors.push(`Token ${i}: ${tokenResult.errors.join(', ')}`);
+      }
+    }
+
+    // Check chain continuity (aud of token[i] should match iss of token[i+1])
+    for (let i = 0; i < tokens.length - 1; i++) {
+      const currentAud = tokens[i].aud;
+      const nextIss = tokens[i + 1].iss;
+      if (currentAud !== nextIss) {
+        result.isValid = false;
+        result.errors.push(
+          `Chain broken between token ${i} and ${i + 1}: ` +
+          `aud(${currentAud}) != iss(${nextIss})`
+        );
+      }
+    }
+
+    return result;
+  }
+
+  validateInvocation(invocation: Record<string, unknown>): ValidationResult {
+    const result: ValidationResult = {
+      isValid: true,
+      messageType: 'ucan_invocation',
+      errors: [],
+      warnings: [],
+      metadata: {},
+    };
+
+    // Check required fields
+    if (!invocation.interface_cid) {
+      result.isValid = false;
+      result.errors.push('Missing interface_cid');
+    }
+
+    if (!invocation.input_cid) {
+      result.isValid = false;
+      result.errors.push('Missing input_cid');
+    }
+
+    if (!invocation.proof_cid) {
+      result.isValid = false;
+      result.errors.push('Missing proof_cid for invocation');
+    }
+
+    return result;
+  }
 }
