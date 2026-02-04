@@ -18,6 +18,8 @@ The archived design research uses CORBA-era language (e.g., “IDL”, “Interf
 
 MCP-IDL adopts the *useful* conceptual pieces (contracts + runtime query + compatibility metadata) while remaining CID-first and optional; it is not a dependency on CORBA or legacy CORBA stacks.
 
+Alias note: the archive also uses the phrase “interface contract object” to describe the universally comparable contract; in MCP-IDL this is the Interface Descriptor content-addressed as `interface_cid`.
+
 ## 2. Conceptual Model
 
 - An **Interface Descriptor** is canonical content (schema + metadata).

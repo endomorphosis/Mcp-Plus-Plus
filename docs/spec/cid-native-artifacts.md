@@ -109,6 +109,7 @@ The archived design thread emphasizes “mandatory observability hooks (trace ID
 
 - `intent_cid` and/or `event_cid` are stable, content-addressed identifiers suitable for trace correlation across components.
 - `correlation_id` remains useful for ephemeral/UI correlation (and SHOULD be carried from intent into receipts when available).
+- Alias note: the archive also describes “transactional grouping for “multi-step tasks as a single reliable operation””; MCP++ can model this by carrying a common `correlation_id` across the related intents/receipts/events.
 
 ## 7. Event Node (CID’d)
 

@@ -3,6 +3,7 @@
 - **CID**: Content Identifier; a hash-addressed identifier for canonicalized content.
 - **Profile**: Optional, negotiated capability that adds semantics without changing core MCP messages.
 - **Interface Descriptor**: A canonical, CID-addressed contract describing a tool/resource interface.
+- **interface contract object**: Archive phrasing for the universally comparable contract required to reduce fragmentation; in MCP++ this corresponds to the Interface Descriptor addressed as `interface_cid`.
 - **Execution Envelope**: A wrapper around an invocation referencing interface/input/intent/policy/proofs via CIDs.
 - **Event DAG**: A content-addressed DAG of execution events linked by causal references.
 - **Policy CID**: A content-addressed representation of policy (permissions/prohibitions/obligations + time constraints).
@@ -15,6 +16,7 @@
 - **Fibonacci Heap**: A priority-queue data structure sometimes used to optimize many priority updates (`decrease-key`). (Alias: “fibinocci heap” in the original chat export.)
 - **Merkle Clock**: A Merkle-DAG-derived logical clock for establishing partial order / causality between events. (Alias: “meekly clock” in the original chat export.)
 - **Trace ID / Correlation ID**: Stable identifiers used to correlate call/reply/receipt chains and audit artifacts across systems. In MCP++ these are typically derived from, or bound to, `intent_cid` and/or `event_cid`.
+- **transactional grouping for “multi-step tasks as a single reliable operation”**: Archive phrasing for grouping related actions under a single transaction/span; typically modeled by carrying a common `correlation_id` across the related intents/receipts/events.
 - **nonce / correlation_id**: Archive phrasing for a per-call correlation value carried through intent/receipt artifacts.
 - **Canonical JSON / CBOR encoding**: Archive phrasing for the deterministic canonicalization encoding used before CID computation.
 - **signatures[]**: Archive phrasing for the `signatures` array carried on decision/receipt artifacts.

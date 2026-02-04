@@ -42,6 +42,7 @@ Each row is: **archive phrase → canonical concept → canonical location(s)**.
 | Agent Object Protocol | Event-driven, strongly-typed “agent object” interaction framing | [docs/spec/mcp-idl.md](../spec/mcp-idl.md), [docs/architecture/glossary.md](glossary.md) |
 | mandatory tool versioning/compatibility metadata | Interface descriptors carry explicit version/compatibility fields | [docs/spec/mcp-idl.md](../spec/mcp-idl.md) |
 | callbacks / event streams | Declared streaming/eventing interface patterns (avoid polling) | [docs/spec/mcp-idl.md](../spec/mcp-idl.md), [docs/spec/transport-mcp-p2p.md](../spec/transport-mcp-p2p.md) |
+| transactional grouping for “multi-step tasks as a single reliable operation” | Transaction/span correlation for multi-step workflows | [docs/spec/cid-native-artifacts.md](../spec/cid-native-artifacts.md), [docs/architecture/glossary.md](glossary.md) |
 | mandatory observability hooks (trace IDs, provenance metadata) | Trace/provenance propagation as a first-class, declared capability | [docs/spec/mcp-idl.md](../spec/mcp-idl.md), [docs/spec/cid-native-artifacts.md](../spec/cid-native-artifacts.md) |
 | deterministic canonicalization pipeline | Canonicalization requirements for CID computation | [docs/spec/cid-native-artifacts.md](../spec/cid-native-artifacts.md), [docs/spec/mcp-idl.md](../spec/mcp-idl.md) |
 | Canonical JSON / CBOR encoding | Deterministic canonical encoding choice for CID computation | [docs/spec/cid-native-artifacts.md](../spec/cid-native-artifacts.md), [docs/spec/mcp-idl.md](../spec/mcp-idl.md) |
@@ -58,6 +59,7 @@ Each row is: **archive phrase → canonical concept → canonical location(s)**.
 | federated agent swarms | Decentralized multi-agent topology (federated/cross-org) | [docs/architecture/glossary.md](glossary.md), [docs/architecture/overview.md](overview.md) |
 | a capability ledger + immutable audit trail | Capability + provenance record enabling auditability | [docs/architecture/glossary.md](glossary.md), [docs/architecture/overview.md](overview.md) |
 | incident response and blast-radius control | Operational security framing enabled by ledger/audit trail | [docs/architecture/overview.md](overview.md), [docs/architecture/glossary.md](glossary.md) |
+
 
 ## How to extend
 
