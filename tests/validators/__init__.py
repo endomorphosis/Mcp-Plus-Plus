@@ -10,6 +10,7 @@ from .cid_artifacts import CIDExecutionValidator
 from .ucan_delegation import UCANDelegationValidator
 from .policy_evaluation import PolicyEvaluationValidator
 from .event_dag import EventDAGValidator
+from .transport import TransportValidator
 
 __all__ = [
     'MCPValidator',
@@ -19,4 +20,5 @@ __all__ = [
     'UCANDelegationValidator',
     'PolicyEvaluationValidator',
     'EventDAGValidator',
+    'TransportValidator',
 ]
