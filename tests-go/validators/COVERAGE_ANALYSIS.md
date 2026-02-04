@@ -35,7 +35,7 @@
 - Defensive programming - would only execute if struct validation was bypassed (not done in this codebase)
 
 #### ValidateExecutionReceipt (75.0%)
-**Lines 63-73**: Redundant CID and status validation
+**Lines 63-68, 71-73**: Redundant CID and status validation
 - Already enforced by struct tags
 - Cannot execute in normal flow because struct validation (line 58) runs first
 - Defensive programming - would only execute if struct validation was bypassed (not done in this codebase)

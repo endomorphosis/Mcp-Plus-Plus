@@ -11,6 +11,9 @@ import (
 func TestBaseMCPValidator_JSONRPCRequest(t *testing.T) {
 	validator := NewBaseMCPValidator()
 	
+	// Note: These tests exercise struct tag validation (which catches most errors)
+	// rather than the redundant manual checks at lines 53-55, which are unreachable
+	// in normal flow. See COVERAGE_ANALYSIS.md for details.
 	tests := []struct {
 		name    string
 		input   string
@@ -665,6 +668,9 @@ func TestMCPIDLValidator_CompatibilityCheck(t *testing.T) {
 func TestCIDValidator_ExecutionEnvelope(t *testing.T) {
 	validator := NewCIDValidator()
 	
+	// Note: These tests exercise struct tag validation (which catches invalid CIDs)
+	// rather than the redundant manual checks at lines 39-44, which are unreachable
+	// in normal flow. See COVERAGE_ANALYSIS.md for details.
 	tests := []struct {
 		name    string
 		input   string
@@ -776,6 +782,9 @@ func TestCIDValidator_ExecutionReceipt(t *testing.T) {
 	
 	timestamp := time.Now().Format(time.RFC3339)
 	
+	// Note: These tests exercise struct tag validation (which catches invalid CIDs and status)
+	// rather than the redundant manual checks at lines 63-68 and 71-73, which are unreachable
+	// in normal flow. See COVERAGE_ANALYSIS.md for details.
 	tests := []struct {
 		name    string
 		input   string
