@@ -98,4 +98,139 @@ mod tests {
         let result = validator.validate_session(&payload).unwrap();
         assert!(result.is_valid);
     }
+    
+    // Additional comprehensive tests
+    
+    #[test]
+    fn test_transport_message_invalid_protocol_id() {
+        let validator = TransportValidator::new();
+        let payload = json!({
+            "protocol_id": "/invalid/1.0.0",
+            "length": 256,
+            "payload": {"jsonrpc": "2.0", "method": "test"}
+        });
+        
+        let result = validator.validate_transport_message(&payload).unwrap();
+        assert!(!result.is_valid, "Should fail due to invalid protocol_id");
+    }
+    
+    #[test]
+    fn test_transport_message_zero_length() {
+        let validator = TransportValidator::new();
+        let payload = json!({
+            "protocol_id": "/mcp+p2p/1.0.0",
+            "length": 0,
+            "payload": {"jsonrpc": "2.0", "method": "test"}
+        });
+        
+        let result = validator.validate_transport_message(&payload).unwrap();
+        assert!(!result.is_valid, "Should fail due to zero length");
+    }
+    
+    #[test]
+    fn test_transport_message_missing_protocol_id() {
+        let validator = TransportValidator::new();
+        let payload = json!({
+            "length": 256,
+            "payload": {"jsonrpc": "2.0", "method": "test"}
+        });
+        
+        let result = validator.validate_transport_message(&payload);
+        assert!(result.is_err(), "Should fail due to missing protocol_id");
+    }
+    
+    #[test]
+    fn test_transport_message_missing_length() {
+        let validator = TransportValidator::new();
+        let payload = json!({
+            "protocol_id": "/mcp+p2p/1.0.0",
+            "payload": {"jsonrpc": "2.0", "method": "test"}
+        });
+        
+        let result = validator.validate_transport_message(&payload);
+        assert!(result.is_err(), "Should fail due to missing length");
+    }
+    
+    #[test]
+    fn test_transport_message_missing_payload() {
+        let validator = TransportValidator::new();
+        let payload = json!({
+            "protocol_id": "/mcp+p2p/1.0.0",
+            "length": 256
+        });
+        
+        let result = validator.validate_transport_message(&payload);
+        assert!(result.is_err(), "Should fail due to missing payload");
+    }
+    
+    #[test]
+    fn test_transport_message_large_length() {
+        let validator = TransportValidator::new();
+        let payload = json!({
+            "protocol_id": "/mcp+p2p/1.0.0",
+            "length": 1048576,
+            "payload": {"jsonrpc": "2.0", "method": "test"}
+        });
+        
+        let result = validator.validate_transport_message(&payload).unwrap();
+        assert!(result.is_valid);
+    }
+    
+    #[test]
+    fn test_session_missing_id() {
+        let validator = TransportValidator::new();
+        let payload = json!({
+            "peer_addr": "/ip4/127.0.0.1/tcp/8080"
+        });
+        
+        let result = validator.validate_session(&payload);
+        assert!(result.is_err(), "Should fail due to missing session_id");
+    }
+    
+    #[test]
+    fn test_session_missing_peer_addr() {
+        let validator = TransportValidator::new();
+        let payload = json!({
+            "session_id": "session-123"
+        });
+        
+        let result = validator.validate_session(&payload);
+        assert!(result.is_err(), "Should fail due to missing peer_addr");
+    }
+    
+    #[test]
+    fn test_session_ipv6_address() {
+        let validator = TransportValidator::new();
+        let payload = json!({
+            "session_id": "session-123",
+            "peer_addr": "/ip6/::1/tcp/8080"
+        });
+        
+        let result = validator.validate_session(&payload).unwrap();
+        assert!(result.is_valid);
+    }
+    
+    #[test]
+    fn test_session_with_p2p_id() {
+        let validator = TransportValidator::new();
+        let payload = json!({
+            "session_id": "session-123",
+            "peer_addr": "/ip4/127.0.0.1/tcp/8080/p2p/QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"
+        });
+        
+        let result = validator.validate_session(&payload).unwrap();
+        assert!(result.is_valid);
+    }
+    
+    #[test]
+    fn test_validator_default() {
+        let validator = TransportValidator::default();
+        let payload = json!({
+            "session_id": "session-123",
+            "peer_addr": "/ip4/127.0.0.1/tcp/8080"
+        });
+        
+        let result = validator.validate_session(&payload).unwrap();
+        assert!(result.is_valid);
+    }
 }

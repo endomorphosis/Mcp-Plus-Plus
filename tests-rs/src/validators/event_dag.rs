@@ -134,4 +134,186 @@ mod tests {
         
         assert!(validator.check_acyclicity(&events).unwrap());
     }
+    
+    // Additional comprehensive tests
+    
+    #[test]
+    fn test_event_genesis_no_parents() {
+        let validator = EventDAGValidator::new();
+        let payload = json!({
+            "event_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "parents": [],
+            "payload": {"data": "genesis"},
+            "timestamp": "2024-01-01T00:00:00Z"
+        });
+        
+        let result = validator.validate_event(&payload).unwrap();
+        assert!(result.is_valid);
+        assert!(!result.warnings.is_empty(), "Should have warning for genesis event");
+    }
+    
+    #[test]
+    fn test_event_missing_cid() {
+        let validator = EventDAGValidator::new();
+        let payload = json!({
+            "parents": ["QmPreviousEvent"],
+            "payload": {"data": "test"},
+            "timestamp": "2024-01-01T00:00:00Z"
+        });
+        
+        let result = validator.validate_event(&payload);
+        assert!(result.is_err(), "Should fail due to missing event_cid");
+    }
+    
+    #[test]
+    fn test_event_missing_timestamp() {
+        let validator = EventDAGValidator::new();
+        let payload = json!({
+            "event_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "parents": ["QmPreviousEvent"],
+            "payload": {"data": "test"}
+        });
+        
+        let result = validator.validate_event(&payload);
+        assert!(result.is_err(), "Should fail due to missing timestamp");
+    }
+    
+    #[test]
+    fn test_event_missing_payload() {
+        let validator = EventDAGValidator::new();
+        let payload = json!({
+            "event_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "parents": ["QmPreviousEvent"],
+            "timestamp": "2024-01-01T00:00:00Z"
+        });
+        
+        let result = validator.validate_event(&payload);
+        assert!(result.is_err(), "Should fail due to missing payload");
+    }
+    
+    #[test]
+    fn test_event_invalid_cid_format() {
+        let validator = EventDAGValidator::new();
+        let payload = json!({
+            "event_cid": "invalid-cid",
+            "parents": ["QmPreviousEvent"],
+            "payload": {"data": "test"},
+            "timestamp": "2024-01-01T00:00:00Z"
+        });
+        
+        let result = validator.validate_event(&payload);
+        match result {
+            Ok(r) => assert!(!r.is_valid, "Invalid CID format should fail"),
+            Err(_) => {} // Also acceptable
+        }
+    }
+    
+    #[test]
+    fn test_event_multiple_parents() {
+        let validator = EventDAGValidator::new();
+        let payload = json!({
+            "event_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "parents": [
+                "QmParent1APJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnP",
+                "QmParent2APJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnP"
+            ],
+            "payload": {"data": "merge event"},
+            "timestamp": "2024-01-01T00:00:00Z"
+        });
+        
+        let result = validator.validate_event(&payload).unwrap();
+        assert!(result.is_valid);
+    }
+    
+    #[test]
+    fn test_acyclicity_with_cycle() {
+        let validator = EventDAGValidator::new();
+        let events = vec![
+            Event {
+                event_cid: "event1".to_string(),
+                parents: vec!["event2".to_string()],
+                payload: json!({}),
+                timestamp: "2024-01-01T00:00:00Z".to_string(),
+            },
+            Event {
+                event_cid: "event2".to_string(),
+                parents: vec!["event1".to_string()],
+                payload: json!({}),
+                timestamp: "2024-01-01T00:00:01Z".to_string(),
+            },
+        ];
+        
+        let is_acyclic = validator.check_acyclicity(&events).unwrap();
+        assert!(!is_acyclic, "Should detect cycle");
+    }
+    
+    #[test]
+    fn test_acyclicity_complex_dag() {
+        let validator = EventDAGValidator::new();
+        let events = vec![
+            Event {
+                event_cid: "event1".to_string(),
+                parents: vec![],
+                payload: json!({}),
+                timestamp: "2024-01-01T00:00:00Z".to_string(),
+            },
+            Event {
+                event_cid: "event2".to_string(),
+                parents: vec!["event1".to_string()],
+                payload: json!({}),
+                timestamp: "2024-01-01T00:00:01Z".to_string(),
+            },
+            Event {
+                event_cid: "event3".to_string(),
+                parents: vec!["event1".to_string()],
+                payload: json!({}),
+                timestamp: "2024-01-01T00:00:02Z".to_string(),
+            },
+            Event {
+                event_cid: "event4".to_string(),
+                parents: vec!["event2".to_string(), "event3".to_string()],
+                payload: json!({}),
+                timestamp: "2024-01-01T00:00:03Z".to_string(),
+            },
+        ];
+        
+        assert!(validator.check_acyclicity(&events).unwrap());
+    }
+    
+    #[test]
+    fn test_acyclicity_empty_events() {
+        let validator = EventDAGValidator::new();
+        let events: Vec<Event> = vec![];
+        
+        assert!(validator.check_acyclicity(&events).unwrap());
+    }
+    
+    #[test]
+    fn test_acyclicity_single_event() {
+        let validator = EventDAGValidator::new();
+        let events = vec![
+            Event {
+                event_cid: "event1".to_string(),
+                parents: vec![],
+                payload: json!({}),
+                timestamp: "2024-01-01T00:00:00Z".to_string(),
+            },
+        ];
+        
+        assert!(validator.check_acyclicity(&events).unwrap());
+    }
+    
+    #[test]
+    fn test_validator_default() {
+        let validator = EventDAGValidator::default();
+        let payload = json!({
+            "event_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "parents": [],
+            "payload": {"data": "test"},
+            "timestamp": "2024-01-01T00:00:00Z"
+        });
+        
+        let result = validator.validate_event(&payload).unwrap();
+        assert!(result.is_valid);
+    }
 }

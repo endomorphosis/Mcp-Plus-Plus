@@ -91,4 +91,145 @@ mod tests {
         assert!(validator.validate_cid_format("bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi"));
         assert!(!validator.validate_cid_format("invalid-cid"));
     }
+    
+    // Additional comprehensive tests
+    
+    #[test]
+    fn test_interface_descriptor_no_tools() {
+        let validator = MCPIDLValidator::new();
+        let payload = json!({
+            "name": "test-interface",
+            "version": "1.0.0",
+            "tools": [],
+            "interface_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"
+        });
+        
+        let result = validator.validate_interface_descriptor(&payload).unwrap();
+        assert!(result.is_valid);
+        assert!(!result.warnings.is_empty(), "Should warn about empty tools");
+    }
+    
+    #[test]
+    fn test_interface_descriptor_invalid_cid() {
+        let validator = MCPIDLValidator::new();
+        let payload = json!({
+            "name": "test-interface",
+            "version": "1.0.0",
+            "tools": [{
+                "name": "test_tool",
+                "input_schema": {"type": "object"}
+            }],
+            "interface_cid": "invalid-cid"
+        });
+        
+        let result = validator.validate_interface_descriptor(&payload).unwrap();
+        assert!(!result.is_valid, "Should fail due to invalid CID");
+    }
+    
+    #[test]
+    fn test_interface_descriptor_missing_name() {
+        let validator = MCPIDLValidator::new();
+        let payload = json!({
+            "version": "1.0.0",
+            "tools": [{
+                "name": "test_tool",
+                "input_schema": {"type": "object"}
+            }],
+            "interface_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"
+        });
+        
+        let result = validator.validate_interface_descriptor(&payload);
+        assert!(result.is_err(), "Should fail due to missing name");
+    }
+    
+    #[test]
+    fn test_interface_descriptor_missing_version() {
+        let validator = MCPIDLValidator::new();
+        let payload = json!({
+            "name": "test-interface",
+            "tools": [{
+                "name": "test_tool",
+                "input_schema": {"type": "object"}
+            }],
+            "interface_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"
+        });
+        
+        let result = validator.validate_interface_descriptor(&payload);
+        assert!(result.is_err(), "Should fail due to missing version");
+    }
+    
+    #[test]
+    fn test_interface_descriptor_missing_cid() {
+        let validator = MCPIDLValidator::new();
+        let payload = json!({
+            "name": "test-interface",
+            "version": "1.0.0",
+            "tools": [{
+                "name": "test_tool",
+                "input_schema": {"type": "object"}
+            }]
+        });
+        
+        let result = validator.validate_interface_descriptor(&payload);
+        assert!(result.is_err(), "Should fail due to missing interface_cid");
+    }
+    
+    #[test]
+    fn test_interface_descriptor_multiple_tools() {
+        let validator = MCPIDLValidator::new();
+        let payload = json!({
+            "name": "test-interface",
+            "version": "1.0.0",
+            "tools": [
+                {
+                    "name": "tool1",
+                    "input_schema": {"type": "object"}
+                },
+                {
+                    "name": "tool2",
+                    "input_schema": {"type": "object"}
+                }
+            ],
+            "interface_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"
+        });
+        
+        let result = validator.validate_interface_descriptor(&payload).unwrap();
+        assert!(result.is_valid);
+    }
+    
+    #[test]
+    fn test_cid_format_base58() {
+        let validator = MCPIDLValidator::new();
+        assert!(validator.validate_cid_format("QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"));
+    }
+    
+    #[test]
+    fn test_cid_format_base32() {
+        let validator = MCPIDLValidator::new();
+        assert!(validator.validate_cid_format("bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi"));
+    }
+    
+    #[test]
+    fn test_cid_format_invalid_short() {
+        let validator = MCPIDLValidator::new();
+        assert!(!validator.validate_cid_format("Qm123"));
+    }
+    
+    #[test]
+    fn test_cid_format_invalid_prefix() {
+        let validator = MCPIDLValidator::new();
+        assert!(!validator.validate_cid_format("Zm123456789012345678901234567890123456789012"));
+    }
+    
+    #[test]
+    fn test_cid_format_empty() {
+        let validator = MCPIDLValidator::new();
+        assert!(!validator.validate_cid_format(""));
+    }
+    
+    #[test]
+    fn test_validator_default() {
+        let validator = MCPIDLValidator::default();
+        assert!(validator.validate_cid_format("QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"));
+    }
 }

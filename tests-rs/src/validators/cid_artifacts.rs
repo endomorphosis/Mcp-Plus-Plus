@@ -93,4 +93,193 @@ mod tests {
         let result = validator.validate_receipt(&payload).unwrap();
         assert!(result.is_valid);
     }
+    
+    // Additional comprehensive tests
+    
+    #[test]
+    fn test_envelope_genesis_no_parents() {
+        let validator = CIDArtifactsValidator::new();
+        let payload = json!({
+            "interface_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "input_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "parents": [],
+            "timestamp": "2024-01-01T00:00:00Z"
+        });
+        
+        let result = validator.validate_envelope(&payload).unwrap();
+        assert!(result.is_valid);
+        assert!(!result.warnings.is_empty(), "Should have warning for genesis event");
+    }
+    
+    #[test]
+    fn test_envelope_missing_interface_cid() {
+        let validator = CIDArtifactsValidator::new();
+        let payload = json!({
+            "input_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "parents": ["QmPreviousEvent"],
+            "timestamp": "2024-01-01T00:00:00Z"
+        });
+        
+        let result = validator.validate_envelope(&payload);
+        assert!(result.is_err(), "Should fail due to missing interface_cid");
+    }
+    
+    #[test]
+    fn test_envelope_missing_input_cid() {
+        let validator = CIDArtifactsValidator::new();
+        let payload = json!({
+            "interface_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "parents": ["QmPreviousEvent"],
+            "timestamp": "2024-01-01T00:00:00Z"
+        });
+        
+        let result = validator.validate_envelope(&payload);
+        assert!(result.is_err(), "Should fail due to missing input_cid");
+    }
+    
+    #[test]
+    fn test_envelope_missing_timestamp() {
+        let validator = CIDArtifactsValidator::new();
+        let payload = json!({
+            "interface_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "input_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "parents": ["QmPreviousEvent"]
+        });
+        
+        let result = validator.validate_envelope(&payload);
+        assert!(result.is_err(), "Should fail due to missing timestamp");
+    }
+    
+    #[test]
+    fn test_envelope_invalid_cid_format() {
+        let validator = CIDArtifactsValidator::new();
+        let payload = json!({
+            "interface_cid": "invalid-cid",
+            "input_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "parents": ["QmPreviousEvent"],
+            "timestamp": "2024-01-01T00:00:00Z"
+        });
+        
+        let result = validator.validate_envelope(&payload);
+        // Should fail validation due to invalid CID format
+        match result {
+            Ok(r) => assert!(!r.is_valid, "Invalid CID format should fail"),
+            Err(_) => {} // Also acceptable
+        }
+    }
+    
+    #[test]
+    fn test_envelope_with_complex_timestamp() {
+        let validator = CIDArtifactsValidator::new();
+        let payload = json!({
+            "interface_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "input_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "parents": ["QmPreviousEvent"],
+            "timestamp": "2024-01-01T12:34:56.789Z"
+        });
+        
+        let result = validator.validate_envelope(&payload).unwrap();
+        assert!(result.is_valid);
+    }
+    
+    #[test]
+    fn test_envelope_multiple_parents() {
+        let validator = CIDArtifactsValidator::new();
+        let payload = json!({
+            "interface_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "input_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "parents": [
+                "QmParent1APJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnP",
+                "QmParent2APJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnP"
+            ],
+            "timestamp": "2024-01-01T00:00:00Z"
+        });
+        
+        let result = validator.validate_envelope(&payload).unwrap();
+        assert!(result.is_valid);
+    }
+    
+    #[test]
+    fn test_receipt_missing_envelope_cid() {
+        let validator = CIDArtifactsValidator::new();
+        let payload = json!({
+            "output_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "signature": "0x1234567890abcdef",
+            "receipt_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"
+        });
+        
+        let result = validator.validate_receipt(&payload);
+        assert!(result.is_err(), "Should fail due to missing envelope_cid");
+    }
+    
+    #[test]
+    fn test_receipt_missing_output_cid() {
+        let validator = CIDArtifactsValidator::new();
+        let payload = json!({
+            "envelope_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "signature": "0x1234567890abcdef",
+            "receipt_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"
+        });
+        
+        let result = validator.validate_receipt(&payload);
+        assert!(result.is_err(), "Should fail due to missing output_cid");
+    }
+    
+    #[test]
+    fn test_receipt_missing_signature() {
+        let validator = CIDArtifactsValidator::new();
+        let payload = json!({
+            "envelope_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "output_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "receipt_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"
+        });
+        
+        let result = validator.validate_receipt(&payload);
+        assert!(result.is_err(), "Should fail due to missing signature");
+    }
+    
+    #[test]
+    fn test_receipt_missing_receipt_cid() {
+        let validator = CIDArtifactsValidator::new();
+        let payload = json!({
+            "envelope_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "output_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "signature": "0x1234567890abcdef"
+        });
+        
+        let result = validator.validate_receipt(&payload);
+        assert!(result.is_err(), "Should fail due to missing receipt_cid");
+    }
+    
+    #[test]
+    fn test_receipt_invalid_cid_format() {
+        let validator = CIDArtifactsValidator::new();
+        let payload = json!({
+            "envelope_cid": "invalid-cid",
+            "output_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "signature": "0x1234567890abcdef",
+            "receipt_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"
+        });
+        
+        let result = validator.validate_receipt(&payload);
+        // Should fail validation due to invalid CID format
+        match result {
+            Ok(r) => assert!(!r.is_valid, "Invalid CID format should fail"),
+            Err(_) => {} // Also acceptable
+        }
+    }
+    
+    #[test]
+    fn test_validator_default() {
+        let validator = CIDArtifactsValidator::default();
+        let payload = json!({
+            "interface_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "input_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "parents": ["QmPreviousEvent"],
+            "timestamp": "2024-01-01T00:00:00Z"
+        });
+        
+        let result = validator.validate_envelope(&payload).unwrap();
+        assert!(result.is_valid);
+    }
 }
