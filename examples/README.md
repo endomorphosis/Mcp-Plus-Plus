@@ -9,14 +9,11 @@ examples/
 ├── python/
 │   ├── weather_server.py       # Simple weather tool server
 │   ├── file_server.py          # File system resource server
-│   └── database_server.py      # Database integration example
-├── typescript/
-│   ├── weather-server.ts       # Weather server in TypeScript
-│   ├── github-server.ts        # GitHub API integration
-│   └── client-example.ts       # Client usage examples
-└── java/
-    ├── WeatherServer.java      # Weather server in Java
-    └── ClientExample.java      # Java client examples
+│   └── requirements.txt        # Python dependencies
+└── typescript/
+    ├── weather-server.ts       # Weather server in TypeScript
+    ├── package.json            # TypeScript dependencies
+    └── tsconfig.json           # TypeScript configuration
 ```
 
 ## Examples Overview
@@ -27,9 +24,8 @@ A simple MCP server that provides weather information tools.
 **Features:**
 - Get current temperature
 - Get weather forecast
-- Get weather alerts
 
-**Languages:** Python, TypeScript, Java
+**Languages:** Python, TypeScript
 
 ### File Server
 An MCP server that exposes file system resources.
@@ -38,28 +34,9 @@ An MCP server that exposes file system resources.
 - List files in directory
 - Read file contents
 - Search files by pattern
+- Create new files
 
 **Languages:** Python
-
-### Database Server
-An MCP server for database operations.
-
-**Features:**
-- Query database
-- List tables
-- Get table schema
-
-**Languages:** Python
-
-### GitHub Server
-Integration with GitHub API as an MCP server.
-
-**Features:**
-- List repositories
-- Get repository info
-- Create issues
-
-**Languages:** TypeScript
 
 ## Running Examples
 
@@ -109,20 +86,7 @@ node dist/weather-server.js
 npx @modelcontextprotocol/inspector node dist/weather-server.js
 ```
 
-### Java Examples
 
-```bash
-cd examples/java
-
-# Build with Maven
-mvn clean package
-
-# Run server
-java -jar target/weather-server.jar
-
-# Or with Gradle
-./gradlew run
-```
 
 ## Using with Claude Desktop
 
@@ -150,8 +114,7 @@ To use these examples with Claude Desktop, add to your configuration:
 
 1. **Start with Weather Server** - Simple tool-based server
 2. **Try File Server** - Learn about resources
-3. **Explore Database Server** - Advanced patterns
-4. **Build your own** - Create something unique!
+3. **Build your own** - Create something unique!
 
 ## Additional Resources
 
