@@ -194,18 +194,17 @@ mod tests {
     #[test]
     fn test_event_invalid_cid_format() {
         let validator = EventDAGValidator::new();
+        // Use a short string that will deserialize but fail CID regex validation
         let payload = json!({
-            "event_cid": "invalid-cid",
+            "event_cid": "Qm123",  // Too short for valid CID
             "parents": ["QmPreviousEvent"],
             "payload": {"data": "test"},
             "timestamp": "2024-01-01T00:00:00Z"
         });
         
-        let result = validator.validate_event(&payload);
-        match result {
-            Ok(r) => assert!(!r.is_valid, "Invalid CID format should fail"),
-            Err(_) => {} // Deserialization error is also acceptable
-        }
+        let result = validator.validate_event(&payload).unwrap();
+        assert!(!result.is_valid, "Invalid CID format should fail");
+        assert!(!result.errors.is_empty());
     }
     
     #[test]
@@ -419,5 +418,78 @@ mod tests {
         
         let is_acyclic = validator.check_acyclicity(&events).unwrap();
         assert!(!is_acyclic, "Should detect cycle with recursion stack");
+    }
+    
+    #[test]
+    fn test_acyclicity_deep_recursive_cycle() {
+        // Test that triggers the recursive has_cycle return true path (line 80)
+        // This requires: node A not visited, recursively checking A finds a cycle
+        let validator = EventDAGValidator::new();
+        let events = vec![
+            Event {
+                event_cid: "event1".to_string(),
+                parents: vec!["event2".to_string()],
+                payload: json!({}),
+                timestamp: "2024-01-01T00:00:00Z".to_string(),
+            },
+            Event {
+                event_cid: "event2".to_string(),
+                parents: vec!["event3".to_string()],
+                payload: json!({}),
+                timestamp: "2024-01-01T00:00:01Z".to_string(),
+            },
+            Event {
+                event_cid: "event3".to_string(),
+                parents: vec!["event4".to_string()],
+                payload: json!({}),
+                timestamp: "2024-01-01T00:00:02Z".to_string(),
+            },
+            Event {
+                event_cid: "event4".to_string(),
+                parents: vec!["event2".to_string()],  // Creates cycle: 2 -> 3 -> 4 -> 2
+                payload: json!({}),
+                timestamp: "2024-01-01T00:00:03Z".to_string(),
+            },
+        ];
+        
+        let is_acyclic = validator.check_acyclicity(&events).unwrap();
+        assert!(!is_acyclic, "Should detect deep recursive cycle");
+    }
+    
+    #[test]
+    fn test_acyclicity_with_shared_parent() {
+        // Test DAG where multiple nodes share a parent (diamond pattern)
+        // This covers line 59 (already visited node), line 80 (return false path), 
+        // and line 85 (finish checking parents)
+        let validator = EventDAGValidator::new();
+        let events = vec![
+            Event {
+                event_cid: "root".to_string(),
+                parents: vec![],
+                payload: json!({}),
+                timestamp: "2024-01-01T00:00:00Z".to_string(),
+            },
+            Event {
+                event_cid: "left".to_string(),
+                parents: vec!["root".to_string()],
+                payload: json!({}),
+                timestamp: "2024-01-01T00:00:01Z".to_string(),
+            },
+            Event {
+                event_cid: "right".to_string(),
+                parents: vec!["root".to_string()],
+                payload: json!({}),
+                timestamp: "2024-01-01T00:00:02Z".to_string(),
+            },
+            Event {
+                event_cid: "merge".to_string(),
+                parents: vec!["left".to_string(), "right".to_string()],
+                payload: json!({}),
+                timestamp: "2024-01-01T00:00:03Z".to_string(),
+            },
+        ];
+        
+        let is_acyclic = validator.check_acyclicity(&events).unwrap();
+        assert!(is_acyclic, "Diamond DAG should be acyclic");
     }
 }

@@ -393,12 +393,10 @@ mod tests {
             "id": 1
         });
         
-        let result = validator.validate_request(&payload);
-        // Should fail validation due to min_length constraint
-        match result {
-            Ok(r) => assert!(!r.is_valid, "Empty method should be invalid"),
-            Err(_) => {} // Deserialization error is also acceptable
-        }
+        // Empty method fails validation due to min_length constraint
+        let result = validator.validate_request(&payload).unwrap();
+        assert!(!result.is_valid, "Empty method should be invalid");
+        assert!(!result.errors.is_empty());
     }
     
     #[test]
@@ -614,6 +612,40 @@ mod tests {
         let result = validator.validate_request(&payload).unwrap();
         assert!(!result.is_valid, "Should fail due to empty prompt name");
         assert!(!result.errors.is_empty());
+    }
+    
+    #[test]
+    fn test_prompts_get_request_with_arguments() {
+        // Test prompts/get with valid arguments to cover the closing brace after error check
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "jsonrpc": "2.0",
+            "method": "prompts/get",
+            "params": {
+                "name": "test-prompt",
+                "arguments": {"key": "value"}
+            },
+            "id": 1
+        });
+        
+        let result = validator.validate_request(&payload).unwrap();
+        assert!(result.is_valid, "Should be valid with arguments");
+    }
+    
+    #[test]
+    fn test_prompts_get_request_no_params() {
+        // Test prompts/get without params - covers line 164 (closing brace)
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "jsonrpc": "2.0",
+            "method": "prompts/get",
+            "id": 1
+        });
+        
+        let result = validator.validate_request(&payload).unwrap();
+        // Without params, validation can't check prompt-specific constraints
+        // So request is valid at the JSON-RPC level
+        assert!(result.is_valid, "Request without params should pass JSON-RPC validation");
     }
     
     #[test]

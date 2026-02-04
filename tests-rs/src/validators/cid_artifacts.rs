@@ -153,19 +153,17 @@ mod tests {
     #[test]
     fn test_envelope_invalid_cid_format() {
         let validator = CIDArtifactsValidator::new();
+        // Use a short string that will deserialize but fail CID regex validation
         let payload = json!({
-            "interface_cid": "invalid-cid",
+            "interface_cid": "Qm123",  // Too short for valid CID
             "input_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
             "parents": ["QmPreviousEvent"],
             "timestamp": "2024-01-01T00:00:00Z"
         });
         
-        let result = validator.validate_envelope(&payload);
-        // Should fail validation due to invalid CID format
-        match result {
-            Ok(r) => assert!(!r.is_valid, "Invalid CID format should fail"),
-            Err(_) => {} // Deserialization error is also acceptable
-        }
+        let result = validator.validate_envelope(&payload).unwrap();
+        assert!(!result.is_valid, "Invalid CID format should fail");
+        assert!(!result.errors.is_empty());
     }
     
     #[test]
@@ -254,19 +252,17 @@ mod tests {
     #[test]
     fn test_receipt_invalid_cid_format() {
         let validator = CIDArtifactsValidator::new();
+        // Use a short string that will deserialize but fail CID regex validation
         let payload = json!({
-            "envelope_cid": "invalid-cid",
+            "envelope_cid": "Qm123",  // Too short for valid CID
             "output_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
             "signature": "0x1234567890abcdef",
             "receipt_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"
         });
         
-        let result = validator.validate_receipt(&payload);
-        // Should fail validation due to invalid CID format
-        match result {
-            Ok(r) => assert!(!r.is_valid, "Invalid CID format should fail"),
-            Err(_) => {} // Deserialization error is also acceptable
-        }
+        let result = validator.validate_receipt(&payload).unwrap();
+        assert!(!result.is_valid, "Invalid CID format should fail");
+        assert!(!result.errors.is_empty());
     }
     
     #[test]
@@ -288,18 +284,15 @@ mod tests {
         // Test envelope that deserializes but fails serde_valid validation
         let validator = CIDArtifactsValidator::new();
         let payload = json!({
-            "interface_cid": "invalid",
+            "interface_cid": "Qm123",  // Too short for valid CID regex
             "input_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
             "parents": ["QmPreviousEvent"],
             "timestamp": "2024-01-01T00:00:00Z"
         });
         
-        let result = validator.validate_envelope(&payload);
-        // Invalid CID should fail at deserialization or validation
-        match result {
-            Ok(r) => assert!(!r.is_valid, "Invalid CID should fail validation"),
-            Err(_) => {} // Deserialization error is also acceptable
-        }
+        let result = validator.validate_envelope(&payload).unwrap();
+        assert!(!result.is_valid, "Invalid CID should fail validation");
+        assert!(!result.errors.is_empty());
     }
     
     #[test]
