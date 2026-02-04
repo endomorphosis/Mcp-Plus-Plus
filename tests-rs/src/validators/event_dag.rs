@@ -422,7 +422,7 @@ mod tests {
     
     #[test]
     fn test_acyclicity_deep_recursive_cycle() {
-        // Test that triggers the recursive has_cycle return true path (line 80)
+        // Test that triggers the recursive has_cycle return true path
         // This requires: node A not visited, recursively checking A finds a cycle
         let validator = EventDAGValidator::new();
         let events = vec![
@@ -459,8 +459,8 @@ mod tests {
     #[test]
     fn test_acyclicity_with_shared_parent() {
         // Test DAG where multiple nodes share a parent (diamond pattern)
-        // This covers line 59 (already visited node), line 80 (return false path), 
-        // and line 85 (finish checking parents)
+        // This covers: already visited node handling, return false path on no cycle found,
+        // and completion of parent checking without finding cycles
         let validator = EventDAGValidator::new();
         let events = vec![
             Event {

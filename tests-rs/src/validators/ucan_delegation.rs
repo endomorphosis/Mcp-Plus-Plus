@@ -303,8 +303,8 @@ mod tests {
     #[test]
     fn test_delegation_chain_with_validated_token() {
         // Test delegation chain validation completes without error
-        // (Note: The token-level validation in the loop at lines 58-62 is redundant
-        // since chain.validate() already validates all tokens via serde_valid)
+        // (Note: The token-level validation loop is redundant since chain.validate() 
+        // already validates all tokens via serde_valid)
         let validator = UCANDelegationValidator::new();
         let payload = json!({
             "chain": [{
