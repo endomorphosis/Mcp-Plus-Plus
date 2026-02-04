@@ -27,12 +27,12 @@ func TestBaseMCPValidator_JSONRPCRequest(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "wrong jsonrpc version 1.0",
+			name:    "invalid jsonrpc version 1.0",
 			input:   `{"jsonrpc":"1.0","method":"initialize","params":{},"id":1}`,
 			wantErr: true,
 		},
 		{
-			name:    "wrong jsonrpc version 3.0",
+			name:    "invalid jsonrpc version 3.0",
 			input:   `{"jsonrpc":"3.0","method":"initialize","params":{},"id":1}`,
 			wantErr: true,
 		},
@@ -848,7 +848,7 @@ func TestCIDValidator_ExecutionReceipt(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "invalid status - pending",
+			name: "invalid status - must be success or failure not pending",
 			input: `{
 				"envelope_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
 				"output_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
@@ -859,7 +859,7 @@ func TestCIDValidator_ExecutionReceipt(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "invalid status - error",
+			name: "invalid status - must be success or failure not error",
 			input: `{
 				"envelope_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
 				"output_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
@@ -870,7 +870,7 @@ func TestCIDValidator_ExecutionReceipt(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "invalid status - unknown",
+			name: "invalid status - must be success or failure not unknown",
 			input: `{
 				"envelope_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
 				"output_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
