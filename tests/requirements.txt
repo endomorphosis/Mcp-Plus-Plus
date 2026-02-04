@@ -2,3 +2,7 @@ pytest>=7.4.0
 pytest-asyncio>=0.21.0
 pytest-cov>=4.1.0
 jsonschema>=4.19.0
+pydantic>=2.5.0
+mypy>=1.8.0
+pytest-mypy>=0.10.3
+types-jsonschema>=4.20.0
