@@ -942,7 +942,7 @@ func TestUCANValidator_UCANToken(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "expired token",
+			name: "expired token (structural validation only)",
 			input: `{
 				"iss":"did:key:123",
 				"aud":"did:key:456",
