@@ -244,10 +244,10 @@ List all available tools.
               "type": "string",
               "description": "City name"
             },
-            "units": {
+            "unit": {
               "type": "string",
-              "enum": ["metric", "imperial"],
-              "default": "metric"
+              "enum": ["celsius", "fahrenheit"],
+              "default": "celsius"
             }
           },
           "required": ["location"]

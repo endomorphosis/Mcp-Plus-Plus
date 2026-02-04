@@ -190,7 +190,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   if (name === "get_temperature") {
     const location = args.location as string;
-    const unit = (args.unit as string) || "fahrenheit";
+    const unit = (args.unit as string) || "celsius";
     
     // In a real implementation, call a weather API
     const temp = unit === "fahrenheit" ? 72 : 22;
