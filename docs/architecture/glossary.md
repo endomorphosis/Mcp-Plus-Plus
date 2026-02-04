@@ -1,0 +1,36 @@
+# Glossary
+
+- **CID**: Content Identifier; a hash-addressed identifier for canonicalized content.
+- **Profile**: Optional, negotiated capability that adds semantics without changing core MCP messages.
+- **Interface Descriptor**: A canonical, CID-addressed contract describing a tool/resource interface.
+- **interface contract object**: Archive phrasing for the universally comparable contract required to reduce fragmentation; in MCP++ this corresponds to the Interface Descriptor addressed as `interface_cid`.
+- **Execution Envelope**: A wrapper around an invocation referencing interface/input/intent/policy/proofs via CIDs.
+- **Event DAG**: A content-addressed DAG of execution events linked by causal references.
+- **Policy CID**: A content-addressed representation of policy (permissions/prohibitions/obligations + time constraints).
+- **Intent CID**: A content-addressed description of a proposed action (tool/interface + input + declared side effects).
+- **Decision CID**: A content-addressed outcome of policy evaluation (allow/deny/obligations + justification).
+- **Receipt CID**: A content-addressed execution attestation that binds intent, output, and decision.
+- **Proof CID**: A content-addressed proof bundle (e.g., a UCAN delegation chain).
+- **Receipt**: A content-addressed record of execution outcome; may be signed.
+- **Delegation Chain**: A verifiable chain of authority granting capabilities (e.g., UCAN-style).
+- **Fibonacci Heap**: A priority-queue data structure sometimes used to optimize many priority updates (`decrease-key`). (Alias: “fibinocci heap” in the original chat export.)
+- **Merkle Clock**: A Merkle-DAG-derived logical clock for establishing partial order / causality between events. (Alias: “meekly clock” in the original chat export.)
+- **Trace ID / Correlation ID**: Stable identifiers used to correlate call/reply/receipt chains and audit artifacts across systems. In MCP++ these are typically derived from, or bound to, `intent_cid` and/or `event_cid`.
+- **transactional grouping for “multi-step tasks as a single reliable operation”**: Archive phrasing for grouping related actions under a single transaction/span; typically modeled by carrying a common `correlation_id` across the related intents/receipts/events.
+- **nonce / correlation_id**: Archive phrasing for a per-call correlation value carried through intent/receipt artifacts.
+- **Canonical JSON / CBOR encoding**: Archive phrasing for the deterministic canonicalization encoding used before CID computation.
+- **signatures[]**: Archive phrasing for the `signatures` array carried on decision/receipt artifacts.
+- **Forbidden-attempt intents**: Archive phrasing for intents that were evaluated as forbidden/denied; often counted as a risk signal.
+- **Observability Hooks**: Declared support for trace/provenance propagation, so clients can safely rely on common debugging/audit signals.
+- **CORBA**: Historical distributed-systems family used here as an analogy for “IDL + runtime compatibility + interface repositories” (not a dependency).
+- **ORB**: Object Request Broker; the CORBA-era “broker” concept that motivates broker-like cross-cutting concerns (policy/QoS/routing/observability) in some MCP++ discussions.
+- **Agent Object Protocol (AOP)**: Phrase from the archived research thread (via a CORBA→MCP analogy) referring to strongly-typed, event-driven, stateful agent↔tool interactions.
+- **Interface Repository**: A runtime-queryable registry of interface contracts (in MCP++: content-addressed via CIDs, optionally gossiped over P2P).
+- **NAT Traversal**: Techniques for establishing peer connectivity when one or both peers are behind NAT or firewalls. (Archive phrasing: “NAT traversal / connectivity across hostile networks”.)
+- **Resilient Routing**: Transport-layer behaviors that improve message delivery in dynamic peer sets (e.g., alternative paths, relays), without changing application semantics.
+- **Hub-and-Spoke**: A topology where many clients connect to a central service. Used as a contrast case for decentralized/federated designs.
+- **Federated Agent Swarms**: A decentralized multi-agent topology spanning domains/orgs, where discovery and routing are first-class.
+- **Capability Ledger**: An append-only record (often content-addressed) that binds actions to explicit authorization proofs and policy decisions.
+- **Immutable Audit Trail**: A verifiable, tamper-evident record of events/decisions/receipts (typically CID-addressed) supporting replay and forensic analysis.
+- **Incident Response**: The operational process for investigating and containing security or reliability incidents.
+- **Blast-Radius Control**: Limiting the scope of damage from compromised or misbehaving peers via least privilege, revocation, and auditable provenance.
