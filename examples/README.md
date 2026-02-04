@@ -2,6 +2,8 @@
 
 This directory contains example implementations of MCP servers and clients in various programming languages.
 
+> **⚠️ Security Notice**: The TypeScript examples use `@modelcontextprotocol/sdk@^1.25.2` to avoid known vulnerabilities. Always use the latest stable version. See [../SECURITY.md](../SECURITY.md) for details.
+
 ## Directory Structure
 
 ```

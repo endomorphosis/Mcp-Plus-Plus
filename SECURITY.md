@@ -2,17 +2,40 @@
 
 Comprehensive security guidelines for implementing and deploying Model Context Protocol servers and clients.
 
+## ⚠️ Critical Security Updates
+
+**Always use the latest stable versions of MCP SDKs:**
+
+### Known Vulnerabilities
+
+#### TypeScript SDK (@modelcontextprotocol/sdk)
+- **ReDoS Vulnerability**: Versions < 1.25.2 are vulnerable to Regular Expression Denial of Service attacks
+  - **Fixed in**: 1.25.2+
+  - **Severity**: High
+  - **Action**: Update immediately to >= 1.25.2
+
+- **DNS Rebinding Protection**: Versions < 1.24.0 do not enable DNS rebinding protection by default
+  - **Fixed in**: 1.24.0+
+  - **Severity**: Medium
+  - **Action**: Update to >= 1.25.2 (includes both fixes)
+
+**Current Recommended Versions:**
+- TypeScript/JavaScript: `@modelcontextprotocol/sdk@^1.25.2` or later
+- Python: Check [PyPI](https://pypi.org/project/mcp/) for latest secure version
+- Java: Check [Maven Central](https://search.maven.org/) for latest secure version
+
 ## Table of Contents
 
 1. [Security Principles](#security-principles)
-2. [Authentication](#authentication)
-3. [Authorization](#authorization)
-4. [Input Validation](#input-validation)
-5. [Output Sanitization](#output-sanitization)
-6. [Transport Security](#transport-security)
-7. [Secrets Management](#secrets-management)
-8. [Common Vulnerabilities](#common-vulnerabilities)
-9. [Security Checklist](#security-checklist)
+2. [Dependency Management](#dependency-management)
+3. [Authentication](#authentication)
+4. [Authorization](#authorization)
+5. [Input Validation](#input-validation)
+6. [Output Sanitization](#output-sanitization)
+7. [Transport Security](#transport-security)
+8. [Secrets Management](#secrets-management)
+9. [Common Vulnerabilities](#common-vulnerabilities)
+10. [Security Checklist](#security-checklist)
 
 ## Security Principles
 
@@ -65,6 +88,144 @@ async def call_tool(name: str, arguments: dict, user: User):
 ### Security by Design
 
 Build security in from the start, not as an afterthought.
+
+## Dependency Management
+
+### Keep Dependencies Updated
+
+Regularly update all dependencies to patch security vulnerabilities:
+
+**Python:**
+```bash
+# Check for outdated packages
+pip list --outdated
+
+# Update specific package
+pip install --upgrade mcp
+
+# Use pip-audit to check for vulnerabilities
+pip install pip-audit
+pip-audit
+```
+
+**TypeScript/JavaScript:**
+```bash
+# Check for outdated packages
+npm outdated
+
+# Update specific package
+npm update @modelcontextprotocol/sdk
+
+# Check for vulnerabilities
+npm audit
+
+# Fix vulnerabilities automatically
+npm audit fix
+```
+
+**Java:**
+```bash
+# Maven - use versions plugin
+mvn versions:display-dependency-updates
+
+# Check for vulnerabilities with OWASP Dependency-Check
+mvn org.owasp:dependency-check-maven:check
+```
+
+### Automated Dependency Scanning
+
+**GitHub Dependabot (Recommended):**
+
+Create `.github/dependabot.yml`:
+
+```yaml
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "maven"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+```
+
+**Snyk:**
+```bash
+# Install Snyk CLI
+npm install -g snyk
+
+# Test for vulnerabilities
+snyk test
+
+# Monitor project
+snyk monitor
+```
+
+### Vulnerability Response Process
+
+1. **Detection**: Use automated scanning (Dependabot, Snyk, npm audit)
+2. **Assessment**: Evaluate severity and exploitability
+3. **Patching**: Update to patched version immediately for critical/high severity
+4. **Testing**: Verify fix doesn't break functionality
+5. **Deployment**: Deploy updated version
+6. **Monitoring**: Watch for issues post-deployment
+
+### Pinning Dependencies
+
+Use exact versions in production to ensure consistency:
+
+**package.json:**
+```json
+{
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.25.2"
+  }
+}
+```
+
+**requirements.txt:**
+```
+mcp==1.0.0
+```
+
+**pom.xml:**
+```xml
+<dependency>
+    <groupId>io.modelcontextprotocol</groupId>
+    <artifactId>mcp-sdk</artifactId>
+    <version>1.0.0</version>
+</dependency>
+```
+
+### Supply Chain Security
+
+Verify package integrity:
+
+**npm:**
+```bash
+# Verify package signatures
+npm audit signatures
+```
+
+**Python:**
+```bash
+# Use package hash verification
+pip install --require-hashes -r requirements.txt
+```
+
+Generate hashes:
+```bash
+pip hash mcp==1.0.0 >> requirements.txt
+```
 
 ## Authentication
 

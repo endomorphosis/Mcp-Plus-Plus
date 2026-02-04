@@ -35,12 +35,14 @@ pip install mcp
 # Initialize a new project
 npm init -y
 
-# Install MCP SDK
-npm install @modelcontextprotocol/sdk
+# Install MCP SDK (use latest version for security patches)
+npm install @modelcontextprotocol/sdk@^1.25.2
 
 # Install TypeScript (optional but recommended)
 npm install -D typescript @types/node
 ```
+
+> **Security Note**: Always use version 1.25.2 or later to avoid known vulnerabilities (ReDoS and DNS rebinding issues). See [SECURITY.md](SECURITY.md) for details.
 
 ### Java
 
