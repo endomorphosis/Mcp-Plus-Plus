@@ -2,10 +2,11 @@
 
 ## Overview
 
-The MCP++ testing framework now includes **dual implementations** with advanced type safety:
+The MCP++ testing framework now includes **three implementations** with advanced type safety:
 
 1. **Python with Pydantic v2 + mypy**: Runtime validation with strict static type checking
 2. **TypeScript with Zod + TypeScript 5.x**: Runtime validation with compile-time type safety
+3. **Rust with serde + serde_valid**: Zero-cost compile-time and runtime validation
 
 ## Statistics
 
@@ -27,6 +28,15 @@ The MCP++ testing framework now includes **dual implementations** with advanced 
 - **Type Checking**: ✅ tsc success, 0 errors
 - **Coverage**: Base MCP, MCP-IDL, CID, UCAN, Policy, Transport, DAG
 
+### Rust Implementation (NEW)
+- **Lines of Code**: ~3,500
+- **Test Files**: 1 integration test module + unit tests in validators
+- **Validators**: 7 profile validators
+- **Models**: 40+ Rust structs/enums with serde
+- **Tests**: 39 passing tests (19 unit + 19 integration + 1 doc)
+- **Type Checking**: ✅ cargo build success, ✅ clippy clean
+- **Coverage**: Base MCP, MCP-IDL, CID, UCAN, Policy, Transport, DAG
+
 ## Directory Structure
 
 ```
@@ -34,8 +44,8 @@ Mcp-Plus-Plus/
 ├── tests/                      # Python testing framework
 │   ├── validators/
 │   │   ├── base_mcp.py        # Original validator
-│   │   ├── base_mcp_typed.py  # NEW: Type-safe validator
-│   │   ├── models.py          # NEW: Pydantic models (40+)
+│   │   ├── base_mcp_typed.py  # Type-safe validator
+│   │   ├── models.py          # Pydantic models (40+)
 │   │   ├── mcp_idl.py
 │   │   ├── cid_artifacts.py
 │   │   ├── ucan_delegation.py
@@ -51,30 +61,49 @@ Mcp-Plus-Plus/
 │   │   ├── test_transport.py
 │   │   ├── test_event_dag.py
 │   │   └── test_cross_cutting.py
-│   ├── mypy.ini              # NEW: mypy strict configuration
+│   ├── mypy.ini              # mypy strict configuration
 │   ├── requirements.txt       # Updated with Pydantic, mypy
-│   ├── TYPE_SAFETY.md        # NEW: Comprehensive type safety guide
+│   ├── TYPE_SAFETY.md        # Comprehensive type safety guide
 │   ├── SPEC_COMPLIANCE.md
 │   ├── VERIFICATION.md
 │   └── README.md
 │
-└── tests-ts/                  # NEW: TypeScript testing framework
+├── tests-ts/                  # TypeScript testing framework
+│   ├── src/
+│   │   ├── models.ts          # Zod schemas (40+)
+│   │   ├── validators/
+│   │   │   ├── baseMCP.ts
+│   │   │   ├── mcpIDL.ts
+│   │   │   ├── cidArtifacts.ts
+│   │   │   ├── ucanDelegation.ts
+│   │   │   ├── policyEvaluation.ts
+│   │   │   ├── transport.ts
+│   │   │   └── eventDAG.ts
+│   │   ├── __tests__/
+│   │   │   └── validators.test.ts
+│   │   └── index.ts
+│   ├── package.json
+│   ├── tsconfig.json          # Strict TypeScript config
+│   ├── vitest.config.ts
+│   └── README.md
+│
+└── tests-rs/                  # NEW: Rust testing framework
     ├── src/
-    │   ├── models.ts          # Zod schemas (40+)
+    │   ├── models.rs          # Type definitions (40+ structs/enums)
     │   ├── validators/
-    │   │   ├── baseMCP.ts
-    │   │   ├── mcpIDL.ts
-    │   │   ├── cidArtifacts.ts
-    │   │   ├── ucanDelegation.ts
-    │   │   ├── policyEvaluation.ts
-    │   │   ├── transport.ts
-    │   │   └── eventDAG.ts
-    │   ├── __tests__/
-    │   │   └── validators.test.ts
-    │   └── index.ts
-    ├── package.json
-    ├── tsconfig.json          # Strict TypeScript config
-    ├── vitest.config.ts
+    │   │   ├── base_mcp.rs
+    │   │   ├── mcp_idl.rs
+    │   │   ├── cid_artifacts.rs
+    │   │   ├── ucan_delegation.rs
+    │   │   ├── policy_evaluation.rs
+    │   │   ├── transport.rs
+    │   │   ├── event_dag.rs
+    │   │   └── mod.rs
+    │   └── lib.rs
+    ├── tests/
+    │   └── integration_test.rs
+    ├── Cargo.toml             # Dependencies & config
+    ├── rustfmt.toml           # Code formatting
     └── README.md
 ```
 
@@ -126,9 +155,41 @@ npm run type-check  # 0 type errors
 npm test            # 23/23 tests passed
 ```
 
+### Rust (serde + serde_valid) (NEW)
+
+**Compile-Time Safety (Rust Type System):**
+- Strong static typing with zero-cost abstractions
+- No null/undefined - uses `Option<T>`
+- Pattern matching with exhaustive case handling
+- Memory safety guaranteed by ownership system
+- No data races at compile time
+
+**Runtime Validation (serde + serde_valid):**
+- Declarative validation with derive macros
+- Field constraints (`min_length`, `pattern`, `minimum`)
+- Custom validators for complex rules
+- Content-addressing CID validation
+- Strict deserialization with `deny_unknown_fields`
+
+**Key Features:**
+- **Zero Runtime Overhead**: Compile-time guarantees, native performance
+- **Memory Safe**: No buffer overflows, use-after-free, or null pointer dereferences
+- **Thread Safe**: No data races (enforced at compile time)
+- **Pattern Matching**: Exhaustive case handling catches missing scenarios
+- **Error Handling**: Result types for explicit error propagation
+
+**Commands:**
+```bash
+cd tests-rs
+cargo build        # Compile-time checks
+cargo test         # 39/39 tests passed
+cargo clippy       # Lint code
+cargo fmt          # Format code
+```
+
 ## Validation Coverage
 
-Both implementations validate:
+All three implementations validate:
 
 1. **Base MCP Protocol**
    - JSON-RPC 2.0 structure
@@ -274,6 +335,20 @@ npm test
 # Tests  23 passed (23)
 ```
 
+### Rust Tests
+```bash
+cd tests-rs
+cargo test
+# running 19 tests (unit tests)
+# test result: ok. 19 passed; 0 failed
+# 
+# running 19 tests (integration tests)
+# test result: ok. 19 passed; 0 failed
+# 
+# running 1 test (doc tests)
+# test result: ok. 1 passed; 0 failed
+```
+
 ## Documentation
 
 - **tests/README.md** - Python testing framework overview
@@ -281,18 +356,20 @@ npm test
 - **tests/SPEC_COMPLIANCE.md** - Spec-to-test mapping matrix
 - **tests/VERIFICATION.md** - Test execution summary
 - **tests-ts/README.md** - TypeScript validators guide
+- **tests-rs/README.md** - Rust validators guide (NEW)
 
 ## Conclusion
 
 The MCP++ testing framework now provides:
 
-✅ **Dual Implementation**: Python (Pydantic/mypy) and TypeScript (Zod/tsc)  
-✅ **Advanced Type Safety**: Strictest settings in both languages  
+✅ **Triple Implementation**: Python (Pydantic/mypy), TypeScript (Zod/tsc), and Rust (serde/serde_valid)  
+✅ **Advanced Type Safety**: Strictest settings in all three languages  
 ✅ **Runtime + Compile-time**: Errors caught at multiple stages  
-✅ **97 Total Tests**: 74 Python + 23 TypeScript  
-✅ **0 Type Errors**: Clean static analysis in both languages  
+✅ **136 Total Tests**: 74 Python + 23 TypeScript + 39 Rust  
+✅ **0 Type Errors**: Clean static analysis in all languages  
 ✅ **100% Spec Coverage**: All MCP++ profiles validated  
 ✅ **Cross-Language Compatible**: Identical validation logic  
 ✅ **Production Ready**: CI/CD integration, comprehensive docs  
+✅ **Zero-Cost Abstractions**: Rust provides native performance with type safety
 
-This ensures MCP++ network payloads are validated with the highest level of type safety available in the industry.
+This ensures MCP++ network payloads are validated with the highest level of type safety available across the most popular systems programming languages.
