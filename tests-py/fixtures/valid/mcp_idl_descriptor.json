@@ -1,0 +1,34 @@
+{
+  "description": "Valid MCP-IDL interface descriptor",
+  "payload": {
+    "name": "weather-api",
+    "namespace": "com.example.weather",
+    "version": "1.0.0",
+    "methods": [
+      {
+        "name": "get_current_weather",
+        "input_schema_cid": "bafyinput123",
+        "output_schema_cid": "bafyoutput456"
+      },
+      {
+        "name": "get_forecast",
+        "input_schema_cid": "bafyinput789",
+        "output_schema_cid": "bafyoutput012"
+      }
+    ],
+    "errors": [
+      {"name": "LocationNotFound"},
+      {"name": "APIError"}
+    ],
+    "requires": ["mcp++/cid-envelope"],
+    "compatibility": {
+      "compatible_with": [],
+      "supersedes": []
+    },
+    "semantic_tags": ["weather", "api"]
+  },
+  "expected": {
+    "valid": true,
+    "has_interface_cid": true
+  }
+}

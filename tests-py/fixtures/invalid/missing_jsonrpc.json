@@ -1,0 +1,14 @@
+{
+  "description": "Invalid MCP request - missing jsonrpc version",
+  "payload": {
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "test"
+    }
+  },
+  "expected": {
+    "valid": false,
+    "error_contains": "jsonrpc"
+  }
+}

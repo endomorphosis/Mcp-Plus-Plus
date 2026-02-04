@@ -1,0 +1,14 @@
+# MCP Python Examples Requirements
+
+# Core MCP SDK
+mcp>=1.0.0
+
+# For async operations
+asyncio>=3.4.3
+
+# Optional: For testing examples
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+
+# Optional: For environment variables
+python-dotenv>=1.0.0
