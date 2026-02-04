@@ -50,7 +50,7 @@ class WeatherServer:
                                 "type": "string",
                                 "description": "City name (e.g., 'San Francisco', 'New York')",
                             },
-                            "units": {
+                            "unit": {
                                 "type": "string",
                                 "enum": ["celsius", "fahrenheit"],
                                 "description": "Temperature units",
@@ -90,7 +90,7 @@ class WeatherServer:
                 if name == "get_current_weather":
                     return await self.get_current_weather(
                         arguments.get("location", ""),
-                        arguments.get("units", "celsius"),
+                        arguments.get("unit", "celsius"),
                     )
                 elif name == "get_forecast":
                     return await self.get_forecast(
@@ -108,7 +108,7 @@ class WeatherServer:
                 ]
 
     async def get_current_weather(
-        self, location: str, units: str
+        self, location: str, unit: str
     ) -> list[TextContent]:
         """Get current weather for a location."""
         if not location:
@@ -130,7 +130,7 @@ class WeatherServer:
 
         # Convert temperature if needed
         temp = weather["temp"]
-        if units == "fahrenheit":
+        if unit == "fahrenheit":
             temp = (temp * 9 / 5) + 32
             temp_str = f"{temp:.1f}°F"
         else:

@@ -174,7 +174,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               type: "string",
               enum: ["celsius", "fahrenheit"],
               description: "Temperature unit",
-              default: "fahrenheit",
+              default: "celsius",
             },
           },
           required: ["location"],
