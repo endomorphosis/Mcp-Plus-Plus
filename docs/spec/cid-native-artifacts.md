@@ -64,6 +64,7 @@ A decision is produced by evaluators after verifying proofs and evaluating polic
   "intent_cid": "bafy...",
   "policy_cid": "bafy...",
   "proofs_checked": ["bafy..."],
+  "evaluation_witness_cid": "bafy...",
   "justification": "human-readable or structured",
   "obligations": [
     {"type": "produce_receipt", "deadline": "2026-02-04T12:00:00Z"}
@@ -75,6 +76,8 @@ A decision is produced by evaluators after verifying proofs and evaluating polic
 ```
 
 - `decision` SHOULD support at least: `allow`, `deny`, `allow_with_obligations`.
+
+`evaluation_witness_cid` is OPTIONAL. When present, it SHOULD commit to a deterministic, replayable “why” record (e.g., evaluator inputs, rule IDs fired, or a policy-evaluation transcript) without requiring the ecosystem to standardize one proof format immediately.
 
 ## 6. Receipt Object (CID’d)
 
@@ -89,12 +92,20 @@ Receipts are the immutable outcome record, suitable for audit, disputes, and ris
   "observed_side_effects": ["bafy..."],
   "proofs_checked": ["bafy..."],
   "decision_cid": "bafy...",
+  "correlation_id": "uuid-or-nonce",
   "time_observed": "2026-02-04T12:34:56Z",
   "signatures": ["..."]
 }
 ```
 
 Receipts MUST be content-addressed and MAY be signed.
+
+## 6.2 Observability and Correlation (Non-Normative)
+
+The archived design thread emphasizes “mandatory observability hooks (trace IDs, provenance metadata) baked into every call/reply/exception”. MCP++ supports this without changing baseline MCP semantics by treating immutable artifacts as the correlation substrate:
+
+- `intent_cid` and/or `event_cid` are stable, content-addressed identifiers suitable for trace correlation across components.
+- `correlation_id` remains useful for ephemeral/UI correlation (and SHOULD be carried from intent into receipts when available).
 
 ## 7. Event Node (CID’d)
 

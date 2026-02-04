@@ -41,6 +41,14 @@ Implementations MAY use separate protocol IDs for:
 - JSON-RPC request/response traffic,
 - optional event dissemination.
 
+### 3.1.1 Proposed Default Protocol ID (Non-Normative)
+
+Until a registry exists, this draft proposes the following *default* libp2p protocol ID for the MCP session stream:
+
+- `/mcp+p2p/1.0.0`
+
+Implementations MAY additionally define sub-protocols (e.g., `/mcp+p2p/session/1.0.0`) but SHOULD prioritize having one commonly supported ID to maximize interoperability.
+
 ## 3.2 Session Lifecycle (Normative)
 
 For each MCP session carried over `mcp+p2p`, an implementation MUST:
@@ -71,6 +79,15 @@ The binding MUST define:
 ### 5.1 Recommended Framing (Non-Normative)
 
 To keep framing simple and unambiguous, implementations SHOULD use a length-prefixed framing strategy (e.g., prefix each JSON-RPC message with its byte length) rather than relying on sentinel delimiters.
+
+#### Example: u32 length prefix (Non-Normative)
+
+One simple choice is:
+
+- 4-byte unsigned big-endian length `N`
+- followed by `N` bytes of UTF-8 JSON text (the JSON-RPC message)
+
+Receivers should reject frames larger than a configured maximum (for example, 1–16 MiB depending on deployment needs).
 
 ## 6. Optional Event Dissemination
 
@@ -162,3 +179,48 @@ This section is intended to reduce “two implementations that both claim `mcp+p
 5. **Pubsub independence (if implemented)**
 	- Disable pubsub connectivity and verify point-to-point MCP sessions still work.
 	- Enable pubsub and verify published announcements are validated (schema/signature/CID checks) before acceptance.
+
+## 10. Baseline Compliance Profile (Draft)
+
+This section defines a **minimal interoperability set**. If two implementations both claim “Baseline `mcp+p2p` compliance”, they should be able to establish a session and exchange MCP JSON-RPC messages reliably.
+
+### 10.1 Baseline Requirements
+
+An implementation claiming Baseline compliance:
+
+- **MUST** support at least one well-known `mcp+p2p` libp2p protocol ID (TBD: registry entry).
+- **MUST** open a libp2p stream using that protocol ID and run MCP initialization as the first application data.
+- **MUST** implement a deterministic framing scheme and publish it as part of the binding.
+- **MUST** enforce a maximum frame size and define violation behavior.
+- **MUST** preserve JSON-RPC `id` correlation and allow multiple in-flight requests per session.
+- **MUST** use authenticated/encrypted libp2p channels.
+- **MUST** implement basic abuse resistance: rate limit session creation and inbound message volume.
+
+### 10.2 Optional Extensions (Non-Baseline)
+
+The following features are explicitly **optional** and should be negotiated/documented separately:
+
+- Pubsub-based dissemination of receipts/decisions/interface descriptors
+- DHT/rendezvous/mDNS discovery behaviors
+- Separate control/data streams or multiple protocol IDs
+- Additional ordering/coordination mechanisms (e.g., scheduling coordination signals)
+
+### 10.3 Protocol ID Registry (Placeholder)
+
+This draft intentionally avoids hard-coding a protocol ID until there is agreement on versioning/registry conventions.
+
+In the interim, implementers can use the Proposed Default Protocol ID above to avoid fragmentation.
+
+#### Versioning convention (Non-Normative)
+
+Protocol IDs SHOULD embed a semantic version:
+
+- breaking changes bump the major version (`/mcp+p2p/2.0.0`)
+- additive, backwards-compatible changes bump minor/patch
+
+When standardizing, the registry entry SHOULD specify:
+
+- protocol ID string(s)
+- framing (e.g., length-prefix)
+- maximum frame size defaults
+- session initialization expectations

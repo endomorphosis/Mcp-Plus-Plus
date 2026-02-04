@@ -12,6 +12,12 @@ This document expands the MCP++ “MCP-IDL” profile: a CID-addressed, runtime-
 - Enable **toolset slicing** under context/token/compute budgets.
 - Remain **non-breaking**: baseline MCP messages remain valid.
 
+## 1.1 Historical Notes (Non-Normative)
+
+The archived design research uses CORBA-era language (e.g., “IDL”, “Interface Repository”, “ORB”) and the phrase “Agent Object Protocol (AOP)” as an analogy for the missing pieces in fragmented agent ecosystems: strongly-typed contracts, runtime compatibility introspection, and event-driven workflows.
+
+MCP-IDL adopts the *useful* conceptual pieces (contracts + runtime query + compatibility metadata) while remaining CID-first and optional; it is not a dependency on CORBA or legacy CORBA stacks.
+
 ## 2. Conceptual Model
 
 - An **Interface Descriptor** is canonical content (schema + metadata).
@@ -47,6 +53,7 @@ An Interface Descriptor MUST include enough information for clients to:
 
 - `semantic_tags[]`: stable tags for retrieval/tool selection
 - `observability`: trace/provenance hooks supported/expected
+- `interaction_patterns`: declared request/response vs callback/event-stream patterns
 - `resource_cost_hints`: approximate runtime/token/network hints
 - `schema_hash`: hash of the descriptor schema portion (redundant to CID, but useful for sub-selection)
 
@@ -72,9 +79,20 @@ An Interface Descriptor MUST include enough information for clients to:
     "supersedes": ["bafy..."]
   },
   "semantic_tags": ["vcs", "git"],
-  "observability": {"trace": true, "provenance": true}
+  "observability": {"trace": true, "provenance": true},
+  "interaction_patterns": {
+    "request_response": true,
+    "event_streams": false
+  }
 }
 ```
+
+### 4.4 Streaming and Callbacks (Non-Normative)
+
+Some tools are best modeled as event streams (“callbacks / event streams”) rather than repeated polling. MCP-IDL allows descriptors to declare this in a purely descriptive way so clients can do graceful degradation:
+
+- A method MAY be described as producing a stream of events (or a server MAY expose a separate event endpoint).
+- If streaming/eventing is used, the descriptor SHOULD provide an `event_schema_cid` (or equivalent) so receivers can validate event payloads.
 
 ## 5. Interface Repository APIs (Normative)
 

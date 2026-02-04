@@ -38,6 +38,12 @@ Each row is: **archive phrase → canonical concept → canonical location(s)**.
 | consensus between the peer group | Neighborhood consensus / attestation | [docs/spec/risk-scheduling.md](../spec/risk-scheduling.md) |
 | speculate about the future tasks | Speculative scheduling / frontier planning | [docs/spec/risk-scheduling.md](../spec/risk-scheduling.md) |
 | extension fragmentation / CORBA/IDL vibe | Profiles + MCP-IDL + toolset slicing | [docs/spec/mcp++-profiles-draft.md](../spec/mcp++-profiles-draft.md), [docs/spec/mcp-idl.md](../spec/mcp-idl.md) |
+| CORBA→MCP 2.0 | CORBA analogy for contracts + compatibility + runtime introspection | [docs/spec/mcp-idl.md](../spec/mcp-idl.md), [docs/architecture/glossary.md](glossary.md) |
+| Agent Object Protocol | Event-driven, strongly-typed “agent object” interaction framing | [docs/spec/mcp-idl.md](../spec/mcp-idl.md), [docs/architecture/glossary.md](glossary.md) |
+| mandatory tool versioning/compatibility metadata | Interface descriptors carry explicit version/compatibility fields | [docs/spec/mcp-idl.md](../spec/mcp-idl.md) |
+| callbacks / event streams | Declared streaming/eventing interface patterns (avoid polling) | [docs/spec/mcp-idl.md](../spec/mcp-idl.md), [docs/spec/transport-mcp-p2p.md](../spec/transport-mcp-p2p.md) |
+| mandatory observability hooks (trace IDs, provenance metadata) | Trace/provenance propagation as a first-class, declared capability | [docs/spec/mcp-idl.md](../spec/mcp-idl.md), [docs/spec/cid-native-artifacts.md](../spec/cid-native-artifacts.md) |
+| deterministic canonicalization pipeline | Canonicalization requirements for CID computation | [docs/spec/cid-native-artifacts.md](../spec/cid-native-artifacts.md), [docs/spec/mcp-idl.md](../spec/mcp-idl.md) |
 
 ## How to extend
 
@@ -45,4 +51,5 @@ When you add a new canonical section based on something from the archive:
 
 1. Add a row to this table with the *literal* archive phrase.
 2. Add an alias note in the relevant spec chapter and/or [docs/architecture/glossary.md](glossary.md) if spelling/terminology differs.
+
 

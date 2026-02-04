@@ -14,3 +14,9 @@
 - **Delegation Chain**: A verifiable chain of authority granting capabilities (e.g., UCAN-style).
 - **Fibonacci Heap**: A priority-queue data structure sometimes used to optimize many priority updates (`decrease-key`). (Alias: “fibinocci heap” in the original chat export.)
 - **Merkle Clock**: A Merkle-DAG-derived logical clock for establishing partial order / causality between events. (Alias: “meekly clock” in the original chat export.)
+- **Trace ID / Correlation ID**: Stable identifiers used to correlate call/reply/receipt chains and audit artifacts across systems. In MCP++ these are typically derived from, or bound to, `intent_cid` and/or `event_cid`.
+- **Observability Hooks**: Declared support for trace/provenance propagation, so clients can safely rely on common debugging/audit signals.
+- **CORBA**: Historical distributed-systems family used here as an analogy for “IDL + runtime compatibility + interface repositories” (not a dependency).
+- **ORB**: Object Request Broker; the CORBA-era “broker” concept that motivates broker-like cross-cutting concerns (policy/QoS/routing/observability) in some MCP++ discussions.
+- **Agent Object Protocol (AOP)**: Phrase from the archived research thread (via a CORBA→MCP analogy) referring to strongly-typed, event-driven, stateful agent↔tool interactions.
+- **Interface Repository**: A runtime-queryable registry of interface contracts (in MCP++: content-addressed via CIDs, optionally gossiped over P2P).

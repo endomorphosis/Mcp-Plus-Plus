@@ -73,6 +73,7 @@ An Interface Descriptor MUST be canonicalized and content-addressed to produce a
 **Optional Fields:**
 - semantic tags
 - observability hooks
+- streaming/event semantics (callbacks / event streams)
 - resource cost hints
 
 ### 4.3 Interface Repository APIs (Normative)
