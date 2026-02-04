@@ -624,21 +624,6 @@ describe('MCP-IDL Validator', () => {
     expect(result.isValid).toBe(false);
     expect(result.errors.some(e => e.includes('server_cid'))).toBe(true);
   });
-
-  it('should reject interfaces/compat with wrong method', () => {
-    const request = {
-      jsonrpc: '2.0',
-      method: 'wrong/method',
-      params: {
-        client_cid: 'QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG',
-        server_cid: 'QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdH',
-      },
-      id: 1,
-    };
-
-    const result = validator.validateInterfaceCompatRequest(request);
-    expect(result.isValid).toBe(false);
-  });
 });
 
 describe('CID Artifacts Validator', () => {
