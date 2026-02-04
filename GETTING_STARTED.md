@@ -103,7 +103,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
     """Execute a tool with given arguments."""
     if name == "get_temperature":
         location = arguments.get("location")
-        unit = arguments.get("unit", "fahrenheit")
+        unit = arguments.get("unit", "celsius")
         
         # In a real implementation, you would call a weather API here
         # For demo purposes, we'll return mock data

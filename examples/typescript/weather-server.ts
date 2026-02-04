@@ -62,7 +62,7 @@ class WeatherServer {
                   type: "string",
                   description: "City name (e.g., 'San Francisco', 'New York')",
                 },
-                units: {
+                unit: {
                   type: "string",
                   enum: ["celsius", "fahrenheit"],
                   description: "Temperature units",
@@ -105,7 +105,7 @@ class WeatherServer {
         if (name === "get_current_weather") {
           return await this.getCurrentWeather(
             args.location as string,
-            (args.units as string) || "celsius"
+            (args.unit as string) || "celsius"
           );
         } else if (name === "get_forecast") {
           return await this.getForecast(
@@ -131,7 +131,7 @@ class WeatherServer {
 
   private async getCurrentWeather(
     location: string,
-    units: string
+    unit: string
   ): Promise<{ content: Array<{ type: string; text: string }> }> {
     if (!location) {
       throw new Error("Location is required");
@@ -158,7 +158,7 @@ class WeatherServer {
     // Convert temperature if needed
     let temp = weather.temp;
     let tempStr: string;
-    if (units === "fahrenheit") {
+    if (unit === "fahrenheit") {
       temp = (temp * 9) / 5 + 32;
       tempStr = `${temp.toFixed(1)}°F`;
     } else {
