@@ -43,6 +43,13 @@ func (v *CIDValidator) ValidateExecutionEnvelope(data []byte) (*testsmcp.Executi
 		return nil, fmt.Errorf("invalid input_cid format: %w", err)
 	}
 	
+	// Validate parent CIDs
+	for i, parent := range envelope.Parents {
+		if err := v.base.validate.Var(parent, "cid"); err != nil {
+			return nil, fmt.Errorf("invalid parent CID at index %d: %w", i, err)
+		}
+	}
+	
 	return &envelope, nil
 }
 

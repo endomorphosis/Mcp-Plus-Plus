@@ -128,11 +128,6 @@ impl MCPValidator {
             return Ok(result);
         }
         
-        // Check JSON-RPC version
-        if request.jsonrpc != "2.0" {
-            result.add_error(format!("Invalid JSON-RPC version: {}", request.jsonrpc));
-        }
-        
         // Check method validity
         if !self.valid_methods.contains(&request.method) {
             result.add_warning(format!("Unknown method: {}", request.method));
@@ -187,11 +182,6 @@ impl MCPValidator {
             return Ok(result);
         }
         
-        // Check JSON-RPC version
-        if response.jsonrpc != "2.0" {
-            result.add_error(format!("Invalid JSON-RPC version: {}", response.jsonrpc));
-        }
-        
         // Must have either result or error, not both
         match (&response.result, &response.error) {
             (Some(_), Some(_)) => {
@@ -220,11 +210,6 @@ impl MCPValidator {
         if let Err(e) = notification.validate() {
             result.add_error(format!("Validation error: {}", e));
             return Ok(result);
-        }
-        
-        // Check JSON-RPC version
-        if notification.jsonrpc != "2.0" {
-            result.add_error(format!("Invalid JSON-RPC version: {}", notification.jsonrpc));
         }
         
         Ok(result)
@@ -359,5 +344,613 @@ mod tests {
             "method": "notifications/test"
         });
         assert!(MCPValidator::is_notification(&payload));
+    }
+    
+    // Additional comprehensive tests for better coverage
+    
+    #[test]
+    fn test_request_missing_jsonrpc() {
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "method": "tools/list",
+            "id": 1
+        });
+        
+        let result = validator.validate_request(&payload);
+        assert!(result.is_err(), "Should fail due to missing jsonrpc field");
+    }
+    
+    #[test]
+    fn test_request_missing_method() {
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "jsonrpc": "2.0",
+            "id": 1
+        });
+        
+        let result = validator.validate_request(&payload);
+        assert!(result.is_err(), "Should fail due to missing method");
+    }
+    
+    #[test]
+    fn test_request_missing_id() {
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "jsonrpc": "2.0",
+            "method": "tools/list"
+        });
+        
+        let result = validator.validate_request(&payload);
+        assert!(result.is_err(), "Should fail due to missing id");
+    }
+    
+    #[test]
+    fn test_request_empty_method() {
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "jsonrpc": "2.0",
+            "method": "",
+            "id": 1
+        });
+        
+        // Empty method fails validation due to min_length constraint
+        let result = validator.validate_request(&payload).unwrap();
+        assert!(!result.is_valid, "Empty method should be invalid");
+        assert!(!result.errors.is_empty());
+    }
+    
+    #[test]
+    fn test_request_with_string_id() {
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "jsonrpc": "2.0",
+            "method": "tools/list",
+            "id": "request-123"
+        });
+        
+        let result = validator.validate_request(&payload).unwrap();
+        assert!(result.is_valid);
+    }
+    
+    #[test]
+    fn test_request_unknown_method_warning() {
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "jsonrpc": "2.0",
+            "method": "unknown/method",
+            "id": 1
+        });
+        
+        let result = validator.validate_request(&payload).unwrap();
+        assert!(result.is_valid);
+        assert!(!result.warnings.is_empty(), "Should have warning for unknown method");
+    }
+    
+    #[test]
+    fn test_request_with_params() {
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "jsonrpc": "2.0",
+            "method": "tools/list",
+            "params": {"filters": ["test"]},
+            "id": 1
+        });
+        
+        let result = validator.validate_request(&payload).unwrap();
+        assert!(result.is_valid);
+    }
+    
+    #[test]
+    fn test_initialize_request_valid() {
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "jsonrpc": "2.0",
+            "method": "initialize",
+            "params": {
+                "protocol_version": "1.0.0",
+                "client_info": {
+                    "name": "test-client",
+                    "version": "1.0.0"
+                },
+                "capabilities": {}
+            },
+            "id": 1
+        });
+        
+        let result = validator.validate_request(&payload).unwrap();
+        assert!(result.is_valid);
+    }
+    
+    #[test]
+    fn test_initialize_request_missing_protocol_version() {
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "jsonrpc": "2.0",
+            "method": "initialize",
+            "params": {
+                "client_info": {
+                    "name": "test-client",
+                    "version": "1.0.0"
+                },
+                "capabilities": {}
+            },
+            "id": 1
+        });
+        
+        let result = validator.validate_request(&payload).unwrap();
+        assert!(!result.is_valid, "Should fail due to missing protocol_version");
+    }
+    
+    #[test]
+    fn test_initialize_request_invalid_version_format() {
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "jsonrpc": "2.0",
+            "method": "initialize",
+            "params": {
+                "protocol_version": "invalid",
+                "client_info": {
+                    "name": "test-client",
+                    "version": "1.0.0"
+                },
+                "capabilities": {}
+            },
+            "id": 1
+        });
+        
+        let result = validator.validate_request(&payload).unwrap();
+        assert!(!result.is_valid, "Should fail due to invalid version format");
+    }
+    
+    #[test]
+    fn test_tools_call_request_valid() {
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "jsonrpc": "2.0",
+            "method": "tools/call",
+            "params": {
+                "name": "get_weather",
+                "arguments": {"location": "Seattle"}
+            },
+            "id": 1
+        });
+        
+        let result = validator.validate_request(&payload).unwrap();
+        assert!(result.is_valid);
+    }
+    
+    #[test]
+    fn test_tools_call_request_missing_name() {
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "jsonrpc": "2.0",
+            "method": "tools/call",
+            "params": {
+                "arguments": {"location": "Seattle"}
+            },
+            "id": 1
+        });
+        
+        let result = validator.validate_request(&payload).unwrap();
+        assert!(!result.is_valid, "Should fail due to missing tool name");
+    }
+    
+    #[test]
+    fn test_resources_read_request_valid() {
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "jsonrpc": "2.0",
+            "method": "resources/read",
+            "params": {
+                "uri": "file:///path/to/resource"
+            },
+            "id": 1
+        });
+        
+        let result = validator.validate_request(&payload).unwrap();
+        assert!(result.is_valid);
+    }
+    
+    #[test]
+    fn test_resources_read_request_missing_uri() {
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "jsonrpc": "2.0",
+            "method": "resources/read",
+            "params": {},
+            "id": 1
+        });
+        
+        let result = validator.validate_request(&payload).unwrap();
+        assert!(!result.is_valid, "Should fail due to missing uri");
+    }
+    
+    #[test]
+    fn test_prompts_get_request_valid() {
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "jsonrpc": "2.0",
+            "method": "prompts/get",
+            "params": {
+                "name": "test-prompt"
+            },
+            "id": 1
+        });
+        
+        let result = validator.validate_request(&payload).unwrap();
+        assert!(result.is_valid);
+    }
+    
+    #[test]
+    fn test_prompts_get_request_missing_name() {
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "jsonrpc": "2.0",
+            "method": "prompts/get",
+            "params": {},
+            "id": 1
+        });
+        
+        let result = validator.validate_request(&payload).unwrap();
+        assert!(!result.is_valid, "Should fail due to missing prompt name");
+        assert!(!result.errors.is_empty());
+    }
+    
+    #[test]
+    fn test_prompts_get_request_empty_name() {
+        // Test with empty name to trigger validate_prompt_get_params error
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "jsonrpc": "2.0",
+            "method": "prompts/get",
+            "params": {
+                "name": ""
+            },
+            "id": 1
+        });
+        
+        let result = validator.validate_request(&payload).unwrap();
+        assert!(!result.is_valid, "Should fail due to empty prompt name");
+        assert!(!result.errors.is_empty());
+    }
+    
+    #[test]
+    fn test_prompts_get_request_with_arguments() {
+        // Test prompts/get with valid arguments to cover the closing brace after error check
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "jsonrpc": "2.0",
+            "method": "prompts/get",
+            "params": {
+                "name": "test-prompt",
+                "arguments": {"key": "value"}
+            },
+            "id": 1
+        });
+        
+        let result = validator.validate_request(&payload).unwrap();
+        assert!(result.is_valid, "Should be valid with arguments");
+    }
+    
+    #[test]
+    fn test_prompts_get_request_no_params() {
+        // Test prompts/get without params - covers line 164 (closing brace)
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "jsonrpc": "2.0",
+            "method": "prompts/get",
+            "id": 1
+        });
+        
+        let result = validator.validate_request(&payload).unwrap();
+        // Without params, validation can't check prompt-specific constraints
+        // So request is valid at the JSON-RPC level
+        assert!(result.is_valid, "Request without params should pass JSON-RPC validation");
+    }
+    
+    #[test]
+    fn test_response_with_error() {
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "jsonrpc": "2.0",
+            "error": {
+                "code": -32600,
+                "message": "Invalid Request"
+            },
+            "id": 1
+        });
+        
+        let result = validator.validate_response(&payload).unwrap();
+        assert!(result.is_valid);
+    }
+    
+    #[test]
+    fn test_response_with_error_and_data() {
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "jsonrpc": "2.0",
+            "error": {
+                "code": -32600,
+                "message": "Invalid Request",
+                "data": {"detail": "Missing required field"}
+            },
+            "id": 1
+        });
+        
+        let result = validator.validate_response(&payload).unwrap();
+        assert!(result.is_valid);
+    }
+    
+    #[test]
+    fn test_response_with_both_result_and_error() {
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "jsonrpc": "2.0",
+            "result": {},
+            "error": {
+                "code": -32600,
+                "message": "Invalid Request"
+            },
+            "id": 1
+        });
+        
+        let result = validator.validate_response(&payload).unwrap();
+        assert!(!result.is_valid, "Response cannot have both result and error");
+    }
+    
+    #[test]
+    fn test_response_with_neither_result_nor_error() {
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "jsonrpc": "2.0",
+            "id": 1
+        });
+        
+        let result = validator.validate_response(&payload).unwrap();
+        assert!(!result.is_valid, "Response must have either result or error");
+    }
+    
+    #[test]
+    fn test_response_invalid_jsonrpc_version() {
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "jsonrpc": "1.0",
+            "result": {},
+            "id": 1
+        });
+        
+        let result = validator.validate_response(&payload).unwrap();
+        assert!(!result.is_valid, "Should be invalid due to wrong JSON-RPC version");
+    }
+    
+    #[test]
+    fn test_response_missing_id() {
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "jsonrpc": "2.0",
+            "result": {}
+        });
+        
+        let result = validator.validate_response(&payload);
+        assert!(result.is_err(), "Should fail due to missing id");
+    }
+    
+    #[test]
+    fn test_notification_valid() {
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "jsonrpc": "2.0",
+            "method": "notifications/resources/updated"
+        });
+        
+        let result = validator.validate_notification(&payload).unwrap();
+        assert!(result.is_valid);
+    }
+    
+    #[test]
+    fn test_notification_with_params() {
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "jsonrpc": "2.0",
+            "method": "notifications/resources/updated",
+            "params": {"uri": "file:///test"}
+        });
+        
+        let result = validator.validate_notification(&payload).unwrap();
+        assert!(result.is_valid);
+    }
+    
+    #[test]
+    fn test_notification_invalid_version() {
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "jsonrpc": "1.0",
+            "method": "notifications/test"
+        });
+        
+        let result = validator.validate_notification(&payload).unwrap();
+        assert!(!result.is_valid, "Should be invalid due to wrong JSON-RPC version");
+    }
+    
+    #[test]
+    fn test_notification_missing_method() {
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "jsonrpc": "2.0"
+        });
+        
+        let result = validator.validate_notification(&payload);
+        assert!(result.is_err(), "Should fail due to missing method");
+    }
+    
+    #[test]
+    fn test_is_request_with_notification_method() {
+        let payload = json!({
+            "method": "notifications/test",
+            "id": 1
+        });
+        // Should not be considered a request if method starts with "notifications/"
+        assert!(!MCPValidator::is_request(&payload));
+    }
+    
+    #[test]
+    fn test_is_response_with_error() {
+        let payload = json!({
+            "error": {"code": -32600, "message": "Error"},
+            "id": 1
+        });
+        assert!(MCPValidator::is_response(&payload));
+    }
+    
+    #[test]
+    fn test_is_notification_no_method() {
+        let payload = json!({
+            "id": 1
+        });
+        assert!(!MCPValidator::is_notification(&payload));
+    }
+    
+    #[test]
+    fn test_validation_result_add_error() {
+        let mut result = ValidationResult::new("test".to_string());
+        assert!(result.is_valid);
+        
+        result.add_error("Test error".to_string());
+        assert!(!result.is_valid);
+        assert_eq!(result.errors.len(), 1);
+    }
+    
+    #[test]
+    fn test_validation_result_add_warning() {
+        let mut result = ValidationResult::new("test".to_string());
+        result.add_warning("Test warning".to_string());
+        assert!(result.is_valid);
+        assert_eq!(result.warnings.len(), 1);
+    }
+    
+    #[test]
+    fn test_all_lifecycle_methods() {
+        let validator = MCPValidator::new();
+        let methods = vec!["initialize", "initialized", "ping"];
+        
+        for method in methods {
+            let payload = json!({
+                "jsonrpc": "2.0",
+                "method": method,
+                "id": 1
+            });
+            let result = validator.validate_request(&payload).unwrap();
+            assert!(result.is_valid, "Method {} should be valid", method);
+        }
+    }
+    
+    #[test]
+    fn test_all_tool_methods() {
+        let validator = MCPValidator::new();
+        let methods = vec!["tools/list", "tools/call"];
+        
+        for method in methods {
+            let payload = json!({
+                "jsonrpc": "2.0",
+                "method": method,
+                "id": 1
+            });
+            let result = validator.validate_request(&payload).unwrap();
+            assert!(result.is_valid || !result.warnings.is_empty(), "Method {} should be recognized", method);
+        }
+    }
+    
+    #[test]
+    fn test_all_resource_methods() {
+        let validator = MCPValidator::new();
+        let methods = vec![
+            "resources/list",
+            "resources/read",
+            "resources/subscribe",
+            "resources/unsubscribe",
+            "resources/templates/list"
+        ];
+        
+        for method in methods {
+            let payload = json!({
+                "jsonrpc": "2.0",
+                "method": method,
+                "id": 1
+            });
+            let result = validator.validate_request(&payload).unwrap();
+            assert!(result.is_valid || !result.warnings.is_empty(), "Method {} should be recognized", method);
+        }
+    }
+    
+    #[test]
+    fn test_all_notification_methods() {
+        let validator = MCPValidator::new();
+        let methods = vec![
+            "notifications/resources/updated",
+            "notifications/resources/list_changed",
+            "notifications/tools/list_changed",
+            "notifications/prompts/list_changed"
+        ];
+        
+        for method in methods {
+            let payload = json!({
+                "jsonrpc": "2.0",
+                "method": method
+            });
+            let result = validator.validate_notification(&payload).unwrap();
+            assert!(result.is_valid, "Notification method {} should be valid", method);
+        }
+    }
+    
+    #[test]
+    fn test_validator_default() {
+        let validator = MCPValidator::default();
+        assert!(!validator.valid_methods.is_empty());
+    }
+    
+    #[test]
+    fn test_error_with_valid_message() {
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "jsonrpc": "2.0",
+            "error": {
+                "code": -32600,
+                "message": "Error message"
+            },
+            "id": 1
+        });
+        
+        let result = validator.validate_response(&payload).unwrap();
+        assert!(result.is_valid);
+    }
+    
+    #[test]
+    fn test_notification_method_with_id_is_not_request() {
+        // Test request with method starting with "notifications/" but has an ID
+        // Should be notification, not request
+        let payload = json!({
+            "method": "notifications/resources/updated",
+            "id": 1
+        });
+        assert!(!MCPValidator::is_request(&payload), "Notification method with ID should not be a request");
+    }
+    
+    #[test]
+    fn test_response_both_result_and_error_validation() {
+        // Test response with both Some(result) and Some(error)
+        let validator = MCPValidator::new();
+        let payload = json!({
+            "jsonrpc": "2.0",
+            "result": {"data": "test"},
+            "error": {
+                "code": -32600,
+                "message": "Error"
+            },
+            "id": 1
+        });
+        
+        let result = validator.validate_response(&payload).unwrap();
+        assert!(!result.is_valid, "Response with both result and error should be invalid");
+        assert!(result.errors.iter().any(|e| e.contains("both result and error")));
     }
 }

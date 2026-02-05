@@ -1,0 +1,34 @@
+
+> @mcp-plus-plus/validators-ts@1.0.0 test:coverage
+> vitest run --coverage
+
+
+[7m[1m[36m RUN [39m[22m[27m [36mv1.6.1[39m [90m/home/runner/work/Mcp-Plus-Plus/Mcp-Plus-Plus/tests-ts[39m
+[2m      Coverage enabled with [22m[33mv8[39m
+
+ [32m✓[39m src/__tests__/validators.test.ts [2m ([22m[2m130 tests[22m[2m)[22m[90m 52[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m130 passed[39m[22m[90m (130)[39m
+[2m   Start at [22m 20:57:13
+[2m   Duration [22m 517ms[2m (transform 158ms, setup 0ms, collect 179ms, tests 52ms, environment 0ms, prepare 84ms)[22m
+
+[34m % [39m[2mCoverage report from [22m[33mv8[39m
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |    98.7 |    99.35 |   97.67 |    98.7 |                   
+ tests-ts          |       0 |        0 |       0 |       0 |                   
+  ...age.config.ts |       0 |        0 |       0 |       0 | 1-17              
+ tests-ts/src      |     100 |      100 |     100 |     100 |                   
+  index.ts         |     100 |      100 |     100 |     100 |                   
+  models.ts        |     100 |      100 |     100 |     100 |                   
+ ...src/validators |     100 |      100 |     100 |     100 |                   
+  baseMCP.ts       |     100 |      100 |     100 |     100 |                   
+  cidArtifacts.ts  |     100 |      100 |     100 |     100 |                   
+  eventDAG.ts      |     100 |      100 |     100 |     100 |                   
+  mcpIDL.ts        |     100 |      100 |     100 |     100 |                   
+  ...Evaluation.ts |     100 |      100 |     100 |     100 |                   
+  transport.ts     |     100 |      100 |     100 |     100 |                   
+  ...Delegation.ts |     100 |      100 |     100 |     100 |                   
+-------------------|---------|----------|---------|---------|-------------------

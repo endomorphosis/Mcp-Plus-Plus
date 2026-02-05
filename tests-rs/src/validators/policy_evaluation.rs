@@ -117,4 +117,216 @@ mod tests {
         let result = validator.validate_decision(&payload).unwrap();
         assert!(result.is_valid);
     }
+    
+    // Additional comprehensive tests
+    
+    #[test]
+    fn test_policy_empty_rules() {
+        let validator = PolicyEvaluationValidator::new();
+        let payload = json!({
+            "policy_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "policy_type": "permission",
+            "rules": []
+        });
+        
+        let result = validator.validate_policy(&payload).unwrap();
+        assert!(!result.is_valid, "Should fail with empty rules");
+    }
+    
+    #[test]
+    fn test_policy_missing_cid() {
+        let validator = PolicyEvaluationValidator::new();
+        let payload = json!({
+            "policy_type": "permission",
+            "rules": [{
+                "condition": "time_before('2024-12-31')",
+                "action": "allow"
+            }]
+        });
+        
+        let result = validator.validate_policy(&payload);
+        assert!(result.is_err(), "Should fail due to missing policy_cid");
+    }
+    
+    #[test]
+    fn test_policy_missing_type() {
+        let validator = PolicyEvaluationValidator::new();
+        let payload = json!({
+            "policy_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "rules": [{
+                "condition": "time_before('2024-12-31')",
+                "action": "allow"
+            }]
+        });
+        
+        let result = validator.validate_policy(&payload);
+        assert!(result.is_err(), "Should fail due to missing policy_type");
+    }
+    
+    #[test]
+    fn test_policy_with_temporal() {
+        let validator = PolicyEvaluationValidator::new();
+        let payload = json!({
+            "policy_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "policy_type": "permission",
+            "temporal": {
+                "not_before": "2024-01-01T00:00:00Z",
+                "not_after": "2024-12-31T23:59:59Z"
+            },
+            "rules": [{
+                "condition": "time_before('2024-12-31')",
+                "action": "allow"
+            }]
+        });
+        
+        let result = validator.validate_policy(&payload).unwrap();
+        assert!(result.is_valid);
+    }
+    
+    #[test]
+    fn test_policy_multiple_rules() {
+        let validator = PolicyEvaluationValidator::new();
+        let payload = json!({
+            "policy_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "policy_type": "permission",
+            "rules": [
+                {
+                    "condition": "time_before('2024-12-31')",
+                    "action": "allow"
+                },
+                {
+                    "condition": "user_has_role('admin')",
+                    "action": "allow"
+                }
+            ]
+        });
+        
+        let result = validator.validate_policy(&payload).unwrap();
+        assert!(result.is_valid);
+    }
+    
+    #[test]
+    fn test_decision_deny() {
+        let validator = PolicyEvaluationValidator::new();
+        let payload = json!({
+            "decision": "deny"
+        });
+        
+        let result = validator.validate_decision(&payload).unwrap();
+        assert!(result.is_valid);
+    }
+    
+    #[test]
+    fn test_decision_missing_field() {
+        let validator = PolicyEvaluationValidator::new();
+        let payload = json!({});
+        
+        let result = validator.validate_decision(&payload);
+        assert!(result.is_err(), "Should fail due to missing decision");
+    }
+    
+    #[test]
+    fn test_decision_with_obligations_but_empty() {
+        let validator = PolicyEvaluationValidator::new();
+        let payload = json!({
+            "decision": "allow_with_obligations",
+            "obligations": []
+        });
+        
+        let result = validator.validate_decision(&payload).unwrap();
+        assert!(!result.is_valid, "AllowWithObligations must have obligations");
+    }
+    
+    #[test]
+    fn test_decision_with_obligations_missing() {
+        let validator = PolicyEvaluationValidator::new();
+        let payload = json!({
+            "decision": "allow_with_obligations"
+        });
+        
+        let result = validator.validate_decision(&payload).unwrap();
+        assert!(!result.is_valid, "AllowWithObligations must have obligations");
+    }
+    
+    #[test]
+    fn test_decision_with_cid() {
+        let validator = PolicyEvaluationValidator::new();
+        let payload = json!({
+            "decision": "allow",
+            "decision_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"
+        });
+        
+        let result = validator.validate_decision(&payload).unwrap();
+        assert!(result.is_valid);
+    }
+    
+    #[test]
+    fn test_validator_default() {
+        let validator = PolicyEvaluationValidator::default();
+        let payload = json!({
+            "decision": "allow"
+        });
+        
+        let result = validator.validate_decision(&payload).unwrap();
+        assert!(result.is_valid);
+    }
+    
+    #[test]
+    fn test_decision_allow_with_obligations_none_obligations() {
+        // Test DecisionType::AllowWithObligations with None obligations (should error)
+        let validator = PolicyEvaluationValidator::new();
+        let payload = json!({
+            "decision": "allow_with_obligations"
+        });
+        
+        let result = validator.validate_decision(&payload).unwrap();
+        assert!(!result.is_valid, "AllowWithObligations with no obligations should be invalid");
+        assert!(result.errors.iter().any(|e| e.contains("obligations")));
+    }
+    
+    #[test]
+    fn test_decision_allow_with_obligations_empty_array() {
+        // Test DecisionType::AllowWithObligations with empty obligations array (should error)
+        let validator = PolicyEvaluationValidator::new();
+        let payload = json!({
+            "decision": "allow_with_obligations",
+            "obligations": []
+        });
+        
+        let result = validator.validate_decision(&payload).unwrap();
+        assert!(!result.is_valid, "AllowWithObligations with empty obligations should be invalid");
+        assert!(result.errors.iter().any(|e| e.contains("obligations")));
+    }
+    
+    #[test]
+    fn test_policy_invalid_cid_triggers_serde_valid_error() {
+        // Test policy with invalid CID that triggers serde_valid early return
+        let validator = PolicyEvaluationValidator::new();
+        let payload = json!({
+            "policy_cid": "invalid",
+            "policy_type": "permission",
+            "rules": [{
+                "condition": "time_before('2024-12-31')",
+                "action": "allow"
+            }]
+        });
+        
+        let result = validator.validate_policy(&payload).unwrap();
+        assert!(!result.is_valid, "Invalid CID should trigger validation error");
+        assert!(!result.errors.is_empty());
+    }
+    
+    #[test]
+    fn test_decision_invalid_cid_triggers_serde_valid_error() {
+        // Test decision with invalid CID that triggers serde_valid early return
+        let validator = PolicyEvaluationValidator::new();
+        let payload = json!({
+            "decision": "allow",
+            "decision_cid": "invalid"
+        });
+        
+        let result = validator.validate_decision(&payload).unwrap();
+        assert!(!result.is_valid, "Invalid CID should trigger validation error");
+        assert!(!result.errors.is_empty());
+    }
 }

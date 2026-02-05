@@ -1,0 +1,477 @@
+info: cargo-llvm-cov currently setting cfg(coverage); you can opt-out it by passing --no-cfg-coverage
+   Compiling mcp-validators v0.1.0 (/home/runner/work/Mcp-Plus-Plus/Mcp-Plus-Plus/tests-rs)
+warning: missing documentation for a variant
+  --> src/models.rs:86:5
+   |
+86 |     String(String),
+   |     ^^^^^^
+   |
+   = note: requested on the command line with `-W missing-docs`
+
+warning: missing documentation for a variant
+  --> src/models.rs:87:5
+   |
+87 |     Number(i64),
+   |     ^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/models.rs:123:5
+    |
+123 |     pub tools: Option<ToolsCapability>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/models.rs:126:5
+    |
+126 |     pub resources: Option<ResourcesCapability>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/models.rs:129:5
+    |
+129 |     pub prompts: Option<PromptsCapability>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/models.rs:132:5
+    |
+132 |     pub experimental: Option<HashMap<String, serde_json::Value>>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+   --> src/models.rs:136:1
+    |
+136 | pub struct ToolsCapability {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/models.rs:138:5
+    |
+138 |     pub list_changed: Option<bool>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+   --> src/models.rs:142:1
+    |
+142 | pub struct ResourcesCapability {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/models.rs:144:5
+    |
+144 |     pub subscribe: Option<bool>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/models.rs:147:5
+    |
+147 |     pub list_changed: Option<bool>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+   --> src/models.rs:151:1
+    |
+151 | pub struct PromptsCapability {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/models.rs:153:5
+    |
+153 |     pub list_changed: Option<bool>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/models.rs:292:5
+    |
+292 |     pub resource: String,
+    |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/models.rs:293:5
+    |
+293 |     pub ability: String,
+    |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/models.rs:296:5
+    |
+296 |     pub caveats: Option<HashMap<String, serde_json::Value>>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> src/models.rs:331:5
+    |
+331 |     Permission,
+    |     ^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> src/models.rs:332:5
+    |
+332 |     Prohibition,
+    |     ^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> src/models.rs:333:5
+    |
+333 |     Obligation,
+    |     ^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/models.rs:340:5
+    |
+340 |     pub not_before: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src/models.rs:343:5
+    |
+343 |     pub not_after: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> src/models.rs:378:5
+    |
+378 |     Allow,
+    |     ^^^^^
+
+warning: missing documentation for a variant
+   --> src/models.rs:379:5
+    |
+379 |     Deny,
+    |     ^^^^
+
+warning: missing documentation for a variant
+   --> src/models.rs:380:5
+    |
+380 |     AllowWithObligations,
+    |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> src/validators/base_mcp.rs:16:5
+   |
+16 |     InvalidJSONRPCVersion(String),
+   |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> src/validators/base_mcp.rs:19:5
+   |
+19 |     InvalidMethod(String),
+   |     ^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> src/validators/base_mcp.rs:22:5
+   |
+22 |     MissingField(String),
+   |     ^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> src/validators/base_mcp.rs:25:5
+   |
+25 |     ValidationFailed(String),
+   |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> src/validators/base_mcp.rs:28:5
+   |
+28 |     SerializationError(#[from] serde_json::Error),
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> src/validators/base_mcp.rs:31:5
+   |
+31 |     SerdeValidError(String),
+   |     ^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/validators/base_mcp.rs:37:5
+   |
+37 |     pub is_valid: bool,
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/validators/base_mcp.rs:38:5
+   |
+38 |     pub message_type: String,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/validators/base_mcp.rs:39:5
+   |
+39 |     pub errors: Vec<String>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src/validators/base_mcp.rs:40:5
+   |
+40 |     pub warnings: Vec<String>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> src/validators/base_mcp.rs:44:5
+   |
+44 |     pub fn new(message_type: String) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> src/validators/base_mcp.rs:53:5
+   |
+53 |     pub fn add_error(&mut self, error: String) {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> src/validators/base_mcp.rs:58:5
+   |
+58 |     pub fn add_warning(&mut self, warning: String) {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> src/validators/cid_artifacts.rs:15:5
+   |
+15 |     pub fn new() -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> src/validators/event_dag.rs:16:5
+   |
+16 |     pub fn new() -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> src/validators/mcp_idl.rs:21:5
+   |
+21 |     pub fn new() -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> src/validators/policy_evaluation.rs:15:5
+   |
+15 |     pub fn new() -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> src/validators/transport.rs:15:5
+   |
+15 |     pub fn new() -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> src/validators/ucan_delegation.rs:15:5
+   |
+15 |     pub fn new() -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: `mcp-validators` (lib) generated 43 warnings
+warning: `mcp-validators` (lib test) generated 43 warnings (43 duplicates)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.73s
+     Running unittests src/lib.rs (target/llvm-cov-target/debug/deps/mcp_validators-991a70fec783cb36)
+
+running 151 tests
+test validators::base_mcp::tests::test_all_tool_methods ... ok
+test validators::base_mcp::tests::test_all_lifecycle_methods ... ok
+test validators::base_mcp::tests::test_all_notification_methods ... ok
+test validators::base_mcp::tests::test_all_resource_methods ... ok
+test validators::base_mcp::tests::test_initialize_request_missing_protocol_version ... ok
+test validators::base_mcp::tests::test_error_with_valid_message ... ok
+test validators::base_mcp::tests::test_invalid_jsonrpc_version ... ok
+test validators::base_mcp::tests::test_is_notification ... ok
+test validators::base_mcp::tests::test_is_notification_no_method ... ok
+test validators::base_mcp::tests::test_is_request ... ok
+test validators::base_mcp::tests::test_is_response ... ok
+test validators::base_mcp::tests::test_is_request_with_notification_method ... ok
+test validators::base_mcp::tests::test_is_response_with_error ... ok
+test validators::base_mcp::tests::test_notification_invalid_version ... ok
+test validators::base_mcp::tests::test_notification_method_with_id_is_not_request ... ok
+test validators::base_mcp::tests::test_notification_missing_method ... ok
+test validators::base_mcp::tests::test_notification_valid ... ok
+test validators::base_mcp::tests::test_notification_with_params ... ok
+test validators::base_mcp::tests::test_prompts_get_request_missing_name ... ok
+test validators::base_mcp::tests::test_prompts_get_request_empty_name ... ok
+test validators::base_mcp::tests::test_prompts_get_request_no_params ... ok
+test validators::base_mcp::tests::test_prompts_get_request_valid ... ok
+test validators::base_mcp::tests::test_prompts_get_request_with_arguments ... ok
+test validators::base_mcp::tests::test_request_empty_method ... ok
+test validators::base_mcp::tests::test_request_missing_id ... ok
+test validators::base_mcp::tests::test_request_missing_jsonrpc ... ok
+test validators::base_mcp::tests::test_request_missing_method ... ok
+test validators::base_mcp::tests::test_request_unknown_method_warning ... ok
+test validators::base_mcp::tests::test_initialize_request_invalid_version_format ... ok
+test validators::base_mcp::tests::test_initialize_request_valid ... ok
+test validators::base_mcp::tests::test_request_with_params ... ok
+test validators::base_mcp::tests::test_request_with_string_id ... ok
+test validators::base_mcp::tests::test_resources_read_request_missing_uri ... ok
+test validators::base_mcp::tests::test_resources_read_request_valid ... ok
+test validators::base_mcp::tests::test_response_missing_id ... ok
+test validators::base_mcp::tests::test_response_both_result_and_error_validation ... ok
+test validators::base_mcp::tests::test_response_invalid_jsonrpc_version ... ok
+test validators::base_mcp::tests::test_response_with_both_result_and_error ... ok
+test validators::base_mcp::tests::test_tools_call_request_missing_name ... ok
+test validators::base_mcp::tests::test_response_with_error ... ok
+test validators::base_mcp::tests::test_response_with_error_and_data ... ok
+test validators::base_mcp::tests::test_response_with_neither_result_nor_error ... ok
+test validators::base_mcp::tests::test_valid_request ... ok
+test validators::base_mcp::tests::test_tools_call_request_valid ... ok
+test validators::base_mcp::tests::test_valid_response ... ok
+test validators::base_mcp::tests::test_validation_result_add_error ... ok
+test validators::base_mcp::tests::test_validation_result_add_warning ... ok
+test validators::base_mcp::tests::test_validator_default ... ok
+test validators::cid_artifacts::tests::test_envelope_genesis_no_parents ... ok
+test validators::cid_artifacts::tests::test_envelope_invalid_cid_format ... ok
+test validators::cid_artifacts::tests::test_envelope_deserializes_but_fails_serde_valid ... ok
+test validators::cid_artifacts::tests::test_envelope_empty_parents_genesis_warning ... ok
+test validators::cid_artifacts::tests::test_envelope_missing_interface_cid ... ok
+test validators::cid_artifacts::tests::test_envelope_missing_input_cid ... ok
+test validators::cid_artifacts::tests::test_envelope_missing_timestamp ... ok
+test validators::cid_artifacts::tests::test_receipt_missing_envelope_cid ... ok
+test validators::cid_artifacts::tests::test_envelope_with_complex_timestamp ... ok
+test validators::cid_artifacts::tests::test_receipt_missing_output_cid ... ok
+test validators::cid_artifacts::tests::test_receipt_missing_receipt_cid ... ok
+test validators::cid_artifacts::tests::test_envelope_multiple_parents ... ok
+test validators::cid_artifacts::tests::test_receipt_missing_signature ... ok
+test validators::cid_artifacts::tests::test_valid_envelope ... ok
+test validators::event_dag::tests::test_acyclicity_complex_dag ... ok
+test validators::cid_artifacts::tests::test_validator_default ... ok
+test validators::event_dag::tests::test_acyclicity_deep_recursive_cycle ... ok
+test validators::event_dag::tests::test_acyclicity_empty_events ... ok
+test validators::event_dag::tests::test_acyclicity_indirect_cycle_three_nodes ... ok
+test validators::event_dag::tests::test_acyclicity_rec_stack_contains_parent ... ok
+test validators::event_dag::tests::test_acyclicity_self_referencing_cycle ... ok
+test validators::event_dag::tests::test_acyclicity_single_event ... ok
+test validators::event_dag::tests::test_acyclicity_unvisited_node_with_cycle ... ok
+test validators::event_dag::tests::test_acyclicity_valid ... ok
+test validators::event_dag::tests::test_acyclicity_with_cycle ... ok
+test validators::event_dag::tests::test_acyclicity_with_shared_parent ... ok
+test validators::event_dag::tests::test_event_invalid_cid_format ... ok
+test validators::event_dag::tests::test_event_missing_cid ... ok
+test validators::event_dag::tests::test_event_missing_payload ... ok
+test validators::event_dag::tests::test_event_genesis_no_parents ... ok
+test validators::event_dag::tests::test_event_missing_timestamp ... ok
+test validators::event_dag::tests::test_event_multiple_parents ... ok
+test validators::event_dag::tests::test_valid_event ... ok
+test validators::cid_artifacts::tests::test_receipt_invalid_cid_format ... ok
+test validators::cid_artifacts::tests::test_valid_receipt ... ok
+test validators::event_dag::tests::test_validator_default ... ok
+test validators::mcp_idl::tests::test_cid_format_empty ... ok
+test validators::mcp_idl::tests::test_cid_format_invalid_prefix ... ok
+test validators::mcp_idl::tests::test_cid_format_invalid_short ... ok
+test validators::mcp_idl::tests::test_cid_format_base32 ... ok
+test validators::mcp_idl::tests::test_cid_format_base58 ... ok
+test validators::mcp_idl::tests::test_interface_descriptor_missing_cid ... ok
+test validators::mcp_idl::tests::test_interface_descriptor_missing_name ... ok
+test validators::mcp_idl::tests::test_interface_descriptor_missing_version ... ok
+test validators::mcp_idl::tests::test_interface_descriptor_invalid_cid ... ok
+test validators::mcp_idl::tests::test_interface_descriptor_empty_tools_warning ... ok
+test validators::mcp_idl::tests::test_interface_descriptor_multiple_tools ... ok
+test validators::mcp_idl::tests::test_interface_descriptor_no_tools ... ok
+test validators::mcp_idl::tests::test_valid_interface_descriptor ... ok
+test validators::mcp_idl::tests::test_validator_default ... ok
+test validators::mcp_idl::tests::test_validate_cid_format ... ok
+test validators::policy_evaluation::tests::test_decision_allow_with_obligations_empty_array ... ok
+test validators::policy_evaluation::tests::test_decision_deny ... ok
+test validators::policy_evaluation::tests::test_decision_allow_with_obligations_none_obligations ... ok
+test validators::policy_evaluation::tests::test_decision_invalid_cid_triggers_serde_valid_error ... ok
+test validators::policy_evaluation::tests::test_decision_missing_field ... ok
+test validators::policy_evaluation::tests::test_decision_with_obligations ... ok
+test validators::policy_evaluation::tests::test_decision_with_obligations_but_empty ... ok
+test validators::policy_evaluation::tests::test_decision_with_obligations_missing ... ok
+test validators::policy_evaluation::tests::test_policy_missing_cid ... ok
+test validators::policy_evaluation::tests::test_policy_missing_type ... ok
+test validators::policy_evaluation::tests::test_decision_with_cid ... ok
+test validators::policy_evaluation::tests::test_policy_invalid_cid_triggers_serde_valid_error ... ok
+test validators::policy_evaluation::tests::test_valid_decision ... ok
+test validators::policy_evaluation::tests::test_policy_empty_rules ... ok
+test validators::policy_evaluation::tests::test_policy_with_temporal ... ok
+test validators::policy_evaluation::tests::test_policy_multiple_rules ... ok
+test validators::policy_evaluation::tests::test_validator_default ... ok
+test validators::transport::tests::test_session_ipv6_address ... ok
+test validators::transport::tests::test_session_empty_session_id_triggers_serde_valid_error ... ok
+test validators::transport::tests::test_session_missing_id ... ok
+test validators::policy_evaluation::tests::test_valid_policy ... ok
+test validators::transport::tests::test_session_missing_peer_addr ... ok
+test validators::transport::tests::test_session_with_p2p_id ... ok
+test validators::transport::tests::test_transport_message_invalid_protocol_id_prefix ... ok
+test validators::transport::tests::test_transport_message_invalid_protocol_id ... ok
+test validators::transport::tests::test_transport_message_large_length ... ok
+test validators::transport::tests::test_transport_message_length_zero ... ok
+test validators::transport::tests::test_transport_message_missing_length ... ok
+test validators::transport::tests::test_transport_message_missing_payload ... ok
+test validators::transport::tests::test_transport_message_missing_protocol_id ... ok
+test validators::transport::tests::test_valid_session ... ok
+test validators::transport::tests::test_validator_default ... ok
+test validators::transport::tests::test_transport_message_zero_length ... ok
+test validators::transport::tests::test_valid_transport_message ... ok
+test validators::ucan_delegation::tests::test_delegation_chain_empty_chain_triggers_serde_valid_error ... ok
+test validators::ucan_delegation::tests::test_delegation_chain_single_token ... ok
+test validators::ucan_delegation::tests::test_delegation_chain_multiple_tokens ... ok
+test validators::ucan_delegation::tests::test_delegation_chain_with_validated_token ... ok
+test validators::ucan_delegation::tests::test_delegation_chain_multiple_invalid_tokens ... ok
+test validators::ucan_delegation::tests::test_ucan_token_aud_not_starting_with_did ... ok
+test validators::ucan_delegation::tests::test_ucan_token_empty_attenuations ... ok
+test validators::ucan_delegation::tests::test_ucan_token_invalid_audience ... ok
+test validators::ucan_delegation::tests::test_ucan_token_missing_audience ... ok
+test validators::ucan_delegation::tests::test_ucan_token_missing_expiry ... ok
+test validators::ucan_delegation::tests::test_ucan_token_invalid_issuer ... ok
+test validators::ucan_delegation::tests::test_ucan_token_missing_issuer ... ok
+test validators::ucan_delegation::tests::test_ucan_token_multiple_attenuations ... ok
+test validators::ucan_delegation::tests::test_ucan_token_with_proof ... ok
+test validators::ucan_delegation::tests::test_valid_delegation_chain ... ok
+test validators::ucan_delegation::tests::test_validator_default ... ok
+test validators::ucan_delegation::tests::test_valid_ucan_token ... ok
+test validators::ucan_delegation::tests::test_ucan_token_iss_not_starting_with_did ... ok
+
+test result: ok. 151 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/coverage_completion_test.rs (target/llvm-cov-target/debug/deps/coverage_completion_test-49783b57982293af)
+
+running 18 tests
+test test_event_dag_missing_parent_reference ... ok
+test test_event_dag_cycle_detection ... ok
+test test_event_dag_no_cycle_already_visited ... ok
+test test_event_dag_node_no_parents ... ok
+test test_event_dag_parent_in_rec_stack ... ok
+test test_is_notification_helper ... ok
+test test_is_request_helper ... ok
+test test_is_response_helper ... ok
+test test_prompt_get_params_validation ... ok
+test test_prompt_get_params_validation_error ... ok
+test test_resource_read_params_validation ... ok
+test test_resource_read_params_validation_error ... ok
+test test_tool_call_params_validation ... ok
+test test_tool_call_params_validation_error ... ok
+test test_validation_result_methods ... ok
+test test_validator_default ... ok
+test test_initialize_params_validation_error ... ok
+test test_initialize_params_validation ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/integration_test.rs (target/llvm-cov-target/debug/deps/integration_test-fa3430cd608c0eb1)
+
+running 14 tests
+test test_base_mcp_valid_notification ... ok
+test test_base_mcp_valid_response ... ok
+test test_base_mcp_valid_request ... ok
+test test_event_dag_valid_event ... ok
+test test_cid_artifacts_valid_envelope ... ok
+test test_mcp_idl_valid_descriptor ... ok
+test test_policy_decision_with_obligations ... ok
+test test_policy_valid_decision ... ok
+test test_transport_valid_session ... ok
+test test_transport_valid_message ... ok
+test test_ucan_valid_delegation_chain ... ok
+test test_cid_artifacts_valid_receipt ... ok
+test test_policy_valid_definition ... ok
+test test_ucan_valid_token ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+Filename                      Regions    Missed Regions     Cover   Functions  Missed Functions  Executed       Lines      Missed Lines     Cover    Branches   Missed Branches     Cover
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+base_mcp.rs                      1042                 4    99.62%          68                 0   100.00%         617                 0   100.00%           0                 0         -
+cid_artifacts.rs                  347                 0   100.00%          22                 0   100.00%         199                 0   100.00%           0                 0         -
+event_dag.rs                      560                 0   100.00%          24                 0   100.00%         358                 0   100.00%           0                 0         -
+mcp_idl.rs                        257                 0   100.00%          20                 0   100.00%         148                 0   100.00%           0                 0         -
+policy_evaluation.rs              365                 0   100.00%          24                 0   100.00%         205                 0   100.00%           0                 0         -
+transport.rs                      312                 0   100.00%          20                 0   100.00%         165                 0   100.00%           0                 0         -
+ucan_delegation.rs                420                 2    99.52%          22                 0   100.00%         266                 0   100.00%           0                 0         -
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL                            3303                 6    99.82%         200                 0   100.00%        1958                 0   100.00%           0                 0         -

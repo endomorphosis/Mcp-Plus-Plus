@@ -17,11 +17,10 @@ Start here: [docs/index.md](docs/index.md)
 ### MCP Implementation Guide
 For practical MCP implementation with examples and tutorials:
 - [Getting Started](GETTING_STARTED.md) - Quick start guide for your first MCP implementation
-- [Architecture](ARCHITECTURE.md) - Deep dive into MCP's design and components
-- [API Reference](API_REFERENCE.md) - Complete API documentation
-- [Best Practices](BEST_PRACTICES.md) - Production-ready implementation patterns
+- [Architecture](docs/ARCHITECTURE.md) - Deep dive into MCP's design and components
+- [API Reference](docs/API_REFERENCE.md) - Complete API documentation
+- [Best Practices](docs/BEST_PRACTICES.md) - Production-ready implementation patterns
 - [Security](SECURITY.md) - Security guidelines and best practices
-- [Examples](examples/) - Sample implementations and use cases
 
 ## 🎯 Quick Overview
 
