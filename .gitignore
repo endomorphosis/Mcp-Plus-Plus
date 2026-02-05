@@ -62,3 +62,9 @@ tests-ts/node_modules/
 **/*.test.ts.bak
 coverage.out
 coverage.html
+
+# Coverage artifacts
+*.lcov
+lcov*.info
+coverage*.txt
+COVERAGE_VERIFICATION.txt
