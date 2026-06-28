@@ -116,8 +116,8 @@ class TestMCPIDLAdditionalCoverage:
             "methods": [
                 {
                     "name": "method1",
-                    "input_schema_cid": "bafy1",
-                    "output_schema_cid": "bafy2"
+                    "input_schema_cid": "bafkreibfslgj3y3sbcalv24u6t4c2fqits6skoncb43vvgretcl7ie5ec4",
+                    "output_schema_cid": "bafkreiaepgospnaf5qeq5w7zr7ljcbujwthz2ocgh7ojnhonrkgteu7gya"
                 }
             ],
             "errors": [],
@@ -138,7 +138,7 @@ class TestMCPIDLAdditionalCoverage:
         """Cover lines 139, 143 - toolset select with budget."""
         validator = MCPIDLValidator()
         params = {
-            "interface_cid": "bafytest",
+            "interface_cid": "bafkreicbodqzax3udku6bezwe4ibqp53poemjm7o7lqjrvkvvxlqg6yzsi",
             "methods": ["method1"],
             "budget": 1000
         }
@@ -149,7 +149,7 @@ class TestMCPIDLAdditionalCoverage:
         """Cover toolset select without budget parameter."""
         validator = MCPIDLValidator()
         params = {
-            "interface_cid": "bafytest",
+            "interface_cid": "bafkreicbodqzax3udku6bezwe4ibqp53poemjm7o7lqjrvkvvxlqg6yzsi",
             "methods": ["method1"]
         }
         result = validator.validate_toolset_select_request(params)
@@ -163,9 +163,9 @@ class TestCIDArtifactsAdditionalCoverage:
         """Cover lines 54, 58, 61-62, 65-66, 71 - envelope parents."""
         validator = CIDExecutionValidator()
         envelope = {
-            "interface_cid": "bafyinterface",
-            "input_cid": "bafyinput",
-            "parents": ["bafyparent1", "bafyparent2", "bafyparent3"]
+            "interface_cid": "bafkreidjbyokd46siupnjtdn5r43zz2ytmp2fnqmfymnvsn7kmzmaoj2hy",
+            "input_cid": "bafkreig7kltat3sk2b6mduv5r6hgl7vk6l6bbpiiv4mkraxfbqu3gvbxie",
+            "parents": ["bafkreihojjgp4soxeawgk64e4vhafpz3kdtlastu5hfnbdv5upb6c2cd7e", "bafkreifyiloqasaswqrluaxwzlyyeftgi2vwfyfe3rahohy4vcpat3vxcq", "bafkreigmix3i4acaodu6sxdwh5jyuppsmy4u7pbpz5k2sr5uzlfx32s36a"]
         }
         result = validator.validate_execution_envelope(envelope)
         assert result.is_valid
@@ -174,10 +174,10 @@ class TestCIDArtifactsAdditionalCoverage:
         """Cover lines 101, 105, 127, 149, 154-155, 159 - receipt validation."""
         validator = CIDExecutionValidator()
         receipt = {
-            "envelope_cid": "bafyenv",
-            "output_cid": "bafyout",
+            "envelope_cid": "bafkreifu5kagbsmrp64xp2ftkyigccmya2qscfubzwualqdgzsxafwyh4m",
+            "output_cid": "bafkreibm7h7zats6yp2s6lcfgor3udqhojwdrivziha2bhuakpm5c6nfui",
             "status": "success",
-            "receipt_cid": "bafyreceipt",
+            "receipt_cid": "bafkreia6qkgszepkk6bb72fkgg5yepxf7iua4nx4vcxeahxjjjjrpofxq4",
             "signature": "sig123",
             "metadata": {"key": "value"}
         }
@@ -240,8 +240,8 @@ class TestEventDAGAdditionalCoverage:
         """Cover lines 40, 57-58, 67-68 - event with parents."""
         validator = EventDAGValidator()
         event = {
-            "event_cid": "bafyevent",
-            "parents": ["bafyparent1", "bafyparent2"],
+            "event_cid": "bafkreigxb2xcukcaszdgdt7avxcafdhgdw3r5zg65np2bunsr6swut2tzq",
+            "parents": ["bafkreihojjgp4soxeawgk64e4vhafpz3kdtlastu5hfnbdv5upb6c2cd7e", "bafkreifyiloqasaswqrluaxwzlyyeftgi2vwfyfe3rahohy4vcpat3vxcq"],
             "timestamp": 1234567890,
             "data": {"action": "test"}
         }
@@ -252,9 +252,9 @@ class TestEventDAGAdditionalCoverage:
         """Cover lines 106-107, 112 - DAG validation."""
         validator = EventDAGValidator()
         events = [
-            {"event_cid": "bafy1", "parents": [], "timestamp": 1000},
-            {"event_cid": "bafy2", "parents": ["bafy1"], "timestamp": 2000},
-            {"event_cid": "bafy3", "parents": ["bafy1", "bafy2"], "timestamp": 3000}
+            {"event_cid": "bafkreibfslgj3y3sbcalv24u6t4c2fqits6skoncb43vvgretcl7ie5ec4", "parents": [], "timestamp": 1000},
+            {"event_cid": "bafkreiaepgospnaf5qeq5w7zr7ljcbujwthz2ocgh7ojnhonrkgteu7gya", "parents": ["bafkreibfslgj3y3sbcalv24u6t4c2fqits6skoncb43vvgretcl7ie5ec4"], "timestamp": 2000},
+            {"event_cid": "bafkreibra3r5nbru56njn52nzuf52s4l5odsbhhavofzoag35scaifpihy", "parents": ["bafkreibfslgj3y3sbcalv24u6t4c2fqits6skoncb43vvgretcl7ie5ec4", "bafkreiaepgospnaf5qeq5w7zr7ljcbujwthz2ocgh7ojnhonrkgteu7gya"], "timestamp": 3000}
         ]
         result = validator.validate_dag(events)
         assert result.is_valid
@@ -287,7 +287,7 @@ class TestUCANDelegationAdditionalCoverage:
         """Cover lines 52-53 - invocation proof validation."""
         validator = UCANDelegationValidator()
         invocation = {
-            "proof_cid": "bafyproof123456"
+            "proof_cid": "bafkreifasx5nj7cwa4n3rflvrfvl5j75jaali5sflrufgoprg3yid4rdg4"
         }
         result = validator.validate_invocation_with_proof(invocation)
         assert result.is_valid
@@ -301,7 +301,7 @@ class TestPolicyEvaluationAdditionalCoverage:
         validator = PolicyEvaluationValidator()
         policy = {
             "type": "permission",
-            "policy_cid": "bafypolicy",
+            "policy_cid": "bafkreib6x4ho6vdn4x7i74ermgmf4zxmoskuex3vwee6rdqvtlbjhvjyfq",
             "temporal_constraints": {
                 "not_before": "2024-01-01T00:00:00Z",
                 "not_after": "2025-01-01T00:00:00Z"
@@ -318,7 +318,7 @@ class TestPolicyEvaluationAdditionalCoverage:
             "decision": "allow_with_obligations",
             "granted": True,
             "evaluated_at": "2024-01-01T00:00:00Z",
-            "decision_cid": "bafydecision",
+            "decision_cid": "bafkreibyco2ekr6e6v2jx3v44zj3mhdosvx337taly535jmwuempxfnsou",
             "obligations": [
                 {"type": "log", "parameters": {"message": "access logged"}}
             ]

@@ -202,7 +202,7 @@ pub struct InterfaceDescriptor {
     pub tools: Vec<ToolDefinition>,
     
     /// CID of this descriptor
-    #[validate(pattern = r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|baf[a-zA-Z0-9]{50,})$")]
+    #[validate(pattern = r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$")]
     pub interface_cid: String,
 }
 
@@ -227,11 +227,11 @@ pub struct ToolDefinition {
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct ExecutionEnvelope {
     /// Interface CID
-    #[validate(pattern = r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|baf[a-zA-Z0-9]{50,})$")]
+    #[validate(pattern = r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$")]
     pub interface_cid: String,
     
     /// Input CID
-    #[validate(pattern = r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|baf[a-zA-Z0-9]{50,})$")]
+    #[validate(pattern = r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$")]
     pub input_cid: String,
     
     /// Parent CIDs (can be empty for genesis)
@@ -246,11 +246,11 @@ pub struct ExecutionEnvelope {
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct ExecutionReceipt {
     /// Envelope CID
-    #[validate(pattern = r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|baf[a-zA-Z0-9]{50,})$")]
+    #[validate(pattern = r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$")]
     pub envelope_cid: String,
     
     /// Output CID
-    #[validate(pattern = r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|baf[a-zA-Z0-9]{50,})$")]
+    #[validate(pattern = r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$")]
     pub output_cid: String,
     
     /// Signature
@@ -258,7 +258,7 @@ pub struct ExecutionReceipt {
     pub signature: String,
     
     /// Receipt CID
-    #[validate(pattern = r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|baf[a-zA-Z0-9]{50,})$")]
+    #[validate(pattern = r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$")]
     pub receipt_cid: String,
 }
 
@@ -310,7 +310,7 @@ pub struct DelegationChain {
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct Policy {
     /// Policy CID
-    #[validate(pattern = r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|baf[a-zA-Z0-9]{50,})$")]
+    #[validate(pattern = r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$")]
     pub policy_cid: String,
     
     /// Policy type
@@ -363,7 +363,7 @@ pub struct PolicyDecision {
     
     /// Optional decision CID
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[validate(pattern = r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|baf[a-zA-Z0-9]{50,})$")]
+    #[validate(pattern = r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$")]
     pub decision_cid: Option<String>,
     
     /// Optional obligations
@@ -427,7 +427,7 @@ pub struct SessionInfo {
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct Event {
     /// Event CID
-    #[validate(pattern = r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|baf[a-zA-Z0-9]{50,})$")]
+    #[validate(pattern = r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$")]
     pub event_cid: String,
     
     /// Parent event CIDs (empty for genesis)

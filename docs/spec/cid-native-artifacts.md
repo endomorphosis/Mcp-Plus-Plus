@@ -19,6 +19,26 @@ A canonicalization pipeline SHOULD include:
 - sorted keys and normalized numeric representations
 - explicit schema/version markers
 
+### 2.1 CID Format (Normative)
+
+CIDs MUST be valid IPFS Content Identifiers and MUST be byte-identical to the
+output of Kubo (`ipfs add --cid-version=1 --raw-leaves`) for the same canonical
+bytes. Two forms are accepted:
+
+- **CIDv1 (preferred):** lowercase multibase base32 (`b` prefix). For 32-byte
+  sha2-256 raw artifacts the string is the multibase encoding of
+  `0x01 0x55 0x12 0x20 <sha256>` and renders as `bafkrei…` (59 chars total).
+- **CIDv0 (legacy):** `Qm…` base58btc, 46 chars.
+
+Conformant validators MUST accept exactly:
+
+```
+^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$
+```
+
+`bafkrei…` examples in this document are abbreviated; real values contain only
+base32 alphabet characters (`a-z2-7`), never `0`, `1`, `8`, or `9`.
+
 ## 3. Artifact Types
 
 The following identifiers are used throughout MCP++:
@@ -40,13 +60,13 @@ The intent object is the minimal, immutable “what I plan to do” description 
 
 ```json
 {
-  "interface_cid": "bafy...",
+  "interface_cid": "bafkrei...",
   "tool": "repo.status",
-  "input_cid": "bafy...",
-  "expected_output_schema_cid": "bafy...",
-  "constraints_policy_cid": "bafy...",
+  "input_cid": "bafkrei...",
+  "expected_output_schema_cid": "bafkrei...",
+  "constraints_policy_cid": "bafkrei...",
   "correlation_id": "uuid-or-nonce",
-  "declared_side_effects": ["bafy...", "capability:write"]
+  "declared_side_effects": ["bafkrei...", "capability:write"]
 }
 ```
 
@@ -62,10 +82,10 @@ A decision is produced by evaluators after verifying proofs and evaluating polic
 ```json
 {
   "decision": "allow" ,
-  "intent_cid": "bafy...",
-  "policy_cid": "bafy...",
-  "proofs_checked": ["bafy..."],
-  "evaluation_witness_cid": "bafy...",
+  "intent_cid": "bafkrei...",
+  "policy_cid": "bafkrei...",
+  "proofs_checked": ["bafkrei..."],
+  "evaluation_witness_cid": "bafkrei...",
   "justification": "human-readable or structured",
   "obligations": [
     {"type": "produce_receipt", "deadline": "2026-02-04T12:00:00Z"}
@@ -90,11 +110,11 @@ Receipts are the immutable outcome record, suitable for audit, disputes, and ris
 
 ```json
 {
-  "intent_cid": "bafy...",
-  "output_cid": "bafy...",
-  "observed_side_effects": ["bafy..."],
-  "proofs_checked": ["bafy..."],
-  "decision_cid": "bafy...",
+  "intent_cid": "bafkrei...",
+  "output_cid": "bafkrei...",
+  "observed_side_effects": ["bafkrei..."],
+  "proofs_checked": ["bafkrei..."],
+  "decision_cid": "bafkrei...",
   "correlation_id": "uuid-or-nonce",
   "time_observed": "2026-02-04T12:34:56Z",
   "signatures": ["..."]
@@ -119,13 +139,13 @@ Events connect intents/decisions/receipts into a provenance and concurrency stru
 
 ```json
 {
-  "parents": ["bafy..."],
-  "interface_cid": "bafy...",
-  "intent_cid": "bafy...",
-  "proof_cid": "bafy...",
-  "decision_cid": "bafy...",
-  "output_cid": "bafy...",
-  "receipt_cid": "bafy...",
+  "parents": ["bafkrei..."],
+  "interface_cid": "bafkrei...",
+  "intent_cid": "bafkrei...",
+  "proof_cid": "bafkrei...",
+  "decision_cid": "bafkrei...",
+  "output_cid": "bafkrei...",
+  "receipt_cid": "bafkrei...",
   "peer_did": "did:key:...",
   "timestamps": {"created": "...", "observed": "..."}
 }

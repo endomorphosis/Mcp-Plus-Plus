@@ -180,9 +180,9 @@ class ExecutionEnvelope(BaseModel):
     """Execution envelope with CID references."""
     model_config = ConfigDict(extra='forbid', strict=True)
     
-    interface_cid: str = Field(..., pattern=r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|baf[a-z0-9]{56})$", 
+    interface_cid: str = Field(..., pattern=r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$", 
                                description="CID of interface descriptor")
-    input_cid: str = Field(..., pattern=r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|baf[a-z0-9]{56})$",
+    input_cid: str = Field(..., pattern=r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$",
                           description="CID of input data")
     parents: List[str] = Field(..., description="Parent envelope CIDs")
     timestamp: str = Field(..., description="ISO 8601 timestamp")
@@ -193,13 +193,13 @@ class ExecutionReceipt(BaseModel):
     """Execution receipt with result."""
     model_config = ConfigDict(extra='forbid', strict=True)
     
-    envelope_cid: str = Field(..., pattern=r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|baf[a-z0-9]{56})$",
+    envelope_cid: str = Field(..., pattern=r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$",
                              description="CID of execution envelope")
-    output_cid: str = Field(..., pattern=r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|baf[a-z0-9]{56})$",
+    output_cid: str = Field(..., pattern=r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$",
                            description="CID of output data")
     success: bool = Field(..., description="Execution success flag")
     decision_cid: Optional[str] = Field(None, 
-                                       pattern=r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|baf[a-z0-9]{56})$",
+                                       pattern=r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$",
                                        description="CID of policy decision")
     signature: Optional[str] = Field(None, description="Receipt signature")
 
@@ -225,7 +225,7 @@ class DelegationChain(BaseModel):
     
     root: UCANToken = Field(..., description="Root UCAN token")
     chain: List[UCANToken] = Field(default_factory=list, description="Delegation chain")
-    proof_cid: str = Field(..., pattern=r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|baf[a-z0-9]{56})$",
+    proof_cid: str = Field(..., pattern=r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$",
                           description="CID of proof chain")
 
 
@@ -273,7 +273,7 @@ class PolicyDecision(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True)
     
     decision: DecisionType = Field(..., description="Decision type")
-    policy_cid: str = Field(..., pattern=r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|baf[a-z0-9]{56})$",
+    policy_cid: str = Field(..., pattern=r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$",
                            description="CID of evaluated policy")
     obligations: Optional[List[Dict[str, Any]]] = Field(None, description="Spawned obligations")
     witness: Optional[Dict[str, Any]] = Field(None, description="Evaluation witness data")
@@ -297,7 +297,7 @@ class DAGEvent(BaseModel):
     model_config = ConfigDict(extra='allow', strict=True)
     
     event_type: EventType = Field(..., description="Event type")
-    event_cid: str = Field(..., pattern=r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|baf[a-z0-9]{56})$",
+    event_cid: str = Field(..., pattern=r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$",
                           description="CID of this event")
     parents: List[str] = Field(..., description="Parent event CIDs")
     timestamp: str = Field(..., description="ISO 8601 timestamp")

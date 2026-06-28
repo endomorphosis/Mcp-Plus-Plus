@@ -125,12 +125,11 @@ class CIDExecutionValidator:
         """
         if not isinstance(cid, str):
             return False
-        
-        # CIDv1 typically starts with 'bafy' (base32) or 'bafk' (base32)
-        # This is a simplified check
-        return (cid.startswith('bafy') or 
-                cid.startswith('bafk') or 
-                cid.startswith('Qm'))  # CIDv0
+
+        # Canonical: CIDv1 base32 (b + 58 [a-z2-7]) or legacy CIDv0 (Qm...).
+        # Matches real Kubo `ipfs add --cid-version=1` output (e.g. bafkrei...).
+        import re as _re
+        return bool(_re.match(r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$", cid))
     
     def validate_cid_invocation(self, invocation: Dict[str, Any]) -> ValidationResult:
         """

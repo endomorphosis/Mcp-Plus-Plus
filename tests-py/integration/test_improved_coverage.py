@@ -138,8 +138,8 @@ class TestMCPIDLCoverageImprovement:
                     "name": "test_method",
                     "params": [],
                     "returns": {},
-                    "input_schema_cid": "bafyinput123",
-                    "output_schema_cid": "bafyoutput456"
+                    "input_schema_cid": "bafkreiartjhws7nsavw2ojunf63y47aqwwci36tqqwzuq4rvwidhzzhg3e",
+                    "output_schema_cid": "bafkreigqm6ti2qyc4e7s44dj2lgepf44kyocl3idl62t2r4ted7igwrzze"
                 }
             ]
         }
@@ -163,7 +163,7 @@ class TestMCPIDLCoverageImprovement:
         """Target lines 105-106, 118-119, 126."""
         validator = MCPIDLValidator()
         # Pass params directly
-        params = {"interface_cid": "bafytest123"}
+        params = {"interface_cid": "bafkreiaqwbyri5n5dfq32zjeiwe2bzpmwktt3hr4bwvyrbzjq4lp7ykubm"}
         result = validator.validate_interface_get_request(params)
         assert result.is_valid
     
@@ -171,7 +171,7 @@ class TestMCPIDLCoverageImprovement:
         """Target lines 221-226."""
         validator = MCPIDLValidator()
         # Pass params directly
-        params = {"interface_cid": "bafytest123", "candidate_cids": ["bafytest456"]}
+        params = {"interface_cid": "bafkreiaqwbyri5n5dfq32zjeiwe2bzpmwktt3hr4bwvyrbzjq4lp7ykubm", "candidate_cids": ["bafkreihutvdbnyrvwxpbqp2ssw2t77vw6wpptxmcfjqrzlj2z57whben4u"]}
         result = validator.validate_interface_compat_request(params)
         assert result.is_valid
     
@@ -183,7 +183,7 @@ class TestMCPIDLCoverageImprovement:
             "jsonrpc": "2.0",
             "method": "interfaces/select",
             "params": {
-                "interface_cid": "bafytest123",
+                "interface_cid": "bafkreiaqwbyri5n5dfq32zjeiwe2bzpmwktt3hr4bwvyrbzjq4lp7ykubm",
                 "methods": ["method1"],
                 "budget": 100
             },
@@ -201,8 +201,8 @@ class TestCIDArtifactsCoverageImprovement:
         validator = CIDExecutionValidator()
         # Valid envelope
         envelope = {
-            "interface_cid": "bafytest123",
-            "input_cid": "bafyinput456",
+            "interface_cid": "bafkreiaqwbyri5n5dfq32zjeiwe2bzpmwktt3hr4bwvyrbzjq4lp7ykubm",
+            "input_cid": "bafkreigoqjtgmmkhwd5elifk4ggzwals3wfiankxnhnylm6lh67mtjwz3a",
             "parents": []
         }
         result = validator.validate_execution_envelope(envelope)
@@ -210,9 +210,9 @@ class TestCIDArtifactsCoverageImprovement:
         
         # With parents
         envelope_with_parents = {
-            "interface_cid": "bafytest123",
-            "input_cid": "bafyinput456",
-            "parents": ["bafyparent1", "bafyparent2"]
+            "interface_cid": "bafkreiaqwbyri5n5dfq32zjeiwe2bzpmwktt3hr4bwvyrbzjq4lp7ykubm",
+            "input_cid": "bafkreigoqjtgmmkhwd5elifk4ggzwals3wfiankxnhnylm6lh67mtjwz3a",
+            "parents": ["bafkreihojjgp4soxeawgk64e4vhafpz3kdtlastu5hfnbdv5upb6c2cd7e", "bafkreifyiloqasaswqrluaxwzlyyeftgi2vwfyfe3rahohy4vcpat3vxcq"]
         }
         result2 = validator.validate_execution_envelope(envelope_with_parents)
         assert result2.is_valid
@@ -222,20 +222,20 @@ class TestCIDArtifactsCoverageImprovement:
         validator = CIDExecutionValidator()
         # Valid receipt
         receipt = {
-            "envelope_cid": "bafyenv123",
-            "output_cid": "bafyoutput456",
+            "envelope_cid": "bafkreied2sjswldvx6fclq65v3pltvby2s5ilt6tsxfbbzrbnhtetssv6q",
+            "output_cid": "bafkreigqm6ti2qyc4e7s44dj2lgepf44kyocl3idl62t2r4ted7igwrzze",
             "status": "success",
-            "receipt_cid": "bafyreceipt789"
+            "receipt_cid": "bafkreiffgsrf2h4tljh3osbo47bzjerrggux66h7eovi3lzwjgiupvkeom"
         }
         result = validator.validate_execution_receipt(receipt)
         assert result.is_valid
         
         # With signature
         receipt_with_sig = {
-            "envelope_cid": "bafyenv123",
-            "output_cid": "bafyoutput456",
+            "envelope_cid": "bafkreied2sjswldvx6fclq65v3pltvby2s5ilt6tsxfbbzrbnhtetssv6q",
+            "output_cid": "bafkreigqm6ti2qyc4e7s44dj2lgepf44kyocl3idl62t2r4ted7igwrzze",
             "status": "success",
-            "receipt_cid": "bafyreceipt789",
+            "receipt_cid": "bafkreiffgsrf2h4tljh3osbo47bzjerrggux66h7eovi3lzwjgiupvkeom",
             "signature": "base64_signature_data"
         }
         result2 = validator.validate_execution_receipt(receipt_with_sig)
@@ -291,7 +291,7 @@ class TestEventDAGCoverageImprovement:
         validator = EventDAGValidator()
         # Genesis event
         event = {
-            "event_cid": "bafyevent123",
+            "event_cid": "bafkreifs6437h4x6goqsvg4rsvoj6ksho4v3itfpl45j4uupx6kbdqx2pm",
             "parents": [],
             "timestamp": 1234567890
         }
@@ -300,8 +300,8 @@ class TestEventDAGCoverageImprovement:
         
         # Event with parents
         event2 = {
-            "event_cid": "bafyevent456",
-            "parents": ["bafyevent123"],
+            "event_cid": "bafkreigdrjxwv4coquzxcjwiggvikgss2lfeew5wyb3igukhb3fs23mppe",
+            "parents": ["bafkreifs6437h4x6goqsvg4rsvoj6ksho4v3itfpl45j4uupx6kbdqx2pm"],
             "timestamp": 1234567891
         }
         result2 = validator.validate_event(event2)
@@ -313,13 +313,13 @@ class TestEventDAGCoverageImprovement:
         # Valid DAG - pass as list directly
         events = [
             {
-                "event_cid": "bafyevent1",
+                "event_cid": "bafkreiap5wdtqdwj2x2ofbnp5dtho5n6vbwteow4rc2kptycuobcxztmry",
                 "parents": [],
                 "timestamp": 1000
             },
             {
-                "event_cid": "bafyevent2",
-                "parents": ["bafyevent1"],
+                "event_cid": "bafkreih5gjtpncidoelji7muat6ny6yps5g5m5iwj6oqba3bnkb34p77tu",
+                "parents": ["bafkreiap5wdtqdwj2x2ofbnp5dtho5n6vbwteow4rc2kptycuobcxztmry"],
                 "timestamp": 2000
             }
         ]
@@ -350,7 +350,7 @@ class TestUCANDelegationCoverageImprovement:
         validator = UCANDelegationValidator()
         # Valid invocation
         invocation = {
-            "proof_cid": "bafyproof123"
+            "proof_cid": "bafkreihmkvnkm57jc4t7p2krazqv4e55t5uvgqgkxyqvoabxzg7pbkdfvm"
         }
         result = validator.validate_invocation_with_proof(invocation)
         assert result.is_valid
@@ -365,7 +365,7 @@ class TestPolicyEvaluationCoverageImprovement:
         # Policy with all optional fields
         policy = {
             "type": "permission",
-            "policy_cid": "bafypolicy123",
+            "policy_cid": "bafkreicehycie35cdgxhaytpcjmubggqlmzvbzinszfecypw7uxqxidqcq",
             "temporal_constraints": {
                 "not_before": "2024-01-01T00:00:00Z",
                 "not_after": "2024-12-31T23:59:59Z"

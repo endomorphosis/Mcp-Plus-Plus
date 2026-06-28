@@ -221,7 +221,7 @@ export function isRequest(
 type CID = string & { readonly __brand: 'CID' };
 
 function validateCID(value: string): CID {
-  if (!/^(Qm[1-9A-HJ-NP-Za-km-z]{44}|baf[a-z0-9]{56})$/.test(value)) {
+  if (!/^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$/.test(value)) {
     throw new Error('Invalid CID');
   }
   return value as CID;

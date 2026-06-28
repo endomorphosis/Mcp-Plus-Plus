@@ -11,7 +11,7 @@ use serde_json::Value;
 use serde_valid::Validate;
 
 lazy_static! {
-    static ref CID_REGEX: Regex = Regex::new(r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|baf[a-zA-Z0-9]{50,})$").unwrap();
+    static ref CID_REGEX: Regex = Regex::new(r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$").unwrap();
 }
 
 /// MCP-IDL Validator

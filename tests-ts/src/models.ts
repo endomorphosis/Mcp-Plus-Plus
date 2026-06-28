@@ -139,7 +139,7 @@ export type InterfaceDescriptor = z.infer<typeof InterfaceDescriptorSchema>;
 // CID Artifacts (Profile B) Models
 // ============================================================================
 
-const CIDPattern = /^(Qm[1-9A-HJ-NP-Za-km-z]{44}|baf[a-z0-9]{56})$/;
+const CIDPattern = /^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$/;
 
 export const ExecutionEnvelopeSchema = z.object({
   interface_cid: z.string().regex(CIDPattern),

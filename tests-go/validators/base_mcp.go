@@ -32,7 +32,7 @@ func NewBaseMCPValidator() *BaseMCPValidator {
 
 // validateCID validates that a string is a valid CID format.
 func validateCID(fl validator.FieldLevel) bool {
-	cidPattern := regexp.MustCompile(`^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[A-Za-z2-7]{58}|z[1-9A-HJ-NP-Za-km-z]{48})$`)
+	cidPattern := regexp.MustCompile(`^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58}|z[1-9A-HJ-NP-Za-km-z]{48})$`)
 	return cidPattern.MatchString(fl.Field().String())
 }
 

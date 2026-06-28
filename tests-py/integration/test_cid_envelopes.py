@@ -20,10 +20,10 @@ class TestCIDExecutionArtifacts:
     def test_valid_execution_envelope(self, validator):
         """Test validation of a valid execution envelope."""
         envelope = {
-            "interface_cid": "bafyinterface123",
-            "input_cid": "bafyinput456",
-            "intent_cid": "bafyintent789",
-            "parents": ["bafyparent1", "bafyparent2"]
+            "interface_cid": "bafkreiapj52u5hi7pco5ebplvecv72olbnqglg2e7emwnmme4gguzsnpu4",
+            "input_cid": "bafkreigoqjtgmmkhwd5elifk4ggzwals3wfiankxnhnylm6lh67mtjwz3a",
+            "intent_cid": "bafkreigtbhe57yqgt5zdwkqk3xdkkpbqmnt77ol62rluu5kvdrxj76tzgi",
+            "parents": ["bafkreihojjgp4soxeawgk64e4vhafpz3kdtlastu5hfnbdv5upb6c2cd7e", "bafkreifyiloqasaswqrluaxwzlyyeftgi2vwfyfe3rahohy4vcpat3vxcq"]
         }
         
         result = validator.validate_execution_envelope(envelope)
@@ -34,7 +34,7 @@ class TestCIDExecutionArtifacts:
     def test_missing_required_fields(self, validator):
         """Test that missing required fields are detected."""
         envelope = {
-            "intent_cid": "bafyintent789"
+            "intent_cid": "bafkreigtbhe57yqgt5zdwkqk3xdkkpbqmnt77ol62rluu5kvdrxj76tzgi"
         }
         
         result = validator.validate_execution_envelope(envelope)
@@ -46,7 +46,7 @@ class TestCIDExecutionArtifacts:
         """Test that invalid CID format is detected."""
         envelope = {
             "interface_cid": "not-a-valid-cid",
-            "input_cid": "bafyinput456"
+            "input_cid": "bafkreigoqjtgmmkhwd5elifk4ggzwals3wfiankxnhnylm6lh67mtjwz3a"
         }
         
         result = validator.validate_execution_envelope(envelope)
@@ -57,9 +57,9 @@ class TestCIDExecutionArtifacts:
     def test_parents_array_validation(self, validator):
         """Test validation of parents array."""
         envelope = {
-            "interface_cid": "bafyinterface123",
-            "input_cid": "bafyinput456",
-            "parents": ["bafyparent1", "invalid-parent"]
+            "interface_cid": "bafkreiapj52u5hi7pco5ebplvecv72olbnqglg2e7emwnmme4gguzsnpu4",
+            "input_cid": "bafkreigoqjtgmmkhwd5elifk4ggzwals3wfiankxnhnylm6lh67mtjwz3a",
+            "parents": ["bafkreihojjgp4soxeawgk64e4vhafpz3kdtlastu5hfnbdv5upb6c2cd7e", "invalid-parent"]
         }
         
         result = validator.validate_execution_envelope(envelope)
@@ -70,8 +70,8 @@ class TestCIDExecutionArtifacts:
     def test_valid_execution_receipt(self, validator):
         """Test validation of a valid execution receipt."""
         receipt = {
-            "output_cid": "bafyoutput123",
-            "receipt_cid": "bafyreceipt456",
+            "output_cid": "bafkreiclrltegoplfz2o3djv7ydnyrozwrr5zkgw6lxmnzaxd7pnqdt62u",
+            "receipt_cid": "bafkreif5oexc3wdpabmikptk5lvk6ireyzfyhuuwa2znh7bxbxtvpytfpy",
             "signature": "0x123abc..."
         }
         
@@ -84,7 +84,7 @@ class TestCIDExecutionArtifacts:
     def test_receipt_missing_fields(self, validator):
         """Test that receipt without required fields fails."""
         receipt = {
-            "output_cid": "bafyoutput123"
+            "output_cid": "bafkreiclrltegoplfz2o3djv7ydnyrozwrr5zkgw6lxmnzaxd7pnqdt62u"
             # Missing receipt_cid
         }
         
@@ -97,8 +97,8 @@ class TestCIDExecutionArtifacts:
         """Test validation of CID-wrapped invocation."""
         invocation = {
             "envelope": {
-                "interface_cid": "bafyinterface123",
-                "input_cid": "bafyinput456"
+                "interface_cid": "bafkreiapj52u5hi7pco5ebplvecv72olbnqglg2e7emwnmme4gguzsnpu4",
+                "input_cid": "bafkreigoqjtgmmkhwd5elifk4ggzwals3wfiankxnhnylm6lh67mtjwz3a"
             },
             "invocation": {
                 "method": "tools/call",
