@@ -45,6 +45,13 @@ Normative keywords **MUST**, **SHOULD**, and **MAY** are used as described in RF
 
 MCP++ profiles are negotiated during MCP initialization using existing capability negotiation mechanisms. Implementations that do not support MCP++ MUST continue to interoperate using baseline MCP semantics.
 
+The `initialize` handshake is normative: clients send `InitializeParams`
+(`protocolVersion` `2024-11-05`, `clientInfo`, `capabilities` with desired
+profiles under `capabilities.experimental` as `{"mcp++/<profile>": true}`); the
+server replies with `InitializeResult` (`protocolVersion`, `serverInfo`,
+`capabilities.experimental` echoing the supported subset). Both shapes are
+validated by the `InitializeParams`/`InitializeResult` spec models.
+
 No MCP++ profile modifies or invalidates existing MCP JSON-RPC message formats.
 
 ---

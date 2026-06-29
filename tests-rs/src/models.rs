@@ -116,6 +116,19 @@ pub struct ClientInfo {
 /// Server information (alias for ClientInfo)
 pub type ServerInfo = ClientInfo;
 
+/// Initialize result (server -> client handshake). mcp++ profiles negotiated
+/// under capabilities.experimental as { "mcp++/<profile>": true }.
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+pub struct InitializeResult {
+    /// Protocol version (e.g. 2024-11-05)
+    #[validate(min_length = 1)]
+    pub protocol_version: String,
+    /// Server capabilities
+    pub capabilities: Capabilities,
+    /// Server information
+    pub server_info: ServerInfo,
+}
+
 /// MCP Capabilities
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Capabilities {

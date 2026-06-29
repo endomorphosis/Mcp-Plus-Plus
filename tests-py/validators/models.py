@@ -109,6 +109,21 @@ class InitializeParams(BaseModel):
     clientInfo: ClientInfo = Field(..., description="Client information")
 
 
+class InitializeResult(BaseModel):
+    """Result of an initialize request (server -> client handshake).
+
+    De-facto interop shape from ipfs_accelerate_py, ipfs_datasets_py and
+    SwissKnife. MCP++ capability negotiation is carried under
+    capabilities.experimental as a map of `mcp++/<profile>` -> True; clients
+    advertise desired profiles and servers echo the supported subset.
+    """
+    model_config = ConfigDict(extra='allow', strict=True)
+
+    protocolVersion: str = Field(..., min_length=1, description="Protocol version (e.g. 2024-11-05)")
+    capabilities: Capabilities = Field(..., description="Server capabilities (mcp++ under experimental)")
+    serverInfo: ServerInfo = Field(..., description="Server information")
+
+
 class ToolCallParams(BaseModel):
     """Parameters for tools/call request."""
     model_config = ConfigDict(extra='forbid', strict=True)

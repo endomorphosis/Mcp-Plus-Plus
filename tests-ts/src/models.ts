@@ -84,6 +84,15 @@ export const InitializeParamsSchema = z.object({
 }).passthrough();
 export type InitializeParams = z.infer<typeof InitializeParamsSchema>;
 
+// Server -> client handshake result. mcp++ profiles negotiated under
+// capabilities.experimental as { "mcp++/<profile>": true }.
+export const InitializeResultSchema = z.object({
+  protocolVersion: z.string().min(1),
+  capabilities: CapabilitiesSchema,
+  serverInfo: ServerInfoSchema,
+}).passthrough();
+export type InitializeResult = z.infer<typeof InitializeResultSchema>;
+
 export const ToolCallParamsSchema = z.object({
   name: z.string().min(1),
   arguments: z.record(z.any()).default({}),
