@@ -46,8 +46,8 @@ An Interface Descriptor MUST include enough information for clients to:
 - `name`: stable human identifier
 - `namespace`: grouping / ownership scope
 - `version`: descriptor version (semantic versioning recommended)
-- `methods[]`: method signatures and their input/output schemas
-- `errors[]`: error types surfaced by the interface
+- `methods[]`: method signatures, each with `name`, inline `input_schema`/`output_schema`, optional `errors[]` (string names), and `streaming`
+- `errors[]`: interface-level error names (strings)
 - `requires[]`: required capabilities/extensions
 - `compatibility`: compatibility metadata (e.g., `compatible_with[]`, `supersedes[]`)
 
@@ -69,16 +69,17 @@ An Interface Descriptor MUST include enough information for clients to:
   "methods": [
     {
       "name": "repo.status",
-      "input_schema_cid": "bafy...",
-      "output_schema_cid": "bafy...",
-      "error_schema_cids": ["bafy..."]
+      "input_schema": {"type": "object", "properties": {"path": {"type": "string"}}},
+      "output_schema": {"type": "object"},
+      "errors": ["NotFound", "Unauthorized"],
+      "streaming": false
     }
   ],
-  "errors": [{"name": "NotFound"}, {"name": "Unauthorized"}],
+  "errors": ["NotFound", "Unauthorized"],
   "requires": ["mcp++/cid-envelope", "mcp++/ucan"],
   "compatibility": {
-    "compatible_with": ["bafy..."],
-    "supersedes": ["bafy..."]
+    "compatible_with": ["bafkrei..."],
+    "supersedes": ["bafkrei..."]
   },
   "semantic_tags": ["vcs", "git"],
   "observability": {"trace": true, "provenance": true},

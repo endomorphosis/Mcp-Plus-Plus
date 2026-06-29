@@ -343,8 +343,8 @@ describe('MCP-IDL Validator', () => {
       methods: [
         {
           name: 'add',
-          params: { x: 'number', y: 'number' },
-          returns: { result: 'number' },
+          input_schema: { x: 'number', y: 'number' },
+          output_schema: { result: 'number' },
         },
       ],
       errors: [],

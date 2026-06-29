@@ -139,11 +139,13 @@ class PromptGetParams(BaseModel):
 class MethodDescriptor(BaseModel):
     """Method descriptor for MCP-IDL."""
     model_config = ConfigDict(extra='allow', strict=True)
-    
+
     name: str = Field(..., min_length=1, description="Method name")
-    params: Dict[str, Any] = Field(..., description="Parameter schema")
-    returns: Dict[str, Any] = Field(..., description="Return type schema")
+    input_schema: Dict[str, Any] = Field(..., description="Input parameter schema")
+    output_schema: Dict[str, Any] = Field(..., description="Output/return schema")
     description: Optional[str] = Field(None, description="Method description")
+    errors: List[str] = Field(default_factory=list, description="Error names this method may raise")
+    streaming: bool = Field(False, description="Whether the method streams output")
 
 
 class ErrorDescriptor(BaseModel):
@@ -163,12 +165,12 @@ class InterfaceDescriptor(BaseModel):
     namespace: str = Field(..., min_length=1, description="Interface namespace")
     version: str = Field(..., min_length=1, description="Semantic version")
     methods: List[MethodDescriptor] = Field(..., min_length=1, description="Method descriptors")
-    errors: List[ErrorDescriptor] = Field(..., description="Error descriptors")
+    errors: List[str] = Field(default_factory=list, description="Interface-level error names")
     requires: List[str] = Field(default_factory=list, description="Required interfaces")
-    compatibility: Dict[str, Any] = Field(..., description="Compatibility constraints")
+    compatibility: Dict[str, Any] = Field(default_factory=dict, description="Compatibility constraints")
     semantic_tags: Optional[List[str]] = Field(None, description="Semantic tags")
     observability: Optional[Dict[str, Any]] = Field(None, description="Observability config")
-    interaction_patterns: Optional[List[str]] = Field(None, description="Interaction patterns")
+    interaction_patterns: Optional[Union[List[str], Dict[str, Any]]] = Field(None, description="Interaction patterns")
     resource_cost_hints: Optional[Dict[str, Any]] = Field(None, description="Resource cost hints")
 
 

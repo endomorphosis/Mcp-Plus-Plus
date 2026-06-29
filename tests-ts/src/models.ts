@@ -107,9 +107,11 @@ export type PromptGetParams = z.infer<typeof PromptGetParamsSchema>;
 
 export const MethodDescriptorSchema = z.object({
   name: z.string().min(1),
-  params: z.record(z.any()),
-  returns: z.record(z.any()),
+  input_schema: z.record(z.any()),
+  output_schema: z.record(z.any()),
   description: z.string().optional(),
+  errors: z.array(z.string()).default([]),
+  streaming: z.boolean().default(false),
 }).passthrough();
 export type MethodDescriptor = z.infer<typeof MethodDescriptorSchema>;
 
@@ -125,12 +127,12 @@ export const InterfaceDescriptorSchema = z.object({
   namespace: z.string().min(1),
   version: z.string().min(1),
   methods: z.array(MethodDescriptorSchema).min(1),
-  errors: z.array(ErrorDescriptorSchema),
+  errors: z.array(z.string()).default([]),
   requires: z.array(z.string()).default([]),
-  compatibility: z.record(z.any()),
+  compatibility: z.record(z.any()).default({}),
   semantic_tags: z.array(z.string()).optional(),
   observability: z.record(z.any()).optional(),
-  interaction_patterns: z.array(z.string()).optional(),
+  interaction_patterns: z.union([z.array(z.string()), z.record(z.any())]).optional(),
   resource_cost_hints: z.record(z.any()).optional(),
 }).passthrough();
 export type InterfaceDescriptor = z.infer<typeof InterfaceDescriptorSchema>;
