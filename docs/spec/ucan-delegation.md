@@ -51,6 +51,23 @@ At execution time, an invocation SHOULD include:
 - `policy_cid` (if richer constraints are evaluated via deontic policy)
 - `context_cids[]` (state snapshots / relevant prior events)
 
+## 5a. Delegation Wire Record (Normative)
+
+Two interoperable forms exist and third parties MUST accept both:
+
+1. **UCAN token shorthand** — `iss`, `aud`, `att`, `exp`, `prf` (raw UCAN standard).
+2. **Full-name delegation record** — the de-facto shape emitted by
+   ipfs_accelerate_py, ipfs_datasets_py and SwissKnife. Fields:
+   - `issuer` (←`iss`), `audience` (←`aud`), `capabilities` (←`att`, list of
+     `{resource, ability}`) — REQUIRED
+   - `expiry` (←`exp`, epoch seconds; `null` = no expiry), `not_before`,
+     `proof_cid` (single bundle CID), `proof_cids` (parent delegation CIDs),
+     `nonce`, `cid` (CID of this record) — OPTIONAL
+   - `expiration` is accepted as an alias of `expiry`.
+
+Validators MUST tolerate either form; the full-name record is validated by
+`Delegation` (py/ts) which permits extra fields for forward compatibility.
+
 ## 6. Execution-Time Validation (Normative)
 
 Implementations MUST validate delegation proofs at execution time.

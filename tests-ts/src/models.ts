@@ -181,6 +181,21 @@ export const DelegationChainSchema = z.object({
 }).strict();
 export type DelegationChain = z.infer<typeof DelegationChainSchema>;
 
+// Canonical wire delegation (full-name form used by servers + SwissKnife).
+// iss/aud/att/exp UCAN tokens map: issuer←iss, audience←aud, capabilities←att, expiry←exp.
+export const DelegationSchema = z.object({
+  issuer: z.string().min(1),
+  audience: z.string().min(1),
+  capabilities: z.array(z.record(z.any())).min(1),
+  expiry: z.number().int().nullable().optional(),
+  not_before: z.number().int().nullable().optional(),
+  proof_cid: z.string().nullable().optional(),
+  proof_cids: z.array(z.string()).nullable().optional(),
+  nonce: z.string().nullable().optional(),
+  cid: z.string().nullable().optional(),
+}).passthrough();
+export type Delegation = z.infer<typeof DelegationSchema>;
+
 // ============================================================================
 // Policy Evaluation (Profile D) Models
 // ============================================================================

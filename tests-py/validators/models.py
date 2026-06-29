@@ -231,6 +231,26 @@ class DelegationChain(BaseModel):
                           description="CID of proof chain")
 
 
+class Delegation(BaseModel):
+    """Canonical wire delegation record (full-name form used by servers/clients).
+
+    This is the interoperable shape emitted by ipfs_accelerate_py, ipfs_datasets_py
+    and SwissKnife. `iss/aud/att/exp` UCAN tokens map onto these full names:
+    issuer←iss, audience←aud, capabilities←att, expiry←exp, proof chain←prf.
+    """
+    model_config = ConfigDict(extra='allow', strict=True)
+
+    issuer: str = Field(..., min_length=1, description="Issuer DID")
+    audience: str = Field(..., min_length=1, description="Audience DID")
+    capabilities: List[Dict[str, Any]] = Field(..., min_length=1, description="Capabilities [{resource, ability}]")
+    expiry: Optional[int] = Field(None, description="Expiration epoch seconds (None = no expiry)")
+    not_before: Optional[int] = Field(None, description="Not-before epoch seconds")
+    proof_cid: Optional[str] = Field(None, description="Single proof bundle CID")
+    proof_cids: Optional[List[str]] = Field(None, description="Parent delegation CIDs")
+    nonce: Optional[str] = Field(None, description="Replay-protection nonce")
+    cid: Optional[str] = Field(None, description="CID of this delegation record")
+
+
 # ============================================================================
 # Policy Evaluation (Profile D) Models
 # ============================================================================
