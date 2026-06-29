@@ -409,7 +409,35 @@ pub struct TransportMessage {
     pub payload: serde_json::Value,
 }
 
-/// Session information
+/// Application-level message over /mcp+p2p/1.0.0 (4-byte BE length prefix + JSON).
+/// De-facto interop shape from ipfs_accelerate_py / ipfs_datasets_py.
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+pub struct P2PMessage {
+    /// request|response|notification|event
+    #[validate(min_length = 1)]
+    pub r#type: String,
+    /// JSON-RPC method (requests)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub method: Option<String>,
+    /// Method params
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub params: Option<serde_json::Value>,
+    /// Correlation id
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    /// Result (responses)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub result: Option<serde_json::Value>,
+    /// Error string (responses)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+    /// Sender peer id
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sender: Option<String>,
+    /// Emit time
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<serde_json::Value>,
+}
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct SessionInfo {
     /// Session ID

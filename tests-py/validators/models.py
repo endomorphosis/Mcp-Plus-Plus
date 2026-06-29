@@ -366,3 +366,31 @@ class TransportSession(BaseModel):
     state: SessionState = Field(..., description="Current state")
     peer_address: str = Field(..., description="Peer multiaddr")
     capabilities: Optional[Dict[str, Any]] = Field(None, description="Negotiated capabilities")
+
+
+class P2PMessageType(str, Enum):
+    """Application-level P2P message kinds."""
+    REQUEST = "request"
+    RESPONSE = "response"
+    NOTIFICATION = "notification"
+    EVENT = "event"
+
+
+class P2PMessage(BaseModel):
+    """Canonical application-level message over /mcp+p2p/1.0.0.
+
+    De-facto interop shape emitted by ipfs_accelerate_py and ipfs_datasets_py:
+    a 4-byte big-endian length prefix followed by this JSON body. Type values
+    accept strings for forward compatibility. SwissKnife's payload-bundled
+    variant (type/id/payload) is permitted via extra='allow'.
+    """
+    model_config = ConfigDict(extra='allow', strict=True)
+
+    type: Union[P2PMessageType, str] = Field(..., description="request|response|notification|event")
+    method: Optional[str] = Field(None, description="JSON-RPC method (requests)")
+    params: Optional[Dict[str, Any]] = Field(None, description="Method params")
+    id: Optional[str] = Field(None, description="Correlation id")
+    result: Optional[Any] = Field(None, description="Result (responses)")
+    error: Optional[str] = Field(None, description="Error string (responses)")
+    sender: Optional[str] = Field(None, description="Sender peer id")
+    timestamp: Optional[Union[int, float, str]] = Field(None, description="Emit time")

@@ -94,6 +94,21 @@ One simple choice is:
 
 Receivers should reject frames larger than a configured maximum (for example, 1–16 MiB depending on deployment needs).
 
+### 5.1 Canonical Application Message Body (`P2PMessage`)
+
+The reference implementations (ipfs_accelerate_py, ipfs_datasets_py, SwissKnife)
+carry an application-level envelope inside each frame, validated by `P2PMessage`
+in the spec validators. The body is UTF-8 JSON with:
+
+- `type` — `request` | `response` | `notification` | `event` (REQUIRED; strings tolerated)
+- `method`, `params`, `id` — request fields (OPTIONAL)
+- `result`, `error` — response fields (OPTIONAL; `error` is a string)
+- `sender` — origin peer id (OPTIONAL)
+- `timestamp` — epoch seconds or ISO-8601 (OPTIONAL)
+
+Default frame cap is 16 MiB. Validators permit extra fields so payload-bundled
+variants (e.g. `{type, id, payload}`) remain interoperable.
+
 ## 6. Optional Event Dissemination
 
 Implementations MAY publish/subscribe to topics for:

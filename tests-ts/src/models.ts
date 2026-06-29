@@ -287,3 +287,19 @@ export const TransportSessionSchema = z.object({
   capabilities: z.record(z.any()).optional(),
 }).passthrough();
 export type TransportSession = z.infer<typeof TransportSessionSchema>;
+
+// Canonical application-level message over /mcp+p2p/1.0.0 (4-byte big-endian
+// length prefix + this JSON body). De-facto shape from ipfs_accelerate_py /
+// ipfs_datasets_py; SwissKnife's payload-bundled variant passes via passthrough.
+export const P2PMessageTypeSchema = z.enum(['request', 'response', 'notification', 'event']);
+export const P2PMessageSchema = z.object({
+  type: z.union([P2PMessageTypeSchema, z.string()]),
+  method: z.string().nullable().optional(),
+  params: z.record(z.any()).nullable().optional(),
+  id: z.string().nullable().optional(),
+  result: z.any().optional(),
+  error: z.string().nullable().optional(),
+  sender: z.string().nullable().optional(),
+  timestamp: z.union([z.number(), z.string()]).nullable().optional(),
+}).passthrough();
+export type P2PMessage = z.infer<typeof P2PMessageSchema>;
