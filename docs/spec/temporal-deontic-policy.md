@@ -78,6 +78,18 @@ Archive phrasing (literal): return decision_cid (content addressed + optionally 
 
 Decisions SHOULD be signed by evaluators.
 
+### 5.1 Wire Decision Result (Normative)
+
+The `mcp++/policy/evaluate` JSON-RPC method returns a minimal decision object:
+
+- `decision` — `allow` | `deny` | `allow_with_obligations` (strings; REQUIRED)
+- `obligations[]` — spawned obligations (OPTIONAL)
+- `allowed` — convenience boolean mirroring the verdict (OPTIONAL)
+- `policy_cid`, `witness` — OPTIONAL provenance
+
+Validated by `PolicyDecision`. CID-native deployments add `policy_cid`/`witness`;
+extra fields are permitted for forward compatibility.
+
 ## 6. Execution → Receipt → Obligations
 
 Execution emits a `receipt_cid` that binds:

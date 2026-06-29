@@ -1022,8 +1022,8 @@ describe('Policy Evaluation Validator', () => {
 
   it('should reject decision with missing required fields', () => {
     const decision = {
-      decision: 'allow',
-      // Missing policy_cid
+      // Missing required `decision` verdict; policy_cid is optional
+      obligations: [],
     };
 
     const result = validator.validateDecision(decision);

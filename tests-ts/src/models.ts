@@ -247,11 +247,12 @@ export const PolicySchema = z.object({
 export type Policy = z.infer<typeof PolicySchema>;
 
 export const PolicyDecisionSchema = z.object({
-  decision: DecisionTypeSchema,
-  policy_cid: z.string().regex(CIDPattern),
+  decision: z.union([DecisionTypeSchema, z.string()]),
+  allowed: z.boolean().optional(),
+  policy_cid: z.string().regex(CIDPattern).optional(),
   obligations: z.array(z.record(z.any())).optional(),
   witness: z.record(z.any()).optional(),
-}).strict();
+}).passthrough();
 export type PolicyDecision = z.infer<typeof PolicyDecisionSchema>;
 
 // ============================================================================

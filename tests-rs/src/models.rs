@@ -399,7 +399,11 @@ pub struct PolicyRule {
 pub struct PolicyDecision {
     /// Decision type
     pub decision: DecisionType,
-    
+
+    /// Convenience allow flag (de-facto wire result)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub allowed: Option<bool>,
+
     /// Optional decision CID
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(pattern = r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$")]

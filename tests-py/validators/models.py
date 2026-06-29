@@ -334,11 +334,17 @@ class Policy(BaseModel):
 
 
 class PolicyDecision(BaseModel):
-    """Policy evaluation decision."""
-    model_config = ConfigDict(extra='forbid', strict=True)
-    
-    decision: DecisionType = Field(..., description="Decision type")
-    policy_cid: str = Field(..., pattern=r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$",
+    """Policy evaluation decision.
+
+    De-facto wire result of mcp++/policy/evaluate from both servers:
+    {decision, obligations, allowed}. `decision` accepts strings; policy_cid
+    optional; `allowed` boolean carried for clients. Extra fields permitted.
+    """
+    model_config = ConfigDict(extra='allow', strict=True)
+
+    decision: Union[DecisionType, str] = Field(..., description="Decision verdict")
+    allowed: Optional[bool] = Field(None, description="Convenience allow flag")
+    policy_cid: Optional[str] = Field(None, pattern=r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$",
                            description="CID of evaluated policy")
     obligations: Optional[List[Dict[str, Any]]] = Field(None, description="Spawned obligations")
     witness: Optional[Dict[str, Any]] = Field(None, description="Evaluation witness data")
