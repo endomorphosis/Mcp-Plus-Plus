@@ -242,3 +242,28 @@ Implementations MAY adopt MCP++ profiles independently:
 
 MCP++ extends MCP into federated, multi-agent domains by introducing contract clarity, immutable provenance, explicit delegation, and policy-aware execution—without deprecating or breaking existing MCP deployments.
 
+---
+
+## Appendix A: HTTP/JSON-RPC Wire Binding (Normative)
+
+To enable third-party interoperability, conformant servers expose the
+profiles over a JSON-RPC 2.0 `POST /mcp` dispatcher and parallel REST paths.
+Method names and the execution result shape are canonical and MUST match:
+
+| Profile | JSON-RPC method | REST path | Result fields |
+|---|---|---|---|
+| handshake | `initialize` | — | `capabilities.experimental{mcp++/*}` |
+| A (IDL) | `tools/list` | `GET /mcp/interfaces` | `interfaces[]` |
+| B (CID exec) | `tools/call`, `mcp++/execute` | `POST /mcp/execute` | `output`, `envelope_cid`, `event_cid`, `receipt` |
+| C (UCAN) | `mcp++/ucan/validate` | `POST /mcp/ucan/{delegate,revoke,validate}` | `valid`, `chain[]` |
+| D (policy) | `mcp++/policy/evaluate` | `POST /mcp/policy/evaluate` | `decision`, `obligations[]`, `allowed` |
+| E (P2P) | `mcp++/p2p/peers` | `GET /mcp/p2p/peers` | `peers[]`, `protocol` |
+| DAG | — | `GET /mcp/dag/{frontier,history,provenance/{cid}}` | `frontier[]`/`events[]`/`chain[]` |
+
+The `mcp++/execute` `receipt` object MUST include `receipt_cid`, `output_cid`,
+`success`, `error`, `duration_ms`; signed receipts add `signature`. All CIDs in
+these payloads MUST satisfy the CID format regex in `cid-native-artifacts.md`.
+Capability negotiation keys are: `mcp++/mcp-idl`, `mcp++/cid-envelope`,
+`mcp++/ucan`, `mcp++/deontic-policy`, `mcp++/event-dag`, `mcp++/p2p-transport`.
+
+
