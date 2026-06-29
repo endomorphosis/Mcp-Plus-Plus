@@ -147,7 +147,7 @@ export const ExecutionEnvelopeSchema = z.object({
   interface_cid: z.string().regex(CIDPattern),
   input_cid: z.string().regex(CIDPattern),
   parents: z.array(z.string()),
-  timestamp: z.string(), // ISO 8601
+  timestamp: z.union([z.string(), z.number()]), // ISO 8601 or epoch seconds
   metadata: z.record(z.any()).optional(),
 }).strict();
 export type ExecutionEnvelope = z.infer<typeof ExecutionEnvelopeSchema>;
@@ -226,6 +226,10 @@ export const EventTypeSchema = z.enum([
   'error',
   'delegation',
   'policy_decision',
+  'intent',
+  'decision',
+  'receipt',
+  'envelope',
 ]);
 export type EventType = z.infer<typeof EventTypeSchema>;
 
@@ -233,7 +237,7 @@ export const DAGEventSchema = z.object({
   event_type: EventTypeSchema,
   event_cid: z.string().regex(CIDPattern),
   parents: z.array(z.string()),
-  timestamp: z.string(), // ISO 8601
+  timestamp: z.union([z.string(), z.number()]), // ISO 8601 or epoch seconds
   payload: z.record(z.any()),
 }).passthrough();
 export type DAGEvent = z.infer<typeof DAGEventSchema>;

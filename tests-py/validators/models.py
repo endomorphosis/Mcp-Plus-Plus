@@ -187,7 +187,7 @@ class ExecutionEnvelope(BaseModel):
     input_cid: str = Field(..., pattern=r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$",
                           description="CID of input data")
     parents: List[str] = Field(..., description="Parent envelope CIDs")
-    timestamp: str = Field(..., description="ISO 8601 timestamp")
+    timestamp: Union[str, float, int] = Field(..., description="ISO 8601 timestamp or epoch seconds")
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
@@ -292,17 +292,21 @@ class EventType(str, Enum):
     ERROR = "error"
     DELEGATION = "delegation"
     POLICY_DECISION = "policy_decision"
+    INTENT = "intent"
+    DECISION = "decision"
+    RECEIPT = "receipt"
+    ENVELOPE = "envelope"
 
 
 class DAGEvent(BaseModel):
     """Event in the DAG."""
     model_config = ConfigDict(extra='allow', strict=True)
     
-    event_type: EventType = Field(..., description="Event type")
+    event_type: Union[EventType, str] = Field(..., description="Event type")
     event_cid: str = Field(..., pattern=r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$",
                           description="CID of this event")
     parents: List[str] = Field(..., description="Parent event CIDs")
-    timestamp: str = Field(..., description="ISO 8601 timestamp")
+    timestamp: Union[str, float, int] = Field(..., description="ISO 8601 timestamp or epoch seconds")
     payload: Dict[str, Any] = Field(..., description="Event payload")
 
 

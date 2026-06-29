@@ -50,6 +50,13 @@ Local coordination mechanisms are described in [docs/spec/risk-scheduling.md](ri
 
 ## 6. Suggested Event Fields
 
+Event nodes on the wire MUST carry: `event_cid` (CID per `cid-native-artifacts.md`),
+`event_type`, `parents[]`, `timestamp` (ISO 8601 string or epoch seconds), and a
+generic `payload` object holding type-specific fields (e.g. `intent_cid`,
+`decision_cid`, `output_cid`, `receipt_cid`). Canonical `event_type` values are:
+`invocation`, `result`, `error`, `delegation`, `policy_decision`, `intent`,
+`decision`, `receipt`, `envelope`. Implementations MAY add extra top-level keys.
+
 See [docs/spec/cid-native-artifacts.md](cid-native-artifacts.md) for suggested `event_cid` shape.
 
 ## 7. Security Considerations
