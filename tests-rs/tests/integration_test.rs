@@ -218,3 +218,42 @@ fn test_event_dag_valid_event() {
     let result = validator.validate_event(&payload).unwrap();
     assert!(result.is_valid, "Event should be valid");
 }
+
+// ===== Cross-server wire conformance for canonical full-name models =====
+
+use mcp_validators::models::{Delegation, DAGEvent, error_code};
+
+#[test]
+fn test_canonical_delegation_wire_shape() {
+    // Full-name delegation as emitted by accelerate/datasets/swissknife.
+    let d: Delegation = serde_json::from_value(json!({
+        "issuer": "did:key:zAlice", "audience": "did:key:zBob",
+        "capabilities": [{"resource": "mcp://tool/infer", "ability": "invoke"}],
+        "expiry": 1782680000, "proof_cids": [],
+        "cid": "bafkreifxone36h5jwjwulvkf27le3lmwon7jz65tzo27luipw55q7tcevu"
+    })).expect("delegation must deserialize");
+    assert_eq!(d.issuer, "did:key:zAlice");
+    assert_eq!(d.capabilities.len(), 1);
+}
+
+#[test]
+fn test_canonical_dag_event_both_timestamp_forms() {
+    let c = "bafkreifxone36h5jwjwulvkf27le3lmwon7jz65tzo27luipw55q7tcevu";
+    // epoch float (accelerate) and ISO string (datasets) both accepted
+    let a: DAGEvent = serde_json::from_value(json!({
+        "event_type": "envelope", "event_cid": c, "parents": [],
+        "timestamp": 1782680000.0, "payload": {"method": "infer"}
+    })).expect("epoch dag event");
+    let b: DAGEvent = serde_json::from_value(json!({
+        "event_type": "receipt", "event_cid": c, "parents": [c],
+        "timestamp": "2026-06-28T00:00:00Z", "payload": {"receipt_cid": c}
+    })).expect("iso dag event");
+    assert_eq!(a.event_type, "envelope");
+    assert_eq!(b.parents.len(), 1);
+}
+
+#[test]
+fn test_canonical_error_codes() {
+    assert_eq!(error_code::METHOD_NOT_FOUND, -32601);
+    assert_eq!(error_code::SERVER_ERROR, -32000);
+}

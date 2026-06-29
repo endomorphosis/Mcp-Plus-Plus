@@ -343,6 +343,42 @@ pub struct DelegationChain {
     pub chain: Vec<UCANToken>,
 }
 
+/// Canonical wire delegation record (full-name form used by servers/clients).
+///
+/// Interoperable shape emitted by ipfs_accelerate_py, ipfs_datasets_py and
+/// SwissKnife. UCAN tokens map onto these full names: issuer←iss, audience←aud,
+/// capabilities←att, expiry←exp, proof chain←prf. Extra fields permitted.
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+pub struct Delegation {
+    /// Issuer DID
+    #[validate(min_length = 1)]
+    pub issuer: String,
+    /// Audience DID
+    #[validate(min_length = 1)]
+    pub audience: String,
+    /// Capabilities [{resource, ability}]
+    #[validate(min_items = 1)]
+    pub capabilities: Vec<HashMap<String, serde_json::Value>>,
+    /// Expiration epoch seconds (None = no expiry)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expiry: Option<i64>,
+    /// Not-before epoch seconds
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub not_before: Option<i64>,
+    /// Single proof bundle CID
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub proof_cid: Option<String>,
+    /// Parent delegation CIDs
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub proof_cids: Option<Vec<String>>,
+    /// Replay-protection nonce
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub nonce: Option<String>,
+    /// CID of this delegation record
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cid: Option<String>,
+}
+
 // ========== Policy Evaluation (Profile D) ==========
 
 /// Policy definition
@@ -510,4 +546,25 @@ pub struct Event {
     
     /// Timestamp
     pub timestamp: String,
+}
+
+/// Canonical DAG event (full-name wire form used by both servers).
+///
+/// `timestamp` accepts an ISO-8601 string or epoch seconds; `event_type` is a
+/// free-form string (invocation/result/error/delegation/policy_decision/...).
+/// Extra fields permitted for forward compatibility.
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+pub struct DAGEvent {
+    /// Event type
+    pub event_type: String,
+    /// CID of this event
+    #[validate(pattern = r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$")]
+    pub event_cid: String,
+    /// Parent event CIDs
+    #[serde(default)]
+    pub parents: Vec<String>,
+    /// ISO 8601 timestamp or epoch seconds
+    pub timestamp: serde_json::Value,
+    /// Event payload
+    pub payload: serde_json::Value,
 }
