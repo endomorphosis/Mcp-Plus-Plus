@@ -20,6 +20,21 @@ class JSONRPCVersion(str, Enum):
     V2_0 = "2.0"
 
 
+class ErrorCode(int, Enum):
+    """Canonical JSON-RPC error codes used by MCP++ servers.
+
+    De-facto codes emitted by ipfs_accelerate_py and ipfs_datasets_py. Standard
+    JSON-RPC range plus -32000 reserved for server/execution errors (e.g. tool
+    timeout). Third parties MUST treat these meanings as normative.
+    """
+    PARSE_ERROR = -32700        # malformed JSON
+    INVALID_REQUEST = -32600    # invalid request object (e.g. bad id)
+    METHOD_NOT_FOUND = -32601   # unknown method or tool not found
+    INVALID_PARAMS = -32602     # invalid method params
+    INTERNAL_ERROR = -32603     # internal error
+    SERVER_ERROR = -32000       # generic server/execution error (incl. timeout)
+
+
 class JSONRPCError(BaseModel):
     """JSON-RPC error object."""
     model_config = ConfigDict(extra='forbid', strict=True)

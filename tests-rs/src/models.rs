@@ -79,6 +79,17 @@ pub struct JSONRPCError {
     pub data: Option<serde_json::Value>,
 }
 
+/// Canonical JSON-RPC error codes used by MCP++ servers. Meanings are normative.
+pub mod error_code {
+    pub const PARSE_ERROR: i32 = -32700;
+    pub const INVALID_REQUEST: i32 = -32600;
+    pub const METHOD_NOT_FOUND: i32 = -32601;
+    pub const INVALID_PARAMS: i32 = -32602;
+    pub const INTERNAL_ERROR: i32 = -32603;
+    pub const SERVER_ERROR: i32 = -32000;
+    pub const CANONICAL: [i32; 6] = [-32700, -32600, -32601, -32602, -32603, -32000];
+}
+
 /// Request ID (can be string or number)
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[serde(untagged)]

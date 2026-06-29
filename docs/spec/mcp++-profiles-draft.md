@@ -273,4 +273,19 @@ these payloads MUST satisfy the CID format regex in `cid-native-artifacts.md`.
 Capability negotiation keys are: `mcp++/mcp-idl`, `mcp++/cid-envelope`,
 `mcp++/ucan`, `mcp++/deontic-policy`, `mcp++/event-dag`, `mcp++/p2p-transport`.
 
+### A.1 Canonical Error Codes (Normative)
+
+JSON-RPC error responses MUST use these codes; meanings are normative:
+
+| Code | Meaning |
+|---|---|
+| `-32700` | Parse error (malformed JSON) |
+| `-32600` | Invalid request (e.g. bad id) |
+| `-32601` | Method not found / tool not found |
+| `-32602` | Invalid params |
+| `-32603` | Internal error |
+| `-32000` | Server/execution error (incl. tool timeout) |
+
+Validators expose these as `ErrorCode` (py/ts) and `error_code::*` (rs).
+
 

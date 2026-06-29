@@ -15,6 +15,17 @@ import { z } from 'zod';
 export const JSONRPCVersionSchema = z.literal('2.0');
 export type JSONRPCVersion = z.infer<typeof JSONRPCVersionSchema>;
 
+// Canonical JSON-RPC error codes used by MCP++ servers. Meanings are normative.
+export enum ErrorCode {
+  ParseError = -32700,
+  InvalidRequest = -32600,
+  MethodNotFound = -32601,
+  InvalidParams = -32602,
+  InternalError = -32603,
+  ServerError = -32000,
+}
+export const CANONICAL_ERROR_CODES: number[] = [-32700, -32600, -32601, -32602, -32603, -32000];
+
 export const JSONRPCErrorSchema = z.object({
   code: z.number().int(),
   message: z.string(),
