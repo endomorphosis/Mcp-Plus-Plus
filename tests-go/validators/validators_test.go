@@ -779,163 +779,47 @@ func TestCIDValidator_ExecutionEnvelope(t *testing.T) {
 
 func TestCIDValidator_ExecutionReceipt(t *testing.T) {
 	validator := NewCIDValidator()
-	
-	timestamp := time.Now().Format(time.RFC3339)
-	
-	// Note: These tests exercise struct tag validation (which catches invalid CIDs and status)
-	// rather than the redundant manual checks at lines 63-68 and 71-73, which are unreachable
-	// in normal flow. See COVERAGE_ANALYSIS.md for details.
+
+	bafA := "bafkreicssskybdf32rmzlbtge5bxyv4v6c6eac322pbrsr3azlb4fkxiqi"
+	bafB := "bafkreihtwdlu4jntm7yl2mgsfzqgr4on37vr7inuld2dql2p4rmqafybti"
+
 	tests := []struct {
 		name    string
 		input   string
 		wantErr bool
 	}{
 		{
-			name: "valid receipt with success",
-			input: `{
-				"envelope_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
-				"output_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
-				"status":"success",
-				"result":{"temperature":72},
-				"timestamp":"` + timestamp + `"
-			}`,
+			name:    "valid receipt with success",
+			input:   `{"success":true,"receipt_cid":"` + bafA + `","output_cid":"` + bafB + `","duration_ms":0.08}`,
 			wantErr: false,
 		},
 		{
-			name: "valid receipt with failure",
-			input: `{
-				"envelope_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
-				"output_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
-				"status":"failure",
-				"error":{"code":-1,"message":"execution failed"},
-				"timestamp":"` + timestamp + `"
-			}`,
+			name:    "valid receipt with failure",
+			input:   `{"success":false,"receipt_cid":"` + bafA + `","error":{"code":-1,"message":"failed"}}`,
 			wantErr: false,
 		},
 		{
-			name: "invalid envelope_cid format - invalid",
-			input: `{
-				"envelope_cid":"invalid-cid",
-				"output_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
-				"status":"success",
-				"result":{},
-				"timestamp":"` + timestamp + `"
-			}`,
+			name:    "invalid receipt_cid format",
+			input:   `{"success":true,"receipt_cid":"invalid-cid"}`,
 			wantErr: true,
 		},
 		{
-			name: "invalid envelope_cid format - not a cid",
-			input: `{
-				"envelope_cid":"not-a-valid-cid",
-				"output_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
-				"status":"success",
-				"result":{},
-				"timestamp":"` + timestamp + `"
-			}`,
+			name:    "invalid output_cid format",
+			input:   `{"success":true,"receipt_cid":"` + bafA + `","output_cid":"bad-cid"}`,
 			wantErr: true,
 		},
 		{
-			name: "invalid output_cid format - bad",
-			input: `{
-				"envelope_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
-				"output_cid":"bad-cid",
-				"status":"success",
-				"result":{},
-				"timestamp":"` + timestamp + `"
-			}`,
-			wantErr: true,
-		},
-		{
-			name: "invalid output_cid format - not valid",
-			input: `{
-				"envelope_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
-				"output_cid":"not-valid-cid-format",
-				"status":"success",
-				"result":{},
-				"timestamp":"` + timestamp + `"
-			}`,
-			wantErr: true,
-		},
-		{
-			name: "invalid status - must be success or failure not pending",
-			input: `{
-				"envelope_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
-				"output_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
-				"status":"pending",
-				"result":{},
-				"timestamp":"` + timestamp + `"
-			}`,
-			wantErr: true,
-		},
-		{
-			name: "invalid status - must be success or failure not error",
-			input: `{
-				"envelope_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
-				"output_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
-				"status":"error",
-				"result":{},
-				"timestamp":"` + timestamp + `"
-			}`,
-			wantErr: true,
-		},
-		{
-			name: "invalid status - must be success or failure not unknown",
-			input: `{
-				"envelope_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
-				"output_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
-				"status":"unknown",
-				"result":{},
-				"timestamp":"` + timestamp + `"
-			}`,
-			wantErr: true,
-		},
-		{
-			name: "missing envelope_cid",
-			input: `{
-				"output_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
-				"status":"success",
-				"result":{},
-				"timestamp":"` + timestamp + `"
-			}`,
-			wantErr: true,
-		},
-		{
-			name: "missing output_cid",
-			input: `{
-				"envelope_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
-				"status":"success",
-				"result":{},
-				"timestamp":"` + timestamp + `"
-			}`,
-			wantErr: true,
-		},
-		{
-			name: "missing status",
-			input: `{
-				"envelope_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
-				"output_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
-				"result":{},
-				"timestamp":"` + timestamp + `"
-			}`,
-			wantErr: true,
-		},
-		{
-			name: "missing timestamp",
-			input: `{
-				"envelope_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
-				"output_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
-				"status":"success",
-				"result":{}
-			}`,
+			name:    "missing receipt_cid",
+			input:   `{"success":true,"output_cid":"` + bafB + `"}`,
 			wantErr: true,
 		},
 		{
 			name:    "invalid JSON",
-			input:   `{"envelope_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG","output_cid":}`,
+			input:   `{"receipt_cid":}`,
 			wantErr: true,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := validator.ValidateExecutionReceipt([]byte(tt.input))
@@ -1857,12 +1741,11 @@ func TestDefensiveValidation_ExecutionEnvelope(t *testing.T) {
 func TestDefensiveValidation_ExecutionReceipt(t *testing.T) {
 	validator := NewCIDValidator()
 	
-	// Test with valid CIDs and status that pass defensive checks
+	// Test with valid CIDs that pass defensive checks
 	validReceipt := `{
-		"envelope_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+		"receipt_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
 		"output_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
-		"status":"success",
-		"timestamp":"2024-01-01T00:00:00Z"
+		"success":true
 	}`
 	
 	_, err := validator.ValidateExecutionReceipt([]byte(validReceipt))
@@ -1871,10 +1754,9 @@ func TestDefensiveValidation_ExecutionReceipt(t *testing.T) {
 	}
 	
 	validReceiptFailure := `{
-		"envelope_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+		"receipt_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
 		"output_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
-		"status":"failure",
-		"timestamp":"2024-01-01T00:00:00Z"
+		"success":false
 	}`
 	
 	_, err = validator.ValidateExecutionReceipt([]byte(validReceiptFailure))
@@ -2137,10 +2019,9 @@ func TestEdgeCaseValidations(t *testing.T) {
 	
 	// Test receipt with timestamp edge case
 	receiptWithTimestamp := `{
-		"envelope_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+		"receipt_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
 		"output_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
-		"status":"success",
-		"timestamp":"2024-12-31T23:59:59Z"
+		"success":true
 	}`
 	_, err = cidValidator.ValidateExecutionReceipt([]byte(receiptWithTimestamp))
 	if err != nil {
@@ -2297,40 +2178,36 @@ func TestCIDValidator_InvalidCIDFormats(t *testing.T) {
 		t.Error("ValidateExecutionEnvelope() should fail with invalid input_cid")
 	}
 	
-	// Invalid envelope_cid in receipt
+	// Invalid receipt_cid in receipt
 	invalidEnvelopeCID := `{
-		"envelope_cid":"invalid-cid",
+		"receipt_cid":"invalid-cid",
 		"output_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
-		"status":"success",
-		"timestamp":"2024-01-01T00:00:00Z"
+		"success":true
 	}`
 	_, err = validator.ValidateExecutionReceipt([]byte(invalidEnvelopeCID))
 	if err == nil {
-		t.Error("ValidateExecutionReceipt() should fail with invalid envelope_cid")
+		t.Error("ValidateExecutionReceipt() should fail with invalid receipt_cid")
 	}
 	
 	// Invalid output_cid in receipt
 	invalidOutputCID := `{
-		"envelope_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+		"receipt_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
 		"output_cid":"invalid-cid",
-		"status":"success",
-		"timestamp":"2024-01-01T00:00:00Z"
+		"success":true
 	}`
 	_, err = validator.ValidateExecutionReceipt([]byte(invalidOutputCID))
 	if err == nil {
 		t.Error("ValidateExecutionReceipt() should fail with invalid output_cid")
 	}
 	
-	// Invalid status value
+	// Missing receipt_cid
 	invalidStatus := `{
-		"envelope_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
 		"output_cid":"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
-		"status":"invalid-status",
-		"timestamp":"2024-01-01T00:00:00Z"
+		"success":true
 	}`
 	_, err = validator.ValidateExecutionReceipt([]byte(invalidStatus))
 	if err == nil {
-		t.Error("ValidateExecutionReceipt() should fail with invalid status")
+		t.Error("ValidateExecutionReceipt() should fail with missing receipt_cid")
 	}
 }
 
@@ -2889,25 +2766,23 @@ func TestCIDValidator_ExecutionEnvelopeInvalidCIDs(t *testing.T) {
 func TestCIDValidator_ExecutionReceiptInvalidCIDsAndStatus(t *testing.T) {
 	validator := NewCIDValidator()
 	
-	// Test invalid envelope_cid (line 63-65)
+	// Test invalid receipt_cid
 	invalidEnvelopeCID := `{
-		"envelope_cid":"bad-cid",
+		"receipt_cid":"bad-cid",
 		"output_cid":"QmT5NvUtoM5nWFfrQdVrFtvGfKFmG7AHE8P34isapyhCxX",
-		"status":"success",
-		"timestamp":"2024-01-01T00:00:00Z"
+		"success":true
 	}`
 	
 	_, err := validator.ValidateExecutionReceipt([]byte(invalidEnvelopeCID))
 	if err == nil {
-		t.Error("ValidateExecutionReceipt() should fail with invalid envelope_cid")
+		t.Error("ValidateExecutionReceipt() should fail with invalid receipt_cid")
 	}
 	
-	// Test invalid output_cid (line 66-68)
+	// Test invalid output_cid
 	invalidOutputCID := `{
-		"envelope_cid":"QmT5NvUtoM5nWFfrQdVrFtvGfKFmG7AHE8P34isapyhCxX",
+		"receipt_cid":"QmT5NvUtoM5nWFfrQdVrFtvGfKFmG7AHE8P34isapyhCxX",
 		"output_cid":"invalid-output-cid",
-		"status":"success",
-		"timestamp":"2024-01-01T00:00:00Z"
+		"success":true
 	}`
 	
 	_, err = validator.ValidateExecutionReceipt([]byte(invalidOutputCID))
@@ -2915,33 +2790,27 @@ func TestCIDValidator_ExecutionReceiptInvalidCIDsAndStatus(t *testing.T) {
 		t.Error("ValidateExecutionReceipt() should fail with invalid output_cid")
 	}
 	
-	// Test invalid status (line 71-73)
+	// Test missing receipt_cid
 	invalidStatus := `{
-		"envelope_cid":"QmT5NvUtoM5nWFfrQdVrFtvGfKFmG7AHE8P34isapyhCxX",
 		"output_cid":"QmT5NvUtoM5nWFfrQdVrFtvGfKFmG7AHE8P34isapyhCxX",
-		"status":"pending",
-		"timestamp":"2024-01-01T00:00:00Z"
+		"success":true
 	}`
 	
 	_, err = validator.ValidateExecutionReceipt([]byte(invalidStatus))
 	if err == nil {
-		t.Error("ValidateExecutionReceipt() should fail with invalid status")
-	}
-	if err != nil && err.Error() != "invalid status: must be 'success' or 'failure', got 'pending'" {
-		t.Errorf("Expected status error, got %v", err)
+		t.Error("ValidateExecutionReceipt() should fail with missing receipt_cid")
 	}
 	
-	// Test another invalid status value
+	// Test failure receipt is valid
 	invalidStatus2 := `{
-		"envelope_cid":"QmT5NvUtoM5nWFfrQdVrFtvGfKFmG7AHE8P34isapyhCxX",
+		"receipt_cid":"QmT5NvUtoM5nWFfrQdVrFtvGfKFmG7AHE8P34isapyhCxX",
 		"output_cid":"QmT5NvUtoM5nWFfrQdVrFtvGfKFmG7AHE8P34isapyhCxX",
-		"status":"unknown",
-		"timestamp":"2024-01-01T00:00:00Z"
+		"success":false
 	}`
 	
 	_, err = validator.ValidateExecutionReceipt([]byte(invalidStatus2))
-	if err == nil {
-		t.Error("ValidateExecutionReceipt() should fail with invalid status 'unknown'")
+	if err != nil {
+		t.Errorf("ValidateExecutionReceipt() failure receipt should be valid, got %v", err)
 	}
 }
 

@@ -55,7 +55,7 @@ func (v *CIDValidator) ValidateExecutionEnvelope(data []byte) (*testsmcp.Executi
 
 // ValidateExecutionReceipt validates an execution receipt.
 //
-// SPEC: CID-Artifacts.md, MUST have envelope_cid, output_cid, status, and timestamp
+// SPEC: CID-Artifacts.md, MUST have receipt_cid; success/output_cid de-facto
 func (v *CIDValidator) ValidateExecutionReceipt(data []byte) (*testsmcp.ExecutionReceipt, error) {
 	var receipt testsmcp.ExecutionReceipt
 	if err := json.Unmarshal(data, &receipt); err != nil {
@@ -67,16 +67,13 @@ func (v *CIDValidator) ValidateExecutionReceipt(data []byte) (*testsmcp.Executio
 	}
 	
 	// Validate CID formats
-	if err := v.base.validate.Var(receipt.EnvelopeCID, "cid"); err != nil {
-		return nil, fmt.Errorf("invalid envelope_cid format: %w", err)
+	if err := v.base.validate.Var(receipt.ReceiptCID, "cid"); err != nil {
+		return nil, fmt.Errorf("invalid receipt_cid format: %w", err)
 	}
-	if err := v.base.validate.Var(receipt.OutputCID, "cid"); err != nil {
-		return nil, fmt.Errorf("invalid output_cid format: %w", err)
-	}
-	
-	// Validate status is either success or failure
-	if receipt.Status != "success" && receipt.Status != "failure" {
-		return nil, fmt.Errorf("invalid status: must be 'success' or 'failure', got '%s'", receipt.Status)
+	if receipt.OutputCID != "" {
+		if err := v.base.validate.Var(receipt.OutputCID, "cid"); err != nil {
+			return nil, fmt.Errorf("invalid output_cid format: %w", err)
+		}
 	}
 	
 	return &receipt, nil

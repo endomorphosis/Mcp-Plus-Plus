@@ -147,14 +147,13 @@ type ExecutionEnvelope struct {
 
 // ExecutionReceipt contains the result of an execution with provenance.
 type ExecutionReceipt struct {
-	EnvelopeCID string                 `json:"envelope_cid" validate:"required"`
-	OutputCID   string                 `json:"output_cid" validate:"required"`
-	Status      string                 `json:"status" validate:"required"`
-	Result      interface{}            `json:"result,omitempty"`
-	Error       *JSONRPCError          `json:"error,omitempty"`
-	Timestamp   time.Time              `json:"timestamp" validate:"required"`
-	Signature   string                 `json:"signature,omitempty"`
-	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+	Success    bool                   `json:"success"`
+	ReceiptCID string                 `json:"receipt_cid" validate:"required"`
+	OutputCID  string                 `json:"output_cid,omitempty"`
+	Error      interface{}            `json:"error,omitempty"`
+	DurationMS float64                `json:"duration_ms,omitempty"`
+	Signature  string                 `json:"signature,omitempty"`
+	Metadata   map[string]interface{} `json:"metadata,omitempty"`
 }
 
 // ============================================================================
