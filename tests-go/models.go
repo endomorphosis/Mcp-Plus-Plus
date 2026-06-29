@@ -284,3 +284,65 @@ type EventDAG struct {
 	Events map[string]*Event `json:"events" validate:"required"`
 	Roots  []string          `json:"roots" validate:"required,min=1,dive,cid"`
 }
+
+// ============================================================================
+// Canonical full-name wire models (cross-server interop parity with py/ts/rs)
+// ============================================================================
+
+// Delegation is the canonical full-name delegation record (Profile C) emitted by
+// ipfs_accelerate_py, ipfs_datasets_py and SwissKnife. UCAN iss/aud/att/exp map
+// onto issuer/audience/capabilities/expiry. Extra fields allowed by default.
+type Delegation struct {
+	Issuer       string                   `json:"issuer" validate:"required,min=1"`
+	Audience     string                   `json:"audience" validate:"required,min=1"`
+	Capabilities []map[string]interface{} `json:"capabilities" validate:"required,min=1"`
+	Expiry       *int64                   `json:"expiry,omitempty"`
+	NotBefore    *int64                   `json:"not_before,omitempty"`
+	ProofCID     string                   `json:"proof_cid,omitempty"`
+	ProofCIDs    []string                 `json:"proof_cids,omitempty"`
+	Nonce        string                   `json:"nonce,omitempty"`
+	CID          string                   `json:"cid,omitempty"`
+}
+
+// DAGEvent is the canonical DAG event wire form. Timestamp accepts an ISO-8601
+// string or epoch seconds; EventType is free-form. Matches both servers.
+type DAGEvent struct {
+	EventType string                 `json:"event_type" validate:"required"`
+	EventCID  string                 `json:"event_cid" validate:"required"`
+	Parents   []string               `json:"parents"`
+	Timestamp interface{}            `json:"timestamp" validate:"required"`
+	Payload   map[string]interface{} `json:"payload" validate:"required"`
+}
+
+// PolicyDecisionWire is the de-facto wire result of mcp++/policy/evaluate from
+// both servers: {decision, obligations, allowed}. policy_cid optional.
+type PolicyDecisionWire struct {
+	Decision    string                   `json:"decision" validate:"required"`
+	Allowed     *bool                    `json:"allowed,omitempty"`
+	PolicyCID   string                   `json:"policy_cid,omitempty"`
+	Obligations []map[string]interface{} `json:"obligations,omitempty"`
+	Witness     map[string]interface{}   `json:"witness,omitempty"`
+}
+
+// P2PMessage is the canonical Profile E application envelope. Only Type is
+// required; remaining fields populate per request/response/notification/event.
+type P2PMessage struct {
+	Type      string                 `json:"type" validate:"required,min=1"`
+	Method    string                 `json:"method,omitempty"`
+	Params    map[string]interface{} `json:"params,omitempty"`
+	ID        string                 `json:"id,omitempty"`
+	Result    interface{}            `json:"result,omitempty"`
+	Error     string                 `json:"error,omitempty"`
+	Sender    string                 `json:"sender,omitempty"`
+	Timestamp interface{}            `json:"timestamp,omitempty"`
+}
+
+// Canonical JSON-RPC error codes emitted by MCP++ servers (normative meanings).
+const (
+	ErrParseError     int = -32700
+	ErrInvalidRequest int = -32600
+	ErrMethodNotFound int = -32601
+	ErrInvalidParams  int = -32602
+	ErrInternalError  int = -32603
+	ErrServerError    int = -32000
+)
