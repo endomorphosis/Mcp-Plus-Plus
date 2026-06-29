@@ -1,0 +1,1 @@
+{"model":"Delegation","payload":{"issuer":"did:key:zAlice","audience":"did:key:zBob","capabilities":[{"resource":"mcp://tool/infer","ability":"invoke"}],"expiry":1782680000,"proof_cids":[],"cid":"bafkreifxone36h5jwjwulvkf27le3lmwon7jz65tzo27luipw55q7tcevu"}}

@@ -1,0 +1,1 @@
+{"model":"DAGEvent","payload":{"event_type":"receipt","event_cid":"bafkreifxone36h5jwjwulvkf27le3lmwon7jz65tzo27luipw55q7tcevu","parents":["bafkreifxone36h5jwjwulvkf27le3lmwon7jz65tzo27luipw55q7tcevu"],"timestamp":"2026-06-28T00:00:00Z","payload":{"receipt_cid":"bafkreifxone36h5jwjwulvkf27le3lmwon7jz65tzo27luipw55q7tcevu"}}}
