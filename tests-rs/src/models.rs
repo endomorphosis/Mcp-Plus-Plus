@@ -133,10 +133,12 @@ pub type ServerInfo = ClientInfo;
 pub struct InitializeResult {
     /// Protocol version (e.g. 2024-11-05)
     #[validate(min_length = 1)]
+    #[serde(rename = "protocolVersion")]
     pub protocol_version: String,
     /// Server capabilities
     pub capabilities: Capabilities,
     /// Server information
+    #[serde(rename = "serverInfo")]
     pub server_info: ServerInfo,
 }
 
