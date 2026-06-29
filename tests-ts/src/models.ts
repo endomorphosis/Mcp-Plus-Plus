@@ -173,12 +173,15 @@ export const ExecutionEnvelopeSchema = z.object({
 export type ExecutionEnvelope = z.infer<typeof ExecutionEnvelopeSchema>;
 
 export const ExecutionReceiptSchema = z.object({
-  envelope_cid: z.string().regex(CIDPattern),
-  output_cid: z.string().regex(CIDPattern),
   success: z.boolean(),
+  receipt_cid: z.string().regex(CIDPattern).optional(),
+  output_cid: z.string().regex(CIDPattern).optional(),
+  envelope_cid: z.string().regex(CIDPattern).optional(),
+  error: z.string().nullable().optional(),
+  duration_ms: z.number().optional(),
   decision_cid: z.string().regex(CIDPattern).optional(),
   signature: z.string().optional(),
-}).strict();
+}).passthrough();
 export type ExecutionReceipt = z.infer<typeof ExecutionReceiptSchema>;
 
 // ============================================================================

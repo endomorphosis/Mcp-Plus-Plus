@@ -269,21 +269,36 @@ pub struct ExecutionEnvelope {
 /// Execution receipt
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct ExecutionReceipt {
-    /// Envelope CID
-    #[validate(pattern = r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$")]
-    pub envelope_cid: String,
-    
-    /// Output CID
-    #[validate(pattern = r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$")]
-    pub output_cid: String,
-    
-    /// Signature
-    #[validate(min_length = 1)]
-    pub signature: String,
-    
+    /// Execution success flag
+    #[serde(default)]
+    pub success: bool,
+
     /// Receipt CID
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     #[validate(pattern = r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$")]
-    pub receipt_cid: String,
+    pub receipt_cid: Option<String>,
+
+    /// Output CID
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[validate(pattern = r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$")]
+    pub output_cid: Option<String>,
+
+    /// Envelope CID
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[validate(pattern = r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$")]
+    pub envelope_cid: Option<String>,
+
+    /// Error message (None on success)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+
+    /// Duration in ms
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub duration_ms: Option<f64>,
+
+    /// Signature
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub signature: Option<String>,
 }
 
 // ========== UCAN Delegation (Profile C) ==========

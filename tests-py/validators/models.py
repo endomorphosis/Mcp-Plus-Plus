@@ -222,14 +222,27 @@ class ExecutionEnvelope(BaseModel):
 
 
 class ExecutionReceipt(BaseModel):
-    """Execution receipt with result."""
-    model_config = ConfigDict(extra='forbid', strict=True)
-    
-    envelope_cid: str = Field(..., pattern=r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$",
-                             description="CID of execution envelope")
-    output_cid: str = Field(..., pattern=r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$",
-                           description="CID of output data")
+    """Execution receipt with result.
+
+    De-facto wire receipt emitted by ipfs_accelerate_py and ipfs_datasets_py.
+    Only `success` is universally required; CID fields are optional and, when
+    present, MUST satisfy the canonical CID regex. Extra fields permitted for
+    forward compatibility (e.g. result, cid, signature, decision_cid).
+    """
+    model_config = ConfigDict(extra='allow', strict=True)
+
     success: bool = Field(..., description="Execution success flag")
+    receipt_cid: Optional[str] = Field(None,
+                                       pattern=r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$",
+                                       description="CID of this receipt")
+    output_cid: Optional[str] = Field(None,
+                           pattern=r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$",
+                           description="CID of output data")
+    envelope_cid: Optional[str] = Field(None,
+                             pattern=r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$",
+                             description="CID of execution envelope")
+    error: Optional[str] = Field(None, description="Error message (None on success)")
+    duration_ms: Optional[float] = Field(None, description="Execution duration in ms")
     decision_cid: Optional[str] = Field(None, 
                                        pattern=r"^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$",
                                        description="CID of policy decision")

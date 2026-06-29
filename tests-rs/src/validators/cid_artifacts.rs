@@ -50,7 +50,16 @@ impl CIDArtifactsValidator {
             result.add_error(format!("Validation error: {}", e));
             return Ok(result);
         }
-        
+        // CID-native receipts require output_cid + receipt_cid (parity with py).
+        if receipt.output_cid.is_none() {
+            result.add_error("Missing required field: output_cid".to_string());
+        }
+        if receipt.receipt_cid.is_none() {
+            result.add_error("Missing required field: receipt_cid".to_string());
+        }
+        if !result.is_valid {
+            return Err(ValidationError::ValidationFailed("missing required receipt fields".to_string()));
+        }
         Ok(result)
     }
 }
@@ -207,7 +216,7 @@ mod tests {
         });
         
         let result = validator.validate_receipt(&payload);
-        assert!(result.is_err(), "Should fail due to missing envelope_cid");
+        assert!(result.is_ok(), "envelope_cid is optional in de-facto receipt");
     }
     
     #[test]
@@ -233,7 +242,7 @@ mod tests {
         });
         
         let result = validator.validate_receipt(&payload);
-        assert!(result.is_err(), "Should fail due to missing signature");
+        assert!(result.is_ok(), "signature is optional in de-facto receipt");
     }
     
     #[test]

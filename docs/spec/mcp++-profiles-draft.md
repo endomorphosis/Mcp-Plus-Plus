@@ -267,9 +267,11 @@ Method names and the execution result shape are canonical and MUST match:
 | E (P2P) | `mcp++/p2p/peers` | `GET /mcp/p2p/peers` | `peers[]`, `protocol` |
 | DAG | — | `GET /mcp/dag/{frontier,history,provenance/{cid}}` | `frontier[]`/`events[]`/`chain[]` |
 
-The `mcp++/execute` `receipt` object MUST include `receipt_cid`, `output_cid`,
-`success`, `error`, `duration_ms`; signed receipts add `signature`. All CIDs in
-these payloads MUST satisfy the CID format regex in `cid-native-artifacts.md`.
+The `mcp++/execute` `receipt` object MUST include `success` and SHOULD include
+`receipt_cid`, `output_cid`, `error`, `duration_ms`; signed receipts add
+`signature`. CID-native deployments require `receipt_cid` + `output_cid`. All
+CIDs in these payloads MUST satisfy the CID format regex in
+`cid-native-artifacts.md`.
 Capability negotiation keys are: `mcp++/mcp-idl`, `mcp++/cid-envelope`,
 `mcp++/ucan`, `mcp++/deontic-policy`, `mcp++/event-dag`, `mcp++/p2p-transport`.
 
