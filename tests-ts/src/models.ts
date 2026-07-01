@@ -327,3 +327,91 @@ export const P2PMessageSchema = z.object({
   timestamp: z.union([z.number(), z.string()]).nullable().optional(),
 }).passthrough();
 export type P2PMessage = z.infer<typeof P2PMessageSchema>;
+
+// ---------------------------------------------------------------------------
+// Session error codes (MCP++ Profile E §9.1 — deterministic error taxonomy)
+// ---------------------------------------------------------------------------
+
+/**
+ * Deterministic transport-layer error code ranges:
+ *   1xxx: Framing errors
+ *   2xxx: Protocol errors
+ *   3xxx: Rate / policy violations
+ *   4xxx: Session lifecycle errors
+ */
+export const SessionErrorCodeSchema = z.union([
+  z.literal(1001), // FRAME_OVERSIZE
+  z.literal(1002), // FRAME_OUTBOUND_OVERSIZE
+  z.literal(1003), // FRAME_MALFORMED_JSON
+  z.literal(1004), // FRAME_TRUNCATED_HEADER
+  z.literal(2001), // PROTOCOL_VERSION_MISMATCH
+  z.literal(2002), // PROTOCOL_HANDSHAKE_INVALID
+  z.literal(2003), // PROTOCOL_NO_COMMON_PROFILE
+  z.literal(3001), // RATE_LIMIT_EXCEEDED
+  z.literal(4001), // SESSION_CLOSED
+  z.literal(4002), // SESSION_READ_ENDED
+  z.literal(4003), // SESSION_TIMEOUT
+]);
+export type SessionErrorCode = z.infer<typeof SessionErrorCodeSchema>;
+
+export const SessionErrorSchema = z.object({
+  code: SessionErrorCodeSchema,
+  message: z.string().min(1),
+  data: z.unknown().optional(),
+}).passthrough();
+export type SessionError = z.infer<typeof SessionErrorSchema>;
+
+// ---------------------------------------------------------------------------
+// PubSub bus message (MCP++ Profile E §3 — MCPPubSubBus BusMessage)
+// ---------------------------------------------------------------------------
+
+export const BusMessageSchema = z.object({
+  /** The topic this message was published on. */
+  topic: z.string().min(1),
+  /** Serialisable payload. */
+  payload: z.unknown(),
+  /** ISO-8601 publish time. */
+  published_at: z.string().datetime({ offset: true }).or(z.string().min(1)),
+  /** Content-addressed CID: `sha256:<64-hex-chars>`. */
+  message_cid: z.string().regex(/^sha256:[0-9a-f]{64}$/),
+  /** Optional UCAN proof from the publisher. */
+  ucan_token: z.string().optional(),
+}).passthrough();
+export type BusMessage = z.infer<typeof BusMessageSchema>;
+
+/** Well-known MCP++ pub/sub topic identifiers. */
+export const MCP_PUBSUB_TOPICS = [
+  'mcp/interface/announce',
+  'mcp/receipt/announce',
+  'mcp/coord/signal',
+  'mcp/delegation/merge',
+  'mcp/policy/update',
+] as const;
+export type MCPPubSubTopic = typeof MCP_PUBSUB_TOPICS[number];
+
+// ---------------------------------------------------------------------------
+// Policy audit log entry (MCP++ Profile D — PolicyAuditLog AuditEntry)
+// ---------------------------------------------------------------------------
+
+export const AuditDecisionSchema = z.enum(['allow', 'deny', 'allow_with_obligations']);
+export type AuditDecision = z.infer<typeof AuditDecisionSchema>;
+
+export const AuditEntrySchema = z.object({
+  /** 1-based monotone sequence number within the log. */
+  seq: z.number().int().positive(),
+  /** Unix timestamp (ms). */
+  timestamp: z.number().int().nonnegative(),
+  /** ISO-8601 wall clock. */
+  timestamp_iso: z.string().min(1),
+  policy_cid: z.string().min(1),
+  intent_cid: z.string().min(1),
+  decision: AuditDecisionSchema,
+  actor: z.string().optional(),
+  tool: z.string().min(1),
+  justification: z.string(),
+  obligations: z.array(z.string()),
+  /** Content-addressed CID of this entry: `sha256:<64-hex-chars>`. */
+  entry_cid: z.string().regex(/^sha256:[0-9a-f]{64}$/),
+  extra: z.record(z.unknown()),
+}).passthrough();
+export type AuditEntry = z.infer<typeof AuditEntrySchema>;
