@@ -17,6 +17,9 @@ import {
   AuditEntrySchema,
   MCP_PUBSUB_TOPICS,
   AuditDecisionSchema,
+  WasmProofResultSchema,
+  ProofReasonSchema,
+  WasmProverIdSchema,
 } from '../models';
 
 // SwissKnife live modules (optional — skip if not in monorepo)
@@ -257,4 +260,71 @@ describe.skipIf(!hasSwissKnife)('SwissKnife PolicyAuditLog AuditEntry interop', 
     expect(e1.entry_cid).toMatch(/^sha256:[0-9a-f]{64}$/);
     PolicyAuditLog.resetInstance();
   });
+});
+
+// ---------------------------------------------------------------------------
+// WasmProofResult — local WASM prover result schema (Phase 1)
+// ---------------------------------------------------------------------------
+
+describe('WasmProofResult schema (MCP++ local prover layer)', () => {
+  const validProved = {
+    proved: true, sat: true, unsat: false,
+    reason: 'sat', prover_id: 'z3-wasm', proof_time_ms: 42,
+  };
+  const validRefuted = {
+    proved: false, sat: false, unsat: true,
+    reason: 'refuted', prover_id: 'z3-wasm', proof_time_ms: 31,
+  };
+  const cacheHit = {
+    proved: true, sat: true, unsat: false,
+    reason: 'sat', prover_id: 'cache-hit', proof_time_ms: 0,
+  };
+
+  it('validates a proved (sat) result', () => {
+    expect(() => WasmProofResultSchema.parse(validProved)).not.toThrow();
+  });
+
+  it('validates a refuted (unsat) result', () => {
+    expect(() => WasmProofResultSchema.parse(validRefuted)).not.toThrow();
+  });
+
+  it('validates a cache-hit result', () => {
+    expect(() => WasmProofResultSchema.parse(cacheHit)).not.toThrow();
+  });
+
+  it('validates all canonical ProofReason values', () => {
+    for (const reason of ['proved', 'refuted', 'sat', 'unsat', 'unknown', 'timeout', 'error']) {
+      expect(() => ProofReasonSchema.parse(reason)).not.toThrow();
+    }
+  });
+
+  it('rejects non-canonical ProofReason', () => {
+    expect(() => ProofReasonSchema.parse('maybe')).toThrow();
+  });
+
+  it('validates all canonical WasmProverId values', () => {
+    for (const id of ['z3-wasm', 'cvc5-wasm', 'coq-jscoq', 'lean4-wasm', 'lurk-wasm', 'neural', 'cache-hit']) {
+      expect(() => WasmProverIdSchema.parse(id)).not.toThrow();
+    }
+  });
+
+  it('rejects non-canonical prover_id', () => {
+    expect(() => WasmProverIdSchema.parse('my-special-prover')).toThrow();
+  });
+
+  it('allows optional model, unsat_core, and meta fields', () => {
+    expect(() => WasmProofResultSchema.parse({
+      ...validProved,
+      model: { x: 2, y: 3 },
+      meta: { z3_result: 'sat', policy_id: 'p1' },
+    })).not.toThrow();
+  });
+
+  it('rejects result with negative proof_time_ms', () => {
+    expect(() => WasmProofResultSchema.parse({ ...validProved, proof_time_ms: -1 })).toThrow();
+  });
+});
+
+(typeof WasmProverHub !== 'undefined' ? describe : describe.skip)('SwissKnife WasmProverHub WasmProofResult interop', () => {
+  // intentionally empty — swissknife hub results are tested in the jest suite
 });

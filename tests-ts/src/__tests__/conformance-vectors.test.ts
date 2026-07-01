@@ -15,6 +15,7 @@ import {
   SessionErrorSchema,
   BusMessageSchema,
   AuditEntrySchema,
+  WasmProofResultSchema,
 } from '../models';
 
 const MODELS: Record<string, any> = {
@@ -27,6 +28,7 @@ const MODELS: Record<string, any> = {
   SessionError: SessionErrorSchema,
   BusMessage: BusMessageSchema,
   AuditEntry: AuditEntrySchema,
+  WasmProofResult: WasmProofResultSchema,
 };
 
 const VEC_DIR = join(__dirname, '..', '..', '..', 'conformance', 'vectors');

@@ -1,0 +1,1 @@
+{"model":"WasmProofResult","payload":{"proved":true,"sat":true,"unsat":false,"reason":"sat","prover_id":"z3-wasm","proof_time_ms":42,"meta":{"z3_result":"sat","policy_id":"test-policy"}}}

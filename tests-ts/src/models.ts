@@ -415,3 +415,61 @@ export const AuditEntrySchema = z.object({
   extra: z.record(z.unknown()),
 }).passthrough();
 export type AuditEntry = z.infer<typeof AuditEntrySchema>;
+
+// ---------------------------------------------------------------------------
+// WASM prover result (MCP++ local-first prover layer)
+// ---------------------------------------------------------------------------
+
+/**
+ * Proof outcome reasons, mirroring Python's ProofResult.reason field.
+ * Maps to the `reason` field of WasmProofResult.
+ */
+export const ProofReasonSchema = z.enum([
+  'proved',    // formula valid (unsat when negated)
+  'refuted',   // formula unsatisfiable / counter-example found
+  'sat',       // formula satisfiable
+  'unsat',     // formula unsatisfiable (explicit)
+  'unknown',   // prover could not decide (resource limit)
+  'timeout',   // proof budget exceeded
+  'error',     // prover internal error
+]);
+export type ProofReason = z.infer<typeof ProofReasonSchema>;
+
+/** Which WASM/local prover produced the result. */
+export const WasmProverIdSchema = z.enum([
+  'z3-wasm',
+  'cvc5-wasm',
+  'coq-jscoq',
+  'lean4-wasm',
+  'lurk-wasm',
+  'neural',
+  'cache-hit',
+]);
+export type WasmProverId = z.infer<typeof WasmProverIdSchema>;
+
+/**
+ * Result from any local WASM theorem prover.
+ *
+ * TypeScript/WASM equivalent of Python's `Z3ProofResult` dataclass, extended
+ * to be prover-agnostic.  Prover-id `cache-hit` means the result was served
+ * from the in-memory {@link ProofCache}.
+ */
+export const WasmProofResultSchema = z.object({
+  /** True when the prover proved the formula valid. */
+  proved: z.boolean(),
+  /** True when the formula was found satisfiable (model exists). */
+  sat: z.boolean(),
+  /** True when the formula was found unsatisfiable. */
+  unsat: z.boolean(),
+  reason: ProofReasonSchema,
+  prover_id: WasmProverIdSchema,
+  /** Proof time in milliseconds. */
+  proof_time_ms: z.number().nonnegative(),
+  /** Counter-example model (if sat). */
+  model: z.record(z.unknown()).optional(),
+  /** Unsat core (sub-formulas causing unsatisfiability). */
+  unsat_core: z.array(z.string()).optional(),
+  /** Prover-specific metadata. */
+  meta: z.record(z.unknown()).optional(),
+}).passthrough();
+export type WasmProofResult = z.infer<typeof WasmProofResultSchema>;
