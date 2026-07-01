@@ -1,0 +1,1 @@
+{"model":"AuditEntry","payload":{"seq":1,"timestamp":1751380800000,"timestamp_iso":"2026-07-01T12:00:00.000Z","policy_cid":"sha256:policy0001","intent_cid":"sha256:intent0001","decision":"allow","tool":"browse","justification":"all rules passed","obligations":[],"entry_cid":"sha256:1111111111111111111111111111111111111111111111111111111111111111","extra":{}}}

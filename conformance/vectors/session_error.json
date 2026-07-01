@@ -1,0 +1,1 @@
+{"model":"SessionError","payload":{"code":1001,"message":"Incoming frame too large: 17000000 > 16777216","data":{"frameLen":17000000,"maxFrameBytes":16777216}}}

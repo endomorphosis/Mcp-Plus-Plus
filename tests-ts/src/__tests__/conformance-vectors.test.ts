@@ -12,6 +12,9 @@ import {
   DelegationSchema,
   DAGEventSchema,
   ExecutionReceiptSchema,
+  SessionErrorSchema,
+  BusMessageSchema,
+  AuditEntrySchema,
 } from '../models';
 
 const MODELS: Record<string, any> = {
@@ -21,6 +24,9 @@ const MODELS: Record<string, any> = {
   Delegation: DelegationSchema,
   DAGEvent: DAGEventSchema,
   ExecutionReceipt: ExecutionReceiptSchema,
+  SessionError: SessionErrorSchema,
+  BusMessage: BusMessageSchema,
+  AuditEntry: AuditEntrySchema,
 };
 
 const VEC_DIR = join(__dirname, '..', '..', '..', 'conformance', 'vectors');

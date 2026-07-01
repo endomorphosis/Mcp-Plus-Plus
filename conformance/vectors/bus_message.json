@@ -1,0 +1,1 @@
+{"model":"BusMessage","payload":{"topic":"mcp/interface/announce","payload":{"interface_cid":"sha256:abc123"},"published_at":"2026-07-01T13:00:00.000Z","message_cid":"sha256:0000000000000000000000000000000000000000000000000000000000000000"}}
