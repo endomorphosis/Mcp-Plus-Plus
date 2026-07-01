@@ -16,6 +16,7 @@ import {
   BusMessageSchema,
   AuditEntrySchema,
   WasmProofResultSchema,
+  ZKProofArtifactSchema,
 } from '../models';
 
 const MODELS: Record<string, any> = {
@@ -29,6 +30,7 @@ const MODELS: Record<string, any> = {
   BusMessage: BusMessageSchema,
   AuditEntry: AuditEntrySchema,
   WasmProofResult: WasmProofResultSchema,
+  ZKProofArtifact: ZKProofArtifactSchema,
 };
 
 const VEC_DIR = join(__dirname, '..', '..', '..', 'conformance', 'vectors');

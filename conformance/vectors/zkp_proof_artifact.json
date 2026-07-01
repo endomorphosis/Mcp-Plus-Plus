@@ -1,0 +1,1 @@
+{"model":"ZKProofArtifact","payload":{"backend":"lurk","statement":"Obligation discharge for policy p1","proof_b64":"UkVBTF9QRUY=","vk_cid":"sha256:0000000000000000000000000000000000000000000000000000000000000000","public_inputs":["p1","1.0.0"],"artifact_cid":"sha256:1111111111111111111111111111111111111111111111111111111111111111","proof_time_ms":42,"lurk_expr":"t"}}

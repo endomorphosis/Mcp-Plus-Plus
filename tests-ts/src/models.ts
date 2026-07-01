@@ -473,3 +473,28 @@ export const WasmProofResultSchema = z.object({
   meta: z.record(z.unknown()).optional(),
 }).passthrough();
 export type WasmProofResult = z.infer<typeof WasmProofResultSchema>;
+
+// ---------------------------------------------------------------------------
+// ZKProofArtifact — ZK proof-carrying code (MCP++ Phase 6)
+// ---------------------------------------------------------------------------
+
+/**
+ * A zero-knowledge proof artifact from a STARK/SNARK backend.
+ * Produced by `LurkWasmBridge.proveObligationDischarge()` when native Lurk
+ * WASM is available.
+ */
+export const ZKProofArtifactSchema = z.object({
+  backend: z.enum(['lurk', 'nova', 'sphinx', 'plonky3', 'circom']),
+  statement: z.string().min(1),
+  /** Serialised proof bytes as base64url. */
+  proof_b64: z.string().min(1),
+  /** Verification key CID: `sha256:<64hex>`. */
+  vk_cid: z.string().regex(/^sha256:[0-9a-f]{64}$/),
+  public_inputs: z.array(z.unknown()),
+  /** Content-addressed CID of this artifact. */
+  artifact_cid: z.string().regex(/^sha256:[0-9a-f]{64}$/),
+  proof_time_ms: z.number().nonnegative(),
+  /** Lurk s-expression, if applicable. */
+  lurk_expr: z.string().optional(),
+}).passthrough();
+export type ZKProofArtifact = z.infer<typeof ZKProofArtifactSchema>;
