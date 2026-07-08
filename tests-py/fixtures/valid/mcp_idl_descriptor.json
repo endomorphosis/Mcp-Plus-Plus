@@ -1,5 +1,6 @@
 {
   "description": "Valid MCP-IDL interface descriptor",
+  "swissknife_interop_ref": "Mcp-Plus-Plus/tests-py/fixtures/valid/swissknife_mcp_plus_plus_interop_descriptor.json",
   "payload": {
     "name": "weather-api",
     "namespace": "com.example.weather",

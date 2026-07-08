@@ -1,0 +1,72 @@
+{
+  "description": "VAI-665 objective validation repair: MCP-IDL interface descriptor for the SwissKnife<->Mcp-Plus-Plus interoperability surface. Mirrors swissknife/src/services/mcp/mcp-plus-plus-interop-descriptor.ts SWISSKNIFE_MCP_PLUS_PLUS_INTEROP_INTERFACE (converted via toMcpIdlValidatorDescriptor) so the upstream Mcp-Plus-Plus MCPIDLValidator can accept a real SwissKnife-authored descriptor.",
+  "task_id": "VAI-665",
+  "goal_id": "VAIOS-G704",
+  "goal_packet": "goal_packet/interoperability/swissknife/06921590135c",
+  "interface_contract": "interface contract swissknife Mcp-Plus-Plus",
+  "source_module": "swissknife/src/services/mcp/mcp-plus-plus-interop-descriptor.ts",
+  "payload": {
+    "name": "swissknife-mcp-plus-plus-interop",
+    "namespace": "com.swissknife.interop.mcp_plus_plus",
+    "version": "0.1.0",
+    "methods": [
+      {
+        "name": "mcpplusplus.negotiate_capabilities",
+        "input_schema_cid": "bafy_negotiate_in",
+        "output_schema_cid": "bafy_negotiate_out"
+      },
+      {
+        "name": "mcpplusplus.execute_with_envelope",
+        "input_schema_cid": "bafy_execute_in",
+        "output_schema_cid": "bafy_execute_out"
+      },
+      {
+        "name": "mcpplusplus.create_delegation",
+        "input_schema_cid": "bafy_delegate_in",
+        "output_schema_cid": "bafy_delegate_out"
+      },
+      {
+        "name": "mcpplusplus.evaluate_policy",
+        "input_schema_cid": "bafy_policy_in",
+        "output_schema_cid": "bafy_policy_out"
+      },
+      {
+        "name": "mcpplusplus.get_dag_frontier",
+        "input_schema_cid": "bafy_frontier_in",
+        "output_schema_cid": "bafy_frontier_out"
+      },
+      {
+        "name": "mcpplusplus.check_compatibility",
+        "input_schema_cid": "bafy_compat_in",
+        "output_schema_cid": "bafy_compat_out"
+      },
+      {
+        "name": "mcpplusplus.create_p2p_session",
+        "input_schema_cid": "bafy_p2p_in",
+        "output_schema_cid": "bafy_p2p_out"
+      }
+    ],
+    "errors": [
+      {"name": "PolicyMediationRequired", "code": 409},
+      {"name": "UnsupportedProfile", "code": 422},
+      {"name": "CompatibilityCheckFailed", "code": 409}
+    ],
+    "requires": [
+      "mcp++/mcp-idl",
+      "mcp++/cid-envelope",
+      "mcp++/ucan",
+      "mcp++/deontic-policy",
+      "mcp++/event-dag",
+      "mcp++/p2p-transport"
+    ],
+    "compatibility": {
+      "compatible_with": [],
+      "supersedes": []
+    },
+    "semantic_tags": ["interop", "mcp++", "swissknife", "control-surface", "policy-mediation", "mcp_plus_plus"]
+  },
+  "expected": {
+    "valid": true,
+    "has_interface_cid": true
+  }
+}
