@@ -1,8 +1,11 @@
-# Event DAG, Concurrency, and Ordering
+# Profile F: Event DAG Provenance, Archival, and Compaction
 
 **Status:** Draft
 
-This document explains how MCP++ uses a content-addressed Event DAG to provide provenance, replay, rollback, and partial ordering for parallel actions.
+This document defines **Profile F: Event DAG Provenance, Archival, and
+Compaction**. It uses the negotiated capability key `mcp++/event-dag` and a
+content-addressed Event DAG to provide provenance, replay, rollback, partial
+ordering, and bounded retention for parallel actions.
 
 ## 1. Event DAG Basics
 
@@ -59,7 +62,26 @@ generic `payload` object holding type-specific fields (e.g. `intent_cid`,
 
 See [docs/spec/cid-native-artifacts.md](cid-native-artifacts.md) for suggested `event_cid` shape.
 
-## 7. Security Considerations
+## 7. Archival and Compaction
+
+Implementations SHOULD keep a bounded hot tier for recent events and compact
+older epochs only after creating a durable archive. An archive stores the
+original event records, their ordered CID list, and enough Merkle layers to
+produce inclusion proofs. This lets a verifier recover an individual historic
+event or validate its membership without loading the entire DAG into memory.
+
+The archive is summarized by a compaction certificate with `certificate_cid`,
+`archive_cid`, `merkle_root`, `event_count`, `root_cids`, `frontier_cids`,
+`proof_system`, and `zero_knowledge`. Provenance responses that reach compacted
+history MUST return the archive and certificate references as a traversal
+boundary. They MUST NOT require unbounded recursive traversal.
+
+An integrity hash or simulated proof is not a zero-knowledge proof. Such a
+certificate MUST identify its proof system and set `zero_knowledge: false`.
+Only a certificate produced and verified by an actual ZK proof system, with a
+verifiable statement and verification key, MAY set `zero_knowledge: true`.
+
+## 8. Security Considerations
 
 - Parent links MUST be immutable and verifiable by CID.
 - Replayers/auditors must validate that referenced CIDs are available and canonicalized under agreed rules.

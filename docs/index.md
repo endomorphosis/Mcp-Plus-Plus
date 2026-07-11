@@ -17,12 +17,17 @@ This folder is the canonical documentation set for the MCP++ project.
 - [CID-Native Execution Artifacts](spec/cid-native-artifacts.md)
 - [Capability Delegation (UCAN)](spec/ucan-delegation.md)
 - [Temporal Deontic Policy Evaluation](spec/temporal-deontic-policy.md)
-- [Event DAG, Concurrency, and Ordering](spec/event-dag-ordering.md)
+- [Profile F: Event DAG Provenance, Archival, and Compaction](spec/event-dag-ordering.md)
 - [Risk Scoring, Consensus, and Scheduling](spec/risk-scheduling.md)
+
+## Live implementation compatibility
+
+- [SwissKnife and IPFS MCP compatibility snapshot](interop/swissknife-ipfs-mcp-compatibility.md)
 
 ## Folder map
 
 - `agents/` — onboarding material, repo map, and “how to work here” guidance for automated agents.
 - `architecture/` — design goals, core concepts, and how the pieces fit.
 - `spec/` — protocol/profile drafts and normative-ish documents.
+- `interop/` — dated, evidence-backed implementation compatibility snapshots.
 - `_archive/` — raw exports, notes, and historical artifacts (not canonical).

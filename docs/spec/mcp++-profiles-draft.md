@@ -22,7 +22,7 @@ This draft is the top-level profile registry. The component details live in thes
 - [Profile B: CID-Native Execution Artifacts](cid-native-artifacts.md)
 - [Profile C: Capability Delegation (UCAN)](ucan-delegation.md)
 - [Profile D: Temporal Deontic Policy Evaluation](temporal-deontic-policy.md)
-- [Event DAG, Concurrency, and Ordering](event-dag-ordering.md)
+- [Profile F: Event DAG Provenance, Archival, and Compaction](event-dag-ordering.md)
 - [Risk Scoring, Neighborhood Consensus, and Scheduling](risk-scheduling.md)
 - [Profile E: `mcp+p2p` Transport Binding](transport-mcp-p2p.md)
 
@@ -171,9 +171,20 @@ See: [docs/spec/transport-mcp-p2p.md](transport-mcp-p2p.md)
 
 ---
 
-## 9. Event DAG and Provenance
+## 9. Profile F: Event DAG Provenance, Archival, and Compaction
 
-### 9.1 Event Structure (Normative)
+### 9.1 Capability and Profile Name (Normative)
+
+Profile F is negotiated with the capability key `mcp++/event-dag`. The stable
+wire key remains intentionally short for compatibility; implementations MUST
+expose the profile name **"Profile F: Event DAG Provenance, Archival, and
+Compaction"** in profile metadata and documentation.
+
+Profile F defines a bounded-retention Event DAG. It preserves auditability
+without requiring every peer to keep, load, or traverse the entire execution
+history in memory.
+
+### 9.2 Event Structure (Normative)
 
 Each event CID MUST commit to:
 - intent
@@ -183,9 +194,41 @@ Each event CID MUST commit to:
 - outputs
 - parents
 
-### 9.2 Unrolling and Audit
+### 9.3 Hot, Archived, and Compacted Tiers (Normative)
 
-Causal traversal of the Event DAG enables deterministic replay, rollback, and attribution.
+Implementations MAY retain recent events in a hot in-memory tier and MUST
+write an archive before removing an event from that tier. An archive MUST be
+content-addressed or otherwise integrity-addressed, contain the original event
+records and Merkle layers sufficient for inclusion verification, and remain
+retrievable through the implementation's declared archive backend.
+
+An implementation MAY compact an old epoch into a certificate only after its
+archive write is durable. Compaction MUST NOT silently discard the underlying
+event records. Implementations SHOULD bound `history` and `provenance`
+traversals and return archive boundaries rather than forcing a client to load
+unbounded history.
+
+### 9.4 Compaction Certificate (Normative)
+
+A compaction certificate MUST include `certificate_cid`, `archive_cid`,
+`merkle_root`, `epoch_id`, `event_count`, `root_cids[]`, `frontier_cids[]`,
+`proof_system`, and `zero_knowledge`. It MUST include `proof` when the selected
+proof system emits proof material, and `verification_key_cid` when a verifier
+key is required.
+
+`zero_knowledge` MUST be `true` only when the certificate contains an actual
+zero-knowledge proof that the receiver can verify against the declared proof
+system and verification key. A hash, Merkle root, signature, or simulated
+Groth16-shaped digest is an integrity commitment and MUST set
+`zero_knowledge` to `false`.
+
+### 9.5 Unrolling and Audit
+
+Causal traversal of the Event DAG enables deterministic replay, rollback, and
+attribution. When a traversal reaches compacted history, the response MUST
+include the relevant `archive_cid` and `certificate_cid`; the caller MAY fetch
+the archive or request a Merkle inclusion proof instead of traversing all prior
+nodes.
 
 See: [docs/spec/event-dag-ordering.md](event-dag-ordering.md)
 
@@ -234,6 +277,7 @@ Implementations MAY adopt MCP++ profiles independently:
 3. Delegation
 4. Policy evaluation
 5. P2P transport
+6. Profile F Event DAG archival and compaction
 
 ---
 
@@ -265,7 +309,7 @@ Method names and the execution result shape are canonical and MUST match:
 | C (UCAN) | `mcp++/ucan/validate` | `POST /mcp/ucan/{delegate,revoke,validate}` | `valid`, `chain[]` |
 | D (policy) | `mcp++/policy/evaluate` | `POST /mcp/policy/evaluate` | `decision`, `obligations[]`, `allowed` |
 | E (P2P) | `mcp++/p2p/peers` | `GET /mcp/p2p/peers` | `peers[]`, `protocol` |
-| DAG | — | `GET /mcp/dag/{frontier,history,provenance/{cid}}` | `frontier[]`/`events[]`/`chain[]` |
+| F (Event DAG) | `mcp++/dag/{frontier,history,provenance,append,compact,archive,archives,certificate/get,certificate/verify,inclusion}` | `GET /mcp/dag/{frontier,history,provenance/{cid},archives,certificates/{cid},inclusion/{cid}}`; `POST /mcp/dag/{append,compact,archive,certificates/verify}` | bounded `frontier[]`/`events[]`/`chain[]`, archive boundaries, archive and certificate CIDs |
 
 The `mcp++/execute` `receipt` object MUST include `success` and SHOULD include
 `receipt_cid`, `output_cid`, `error`, `duration_ms`; signed receipts add
@@ -273,7 +317,8 @@ The `mcp++/execute` `receipt` object MUST include `success` and SHOULD include
 CIDs in these payloads MUST satisfy the CID format regex in
 `cid-native-artifacts.md`.
 Capability negotiation keys are: `mcp++/mcp-idl`, `mcp++/cid-envelope`,
-`mcp++/ucan`, `mcp++/deontic-policy`, `mcp++/event-dag`, `mcp++/p2p-transport`.
+`mcp++/ucan`, `mcp++/deontic-policy`, `mcp++/event-dag` (Profile F),
+`mcp++/p2p-transport`.
 
 ### A.1 Canonical Error Codes (Normative)
 
@@ -289,5 +334,4 @@ JSON-RPC error responses MUST use these codes; meanings are normative:
 | `-32000` | Server/execution error (incl. tool timeout) |
 
 Validators expose these as `ErrorCode` (py/ts) and `error_code::*` (rs).
-
 
