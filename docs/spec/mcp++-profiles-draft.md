@@ -222,6 +222,40 @@ system and verification key. A hash, Merkle root, signature, or simulated
 Groth16-shaped digest is an integrity commitment and MUST set
 `zero_knowledge` to `false`.
 
+### 9.4.1 Verifier-Backed ZK Extension (Normative)
+
+Implementations that offer real Profile F proof generation expose the following
+operations in the Profile F namespace:
+
+- `mcp++/dag/zk/status`
+- `mcp++/dag/zk/prove`
+- `mcp++/dag/zk/verify`
+
+The REST equivalents are `GET /mcp/dag/zk/status` and `POST
+/mcp/dag/zk/{prove,verify}`. `status` MUST report `available: false` when the
+proving binary, proving key, or verifying key is unavailable. A prover MUST
+fail closed in that state; it MUST NOT return simulated proof bytes with
+`zero_knowledge: true`.
+
+The initial bounded circuit profiles are `MCP++_EventDAG_Compaction_v1`
+(`groth16-bn254-event-dag-v3`) and the SwissKnife-local
+`event_dag_compaction_v1` (`groth16-bn254-poseidon-event-dag-v1`). Each
+certificate MUST identify its exact circuit and leaf derivation. Both prove
+knowledge of one through four private event commitments with a public root and
+active-leaf count. An archive verifier MUST derive the declared commitments
+from the archived CID batch, recompute the declared ZK root, verify the
+Groth16 proof, and verify the normal archive Merkle root before accepting the
+certificate. Implementations MUST NOT treat different circuit identifiers as
+interchangeable. Larger archives MAY be split into bounded proof batches or
+retain a hash-only certificate until an audited aggregation circuit is
+available.
+
+Certificates produced by this extension MUST include `proof_system`,
+`zero_knowledge`, `circuit_version`, `ruleset_id`, `zk_merkle_root`, `proof`,
+`verification_key_cid`, and `verification_key_sha256`. A verification-key CID
+identifies the exact key blob; deployments are responsible for publishing that
+blob through their declared archive backend before advertising the proof path.
+
 ### 9.5 Unrolling and Audit
 
 Causal traversal of the Event DAG enables deterministic replay, rollback, and
@@ -309,7 +343,7 @@ Method names and the execution result shape are canonical and MUST match:
 | C (UCAN) | `mcp++/ucan/validate` | `POST /mcp/ucan/{delegate,revoke,validate}` | `valid`, `chain[]` |
 | D (policy) | `mcp++/policy/evaluate` | `POST /mcp/policy/evaluate` | `decision`, `obligations[]`, `allowed` |
 | E (P2P) | `mcp++/p2p/peers` | `GET /mcp/p2p/peers` | `peers[]`, `protocol` |
-| F (Event DAG) | `mcp++/dag/{frontier,history,provenance,append,compact,archive,archives,certificate/get,certificate/verify,inclusion}` | `GET /mcp/dag/{frontier,history,provenance/{cid},archives,certificates/{cid},inclusion/{cid}}`; `POST /mcp/dag/{append,compact,archive,certificates/verify}` | bounded `frontier[]`/`events[]`/`chain[]`, archive boundaries, archive and certificate CIDs |
+| F (Event DAG) | `mcp++/dag/{frontier,history,provenance,append,compact,archive,archives,certificate/get,certificate/verify,inclusion,zk/status,zk/prove,zk/verify}` | `GET /mcp/dag/{frontier,history,provenance/{cid},archives,certificates/{cid},inclusion/{cid},zk/status}`; `POST /mcp/dag/{append,compact,archive,certificates/verify,zk/prove,zk/verify}` | bounded `frontier[]`/`events[]`/`chain[]`, archive boundaries, certificate CIDs, and optional verifier-backed ZK certificates |
 
 The `mcp++/execute` `receipt` object MUST include `success` and SHOULD include
 `receipt_cid`, `output_cid`, `error`, `duration_ms`; signed receipts add
@@ -334,4 +368,3 @@ JSON-RPC error responses MUST use these codes; meanings are normative:
 | `-32000` | Server/execution error (incl. tool timeout) |
 
 Validators expose these as `ErrorCode` (py/ts) and `error_code::*` (rs).
-

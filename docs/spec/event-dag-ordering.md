@@ -81,6 +81,24 @@ certificate MUST identify its proof system and set `zero_knowledge: false`.
 Only a certificate produced and verified by an actual ZK proof system, with a
 verifiable statement and verification key, MAY set `zero_knowledge: true`.
 
+## 5.1 Bounded Groth16 Certificate Profile
+
+`MCP++_EventDAG_Compaction_v1` is an initial verifier-backed Profile F
+certificate profile. Its `groth16-bn254-event-dag-v3` circuit keeps one through
+four event digests private while exposing a constrained root and active-leaf
+count. SwissKnife additionally ships a local-only
+`event_dag_compaction_v1` circuit using Poseidon Merkle compression over
+SHA-256-to-field CID commitments. A receiver MUST recompute the declared ZK
+root from the archived CID batch, verify the proof using the certificate's
+verification-key CID, and verify the archive's ordinary Merkle root. The
+certificate does not replace durable archive storage.
+
+The Profile F operations are `mcp++/dag/zk/status`, `mcp++/dag/zk/prove`, and
+`mcp++/dag/zk/verify`. A missing proving key, verifier key, or prover MUST be
+reported as unavailable; a server MAY use an integrity-only certificate but
+MUST set `zero_knowledge: false`. Larger epochs must be chunked or use an
+audited aggregation circuit before they can claim full ZK coverage.
+
 ## 8. Security Considerations
 
 - Parent links MUST be immutable and verifiable by CID.
