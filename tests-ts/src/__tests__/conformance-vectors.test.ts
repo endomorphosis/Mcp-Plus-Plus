@@ -12,11 +12,6 @@ import {
   DelegationSchema,
   DAGEventSchema,
   ExecutionReceiptSchema,
-  SessionErrorSchema,
-  BusMessageSchema,
-  AuditEntrySchema,
-  WasmProofResultSchema,
-  ZKProofArtifactSchema,
 } from '../models';
 
 const MODELS: Record<string, any> = {
@@ -26,11 +21,6 @@ const MODELS: Record<string, any> = {
   Delegation: DelegationSchema,
   DAGEvent: DAGEventSchema,
   ExecutionReceipt: ExecutionReceiptSchema,
-  SessionError: SessionErrorSchema,
-  BusMessage: BusMessageSchema,
-  AuditEntry: AuditEntrySchema,
-  WasmProofResult: WasmProofResultSchema,
-  ZKProofArtifact: ZKProofArtifactSchema,
 };
 
 const VEC_DIR = join(__dirname, '..', '..', '..', 'conformance', 'vectors');
