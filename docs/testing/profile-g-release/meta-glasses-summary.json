@@ -1,0 +1,68 @@
+{
+  "allowed_fields": [
+    "release_decision",
+    "aggregate counts",
+    "bounded risk action",
+    "peer DID",
+    "claim/receipt/event CID",
+    "fencing token",
+    "expiry",
+    "redacted reason"
+  ],
+  "forbidden_actions": [
+    "claim",
+    "renew",
+    "release",
+    "resolve",
+    "reconcile",
+    "select plan",
+    "steer task"
+  ],
+  "handoff_rule": "Any action request leaves the glasses summary and enters the desktop/mobile confirmed Profile C/D policy path.",
+  "projection": {
+    "mode": "read-only",
+    "mutation_authority": false,
+    "physical_glasses_required": false,
+    "surfaces": [
+      "glasses_hud",
+      "display_webapp",
+      "audio-summary",
+      "mobile-card-fallback"
+    ]
+  },
+  "publication_date": "2026-07-12",
+  "redacted_fields": [
+    "raw task input/output",
+    "UCAN token",
+    "policy body",
+    "raw health telemetry",
+    "unredacted risk evidence",
+    "private peer address",
+    "operator prompt"
+  ],
+  "release_decision": "GO",
+  "schema": "mcp++/profile-g/meta-glasses-summary@1",
+  "summary": {
+    "duplicate_completion_events": 0,
+    "frontiers_converged": true,
+    "peer_count": 3,
+    "policy_bypasses": 0,
+    "profiles": "A-G",
+    "starved_tasks": 0,
+    "throughput_gain": 2.752294,
+    "transports": [
+      "jsonrpc-http",
+      "mcp+p2p"
+    ]
+  },
+  "visible_states": [
+    "degraded",
+    "denied",
+    "conflicted",
+    "expired",
+    "stale_fence",
+    "partitioned",
+    "blocked",
+    "unavailable"
+  ]
+}

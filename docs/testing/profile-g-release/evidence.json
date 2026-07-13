@@ -1,0 +1,243 @@
+{
+  "benchmark_summary": {
+    "duplicate_completion_events": 0,
+    "frontiers_converged": true,
+    "peer_count": 3,
+    "policy_bypasses": 0,
+    "starved_tasks": 0,
+    "throughput_gain": 2.752294
+  },
+  "decision": "GO",
+  "gates": [
+    {
+      "command": "python -m pytest -q integration/test_conformance_vectors.py integration/test_cid_envelopes.py integration/test_policy_evaluation.py integration/test_event_dag.py integration/test_transport.py",
+      "id": "profiles-a-f-conformance",
+      "profiles": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F"
+      ],
+      "status": "pass",
+      "title": "Profiles A-F canonical conformance",
+      "transports": [
+        "jsonrpc-http",
+        "mcp+p2p"
+      ]
+    },
+    {
+      "command": "python -m pytest -q integration/test_profile_g_codec.py",
+      "id": "profile-g-codecs",
+      "profiles": [
+        "G"
+      ],
+      "status": "pass",
+      "title": "Profile G closed schemas, CIDs, and invalid vectors",
+      "transports": []
+    },
+    {
+      "command": "python -m pytest -q ipfs_accelerate_py/mcp/tests/test_profile_g_transport.py",
+      "id": "accelerator-profile-g-transport",
+      "profiles": [
+        "G"
+      ],
+      "status": "pass",
+      "title": "Accelerator JSON-RPC/REST/Profile E binding",
+      "transports": [
+        "jsonrpc-http",
+        "mcp+p2p"
+      ]
+    },
+    {
+      "command": "python -m pytest -q tests/mcp_server/test_profile_g_transport.py",
+      "id": "datasets-profile-g-transport",
+      "profiles": [
+        "G"
+      ],
+      "status": "pass",
+      "title": "Datasets negotiation and Profile E denial binding",
+      "transports": [
+        "jsonrpc-http",
+        "mcp+p2p"
+      ]
+    },
+    {
+      "command": "python -m pytest -q tests/test_profile_g_transport.py",
+      "id": "kit-profile-g-transport",
+      "profiles": [
+        "G"
+      ],
+      "status": "pass",
+      "title": "Kit HTTP/Profile E semantic parity",
+      "transports": [
+        "jsonrpc-http",
+        "mcp+p2p"
+      ]
+    },
+    {
+      "command": "python -m pytest -q integration/test_profile_g_three_peer.py",
+      "id": "profile-g-three-peer",
+      "peer_count": 3,
+      "profiles": [
+        "B",
+        "C",
+        "D",
+        "F",
+        "G"
+      ],
+      "status": "pass",
+      "title": "Three-peer conflict, takeover, and reconciliation",
+      "transports": [
+        "jsonrpc-http",
+        "mcp+p2p"
+      ]
+    },
+    {
+      "command": "python benchmarks/run_profile_g_benchmark.py --output-dir <temporary-output>",
+      "id": "profile-g-performance",
+      "peer_count": 3,
+      "profiles": [
+        "G"
+      ],
+      "status": "pass",
+      "title": "Throughput, fairness, starvation, and recovery thresholds",
+      "transports": []
+    },
+    {
+      "command": "npm run test:run -- test/mcp-plus-plus/profile-g-connector.test.ts",
+      "id": "swissknife-profile-g",
+      "profiles": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G"
+      ],
+      "status": "pass",
+      "title": "Desktop connector and governed/read-only mappings",
+      "transports": [
+        "jsonrpc-http",
+        "mcp+p2p"
+      ]
+    }
+  ],
+  "observable_states": [
+    {
+      "required_detail": "affected peer/transport and receipt",
+      "state": "degraded",
+      "surface": "backend health and transport fallback"
+    },
+    {
+      "required_detail": "reason, decision CID, and required confirmation",
+      "state": "denied",
+      "surface": "policy decision"
+    },
+    {
+      "required_detail": "winning/losing claim CIDs and fencing token",
+      "state": "conflicted",
+      "surface": "claims and leases"
+    },
+    {
+      "required_detail": "expiry, successor epoch, and takeover receipt",
+      "state": "expired",
+      "surface": "claims and leases"
+    },
+    {
+      "required_detail": "rejection code and current fence",
+      "state": "stale_fence",
+      "surface": "reconciliation"
+    },
+    {
+      "required_detail": "quorum failure and retry state",
+      "state": "partitioned",
+      "surface": "neighborhood peers"
+    },
+    {
+      "required_detail": "dependency or authority reason",
+      "state": "blocked",
+      "surface": "task queue"
+    },
+    {
+      "required_detail": "capability, owner, reason, and correlation ID",
+      "state": "unavailable",
+      "surface": "gateway evidence"
+    }
+  ],
+  "profiles": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G"
+  ],
+  "publication_date": "2026-07-12",
+  "release_rule": "Every gate must pass; missing evidence, hidden state, transport drift, stale-fence execution, policy bypass, duplicate completion, or starvation is NO_GO.",
+  "schema": "mcp++/release-evidence@1",
+  "screenshots": [
+    {
+      "bytes": 57403,
+      "path": "swissknife/test-results/virtual-desktop-ipfs-mcp-orb/app-screenshots/agent-supervisor.png",
+      "sha256": "sha256:6acec83bfea1ecf23bfddcfde864302e5acf05671f4c9f20934baa5ea91fa204"
+    },
+    {
+      "bytes": 53700,
+      "path": "swissknife/test-results/virtual-desktop-ipfs-mcp-orb/app-screenshots/mcp-plus-plus.png",
+      "sha256": "sha256:f9a5f3f1ec466509e32530708c4b5fac12bcf1f8bbafa20b1c8acb5ecdeb17f1"
+    },
+    {
+      "bytes": 15674,
+      "path": "swissknife/test-results/virtual-desktop-ipfs-mcp-orb/glasses-screenshots/agent-supervisor-display.png",
+      "sha256": "sha256:2c4e42cfc3afdc83447b05720ac7719962ca881c5bfd51d2f3abe6b077f91283"
+    },
+    {
+      "bytes": 15674,
+      "path": "swissknife/test-results/virtual-desktop-ipfs-mcp-orb/glasses-screenshots/agent-supervisor-fallback.png",
+      "sha256": "sha256:4b103c14c45a5ad133a7b5dda3d7a040877c6ab84b7da65e5d1684fad1f6835a"
+    }
+  ],
+  "source_evidence": [
+    {
+      "path": "Mcp-Plus-Plus/docs/spec/mcp++-profiles-draft.md",
+      "sha256": "sha256:0e18f68622e84f96f7d6cabb7e2ce22323adaaf6f17c83632d5fa2caee7ddeb5"
+    },
+    {
+      "path": "Mcp-Plus-Plus/docs/spec/risk-scheduling.md",
+      "sha256": "sha256:0f909903c1221ef6cd9b92c2ce2cdaadd231eb2edfe50268a3047e9be54d2dbc"
+    },
+    {
+      "path": "Mcp-Plus-Plus/conformance/vectors/profile_g_artifacts_valid.json",
+      "sha256": "sha256:7a8983984e52f0e67a2e3aa8a79594ea4b57a05ac55a6ed593d4d811e39a2936"
+    },
+    {
+      "path": "Mcp-Plus-Plus/conformance/vectors/profile_g_artifacts_invalid.json",
+      "sha256": "sha256:2d0171406279c94c48076a36940a6a26d740ccd04752badc6b0228117b23fa44"
+    },
+    {
+      "path": "Mcp-Plus-Plus/conformance/vectors/profile_g_protocol_valid.json",
+      "sha256": "sha256:2d320d7f2bf3953aed10320d01cf51b4a451fa8ef1489e9526a7f35096d116ad"
+    },
+    {
+      "path": "Mcp-Plus-Plus/conformance/vectors/profile_g_protocol_invalid.json",
+      "sha256": "sha256:c43359856f96a2704a3dd919c7e521f7cca1bf516ad9aed1b0b575b315b4c8e6"
+    },
+    {
+      "path": "Mcp-Plus-Plus/conformance/vectors/profile_g_three_peer.json",
+      "sha256": "sha256:f78155b6798ef7154911210ac489476a7f95146029d7aa55395ace0f85d02626"
+    },
+    {
+      "path": "Mcp-Plus-Plus/docs/testing/profile-g-performance/results.json",
+      "sha256": "sha256:f19606483521112c3cc93544aa7d3d58a80ff5ab0f2aaab95c0266e2a8d4a0ee"
+    }
+  ],
+  "task_id": "SVD-091",
+  "transports": [
+    "jsonrpc-http",
+    "mcp+p2p"
+  ]
+}

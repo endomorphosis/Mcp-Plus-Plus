@@ -1,0 +1,14 @@
+{
+  "profileVersion":"1.0","cases":[
+    {"id":"invalid-base64","operation":"decode","kind":"PaymentRequired","encoded":"%%%","expected_error":"H_INVALID_PAYMENT_MESSAGE","expected_path":"/header"},
+    {"id":"invalid-amount","operation":"artifact-mutate","source":"settlement-receipt","mutation":{"path":"amount","value":"01"},"expected_error":"H_AMOUNT_MISMATCH","expected_path":"/amount"},
+    {"id":"invalid-network","operation":"artifact-mutate","source":"settlement-receipt","mutation":{"path":"network","value":"ethereum"},"expected_error":"H_UNSUPPORTED_NETWORK","expected_path":"/network"},
+    {"id":"expired-quote","operation":"artifact","source":"payment-quote","now_ms":1700000300000,"expected_error":"H_QUOTE_EXPIRED","expected_path":"/expiresAt"},
+    {"id":"request-substitution","operation":"binding","source":"payment-authorization","expected_request_cid":"baguqeerax3hnd7tjmni3xglbngspdgd4ugnv6uxtpr7pgby7tqcez42ybp6a","expected_error":"H_REQUEST_MISMATCH","expected_path":"/requestCid"},
+    {"id":"invalid-signature","operation":"artifact-mutate","source":"payment-quote","mutation":{"path":"signature","value":"not-a-signature"},"expected_error":"H_VERIFICATION_FAILED","expected_path":"/signature"},
+    {"id":"replay","operation":"replay","commitment":"baguqeera7psh63mcwq22rh3on7fglliwcoazlxqgyx6d763gqjvhnzsoi6pq","expected_error":"H_PAYMENT_REPLAY","expected_path":"/commitment"},
+    {"id":"redaction-wallet-address","operation":"artifact-redaction","source":"payment-quote","expected_error":"H_INVALID_PAYMENT_MESSAGE","expected_path":"/requirements/0/extra/walletAddress"},
+    {"id":"requirement-bound","operation":"artifact","source":"payment-quote","limits":{"max_requirements":1},"append_requirement":true,"expected_error":"H_LIMIT_EXCEEDED","expected_path":"/requirements"},
+    {"id":"artifact-size-bound","operation":"artifact-mutate","source":"settlement-receipt","limits":{"max_artifact_bytes":128},"mutation":{"path":"correlationId","value":"size-bound"},"expected_error":"H_LIMIT_EXCEEDED","expected_path":""}
+  ]
+}

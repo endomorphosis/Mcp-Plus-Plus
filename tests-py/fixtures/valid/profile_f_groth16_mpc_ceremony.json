@@ -1,0 +1,68 @@
+{
+  "schema": "mcp++/groth16-mpc-ceremony@1",
+  "profile": {
+    "capability": "mcp++/event-dag",
+    "name": "Profile F: Event DAG Provenance, Archival, and Compaction"
+  },
+  "ceremonyId": "profile-f-event-dag-compaction-v1",
+  "circuitId": "event_dag_compaction_v1",
+  "circuitR1cs": {
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "cid": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "sizeBytes": 101
+  },
+  "phase1Powers": {
+    "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "cid": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "sizeBytes": 102
+  },
+  "initialZkey": {
+    "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "cid": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "sizeBytes": 103
+  },
+  "curve": "bn128",
+  "minimumIndependentContributors": 2,
+  "contributions": [
+    {
+      "sequence": 1,
+      "participantDid": "did:key:z6MkhAlice",
+      "inputArtifactSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "outputArtifactSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "attestation": {
+        "algorithm": "EdDSA",
+        "signature": "alice-signature",
+        "signedAt": "2026-07-11T12:00:00.000Z",
+        "statementCid": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "transcriptVerifier": "snarkjs-zkey-verify",
+      "transcriptVerifiedAt": "2026-07-11T12:01:00.000Z"
+    },
+    {
+      "sequence": 2,
+      "participantDid": "did:key:z6MkhBob",
+      "inputArtifactSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "outputArtifactSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "attestation": {
+        "algorithm": "EdDSA",
+        "signature": "bob-signature",
+        "signedAt": "2026-07-11T12:02:00.000Z",
+        "statementCid": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+      },
+      "transcriptVerifier": "snarkjs-zkey-verify",
+      "transcriptVerifiedAt": "2026-07-11T12:03:00.000Z"
+    }
+  ],
+  "finalZkey": {
+    "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "cid": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "sizeBytes": 105
+  },
+  "verificationKey": {
+    "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "cid": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "sizeBytes": 106
+  },
+  "status": "complete",
+  "finalizedAt": "2026-07-11T12:04:00.000Z"
+}

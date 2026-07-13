@@ -1,0 +1,27 @@
+{
+  "model": "DAGEvent",
+  "payload": {"event_type":"envelope","event_cid":"bafkreify4h4axvyk4b4ey6cvurixgg3ul7o3m52j2i7wg67jbavxl2kxlm","parents":[],"timestamp":1783872000,"payload":{"profile":"mcp++/risk-scheduling","suite":"three-peer"}},
+  "schema": "mcp++/profile-g/three-peer-fixture@1",
+  "id": "simultaneous-claim-partition-restart-takeover-reconcile",
+  "initial_time_ms": 1783872000000,
+  "peer_ids": ["did:web:peer-a.example", "did:web:peer-b.example", "did:web:peer-c.example"],
+  "task_cid": "baguqeerab25ufh5invebyjrq7lct3mojdt762xknihiqehaxsrcowz7h5yfq",
+  "claims": [
+    {"peer_id": "did:web:peer-a.example", "risk_bucket": 1, "capability_fit_millionths": 800000, "expected_finish_offset_ms": 4000},
+    {"peer_id": "did:web:peer-b.example", "risk_bucket": 1, "capability_fit_millionths": 900000, "expected_finish_offset_ms": 5000}
+  ],
+  "takeover": {"peer_id": "did:web:peer-c.example", "risk_bucket": 0, "capability_fit_millionths": 950000, "expected_finish_offset_ms": 3000},
+  "outputs": {
+    "stale": "bafkreiha52f3kbuf4bp2b5d62bbahluvh7p5avpvxuujf2qymucckt4mhi",
+    "accepted": "bafkreidpgkdasegkb6zkedd73ikdmzvqtw7y3njdqgk4scsyn62uf7ymvu",
+    "conflicting": "bafkreic55fjrt4lum7ww3rmojyfrnqizhij3gxla3relz4dl62335256nq"
+  },
+  "expected": {
+    "epoch_1_winner": "did:web:peer-b.example",
+    "epoch_2_winner": "did:web:peer-c.example",
+    "accepted_epochs": [1, 2],
+    "fencing_tokens": [1, 2],
+    "successful_completion_count": 1,
+    "rejected_evidence_reasons": ["G_COMPLETION_CONFLICT", "G_STALE_FENCE"]
+  }
+}

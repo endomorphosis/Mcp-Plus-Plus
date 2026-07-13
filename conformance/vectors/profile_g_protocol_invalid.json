@@ -1,0 +1,27 @@
+{
+  "model": "DAGEvent",
+  "payload": {"event_type":"envelope","event_cid":"bafkreify4h4axvyk4b4ey6cvurixgg3ul7o3m52j2i7wg67jbavxl2kxlm","parents":[],"timestamp":1783872000,"payload":{"profile":"mcp++/risk-scheduling","suite":"protocol-invalid"}},
+  "schema": "mcp++/profile-g/conformance-suite@1",
+  "profile": "mcp++/risk-scheduling@1.0",
+  "cases": [
+    {"id":"not-negotiated","kind":"Mutation","valid":false,"condition":{"negotiated":false,"method":"mcp++/schedule/claim"},"expected_jsonrpc":-32040,"expected_http":409,"expected_error":"G_CAPABILITY_NOT_NEGOTIATED"},
+    {"id":"cid-mismatch","kind":"Mutation","valid":false,"condition":{"claimed_cid":"baguqeerakks7bnxojgffzvzkytumof6wj45v4f4pla66djy34k2wiwh4i35a","computed_cid":"baguqeerap5qiswfohduhwght3zgs3rrxcjvcqj6apcl4hzilwdrugdu45baq"},"expected_jsonrpc":-32041,"expected_http":422,"expected_error":"G_CID_MISMATCH"},
+    {"id":"revoked-proof-no-fallback","kind":"ProviderChain","valid":false,"condition":{"package_result":"G_AUTHORITY_DENIED","proof_status":"revoked"},"forbidden_next_adapters":["cli","mcp"],"expected_jsonrpc":-32042,"expected_http":403,"expected_error":"G_AUTHORITY_DENIED"},
+    {"id":"denied-policy-no-fallback","kind":"ProviderChain","valid":false,"condition":{"package_result":"G_POLICY_DENIED","decision":"deny"},"forbidden_next_adapters":["cli","mcp"],"expected_jsonrpc":-32043,"expected_http":403,"expected_error":"G_POLICY_DENIED"},
+    {"id":"unselected-plan","kind":"TaskReadiness","valid":false,"condition":{"selection_cid":null,"dependencies_complete":true},"expected_jsonrpc":-32044,"expected_http":409,"expected_error":"G_NOT_READY"},
+    {"id":"idempotency-key-reuse","kind":"Idempotency","valid":false,"condition":{"scope":["did:web:worker-a.example","mcp++/schedule/claim","same-key"],"stored_request_hash":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","new_request_hash":"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"},"expected_jsonrpc":-32045,"expected_http":409,"expected_error":"G_IDEMPOTENCY_CONFLICT"},
+    {"id":"losing-claim","kind":"ClaimConflict","valid":false,"condition":{"submitted_claim_cid":"baguqeera3wpmlpa64k3lyv6q42qscmwv7aps5ca4gehhpc5q6so6wx22qqva","winner_claim_cid":"baguqeeraxdwm25h6grgd5elfisj62hggt2nwg7hy3uhnfuuij4rxlpivytza"},"expected_jsonrpc":-32046,"expected_http":409,"expected_error":"G_CLAIM_CONFLICT"},
+    {"id":"renew-after-expiry","kind":"Lease","valid":false,"condition":{"now_ms":1783872061001,"lease_expires_at_ms":1783872061000},"expected_jsonrpc":-32047,"expected_http":409,"expected_error":"G_LEASE_EXPIRED"},
+    {"id":"stale-sink-fence","kind":"Fence","valid":false,"condition":{"submitted_token":1,"highest_sink_token":2},"expected_jsonrpc":-32048,"expected_http":409,"expected_error":"G_STALE_FENCE"},
+    {"id":"exclusive-task-partition","kind":"Quorum","valid":false,"condition":{"execution_mode":"exclusive","linearizable_provider":"unreachable"},"expected_jsonrpc":-32049,"expected_http":503,"expected_error":"G_QUORUM_UNAVAILABLE"},
+    {"id":"page-over-limit","kind":"BoundedPage","valid":false,"condition":{"requested_limit":1001,"advertised_max_page_size":1000},"expected_jsonrpc":-32050,"expected_http":413,"expected_error":"G_LIMIT_EXCEEDED"},
+    {"id":"all-providers-unavailable","kind":"ProviderChain","valid":false,"condition":{"attempts":[["package","unavailable"],["cli","unavailable"],["mcp","unavailable"]]},"expected_jsonrpc":-32051,"expected_http":503,"expected_error":"G_PROVIDER_UNAVAILABLE"},
+    {"id":"expired-risk-evidence","kind":"RiskEvaluation","valid":false,"condition":{"assessment_time_ms":1783872300001,"evidence_expires_at_ms":1783872300000},"expected_jsonrpc":-32052,"expected_http":422,"expected_error":"G_EVIDENCE_INVALID"},
+    {"id":"confidential-evidence-read","kind":"Disclosure","valid":false,"condition":{"classification":"confidential","caller_authorized":false},"expected_jsonrpc":-32053,"expected_http":403,"expected_error":"G_REDACTED"},
+    {"id":"unresolved-archive-history","kind":"History","valid":false,"condition":{"hot_history_complete":false,"archive_cid":"baguqeerab2z6g273etontoy5dpwocuysc22zkoni7xqx52acesxqmu6jfkrq","archive_loaded":false},"expected_jsonrpc":-32054,"expected_http":409,"expected_error":"G_ARCHIVE_BOUNDARY"},
+    {"id":"attempt-budget-exhausted","kind":"Retry","valid":false,"condition":{"attempt":3,"max_attempts":3,"requested_next_attempt":4},"expected_jsonrpc":-32055,"expected_http":409,"expected_error":"G_RETRY_EXHAUSTED"},
+    {"id":"malicious-epoch-jump","kind":"ClaimEpoch","valid":false,"condition":{"latest_terminal_epoch":1,"submitted_epoch":99,"expected_epoch":2},"expected_jsonrpc":-32602,"expected_http":400,"expected_error":"G_INVALID_ARTIFACT"},
+    {"id":"takeover-before-expiry","kind":"ClaimEpoch","valid":false,"condition":{"latest_epoch":1,"submitted_epoch":2,"prior_lease_expires_at_ms":1783872061000,"now_ms":1783872060999},"expected_jsonrpc":-32046,"expected_http":409,"expected_error":"G_CLAIM_CONFLICT"},
+    {"id":"mutating-truncation-forbidden","kind":"Mutation","valid":false,"condition":{"parents_count":33,"advertised_max_parents":32,"server_action":"truncate"},"expected_server_action":"reject","expected_jsonrpc":-32050,"expected_http":413,"expected_error":"G_LIMIT_EXCEEDED"}
+  ]
+}

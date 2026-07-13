@@ -1,0 +1,89 @@
+{
+  "model": "DAGEvent",
+  "payload": {"event_type":"envelope","event_cid":"bafkreify4h4axvyk4b4ey6cvurixgg3ul7o3m52j2i7wg67jbavxl2kxlm","parents":[],"timestamp":1783872000,"payload":{"profile":"mcp++/risk-scheduling","suite":"artifacts-invalid"}},
+  "schema": "mcp++/profile-g/conformance-suite@1",
+  "profile": "mcp++/risk-scheduling@1.0",
+  "cases": [
+    {
+      "id": "unknown-field",
+      "kind": "Goal",
+      "valid": false,
+      "payload": {"schema":"mcp++/profile-g/goal@1","created_at_ms":1783872000000,"parents":[],"correlation_id":"bad-001","owner_did":"did:web:planner.example","objective_cid":"bafkreiguks7mmvwte4ruaslbai7ntsz4g4rbnb6ebneyuv5t535jhrgf6q","policy_cid":"baguqeeraqi2bfupkzntzkyra4uzjlhybarqdav6iq4cimpfdrz6ndch5vaja","parent_goal_cids":[],"labels":[],"objective_text":"secret objective"},
+      "expected_error": "G_INVALID_ARTIFACT",
+      "expected_path": "/objective_text"
+    },
+    {
+      "id": "floating-score",
+      "kind": "PlanBranch",
+      "valid": false,
+      "payload": {"schema":"mcp++/profile-g/plan-branch@1","created_at_ms":1783872000200,"parents":[],"correlation_id":"bad-002","subgoal_cid":"baguqeera4ier5ndxe3t3bsujiqh55vfhnzzkhjdcqwuwbomaxlkphls5kafq","candidate_input_cids":[],"task_template_cids":["baguqeeraltpa6euy6qpx2helsb5dngjkpjitejncmfn5nyyhx4njcsnqnnaa"],"evaluator_cid":"baguqeerasnzmi4hovxk6zwody5gcwpfwgp4of4x226mskcqpodlffnvyexsa","score_millionths":0.5,"explanation_cid":"bafkreihxr7fom7kkvgmbt72ysh6tyogrligyxf6uo7mlrecazjb2v3pnty"},
+      "expected_error": "G_INVALID_ARTIFACT",
+      "expected_path": "/score_millionths"
+    },
+    {
+      "id": "unsorted-duplicate-dependencies",
+      "kind": "TaskSpec",
+      "valid": false,
+      "payload": {"schema":"mcp++/profile-g/task@1","created_at_ms":1783872000400,"parents":[],"correlation_id":"bad-003","subgoal_cid":"baguqeera4ier5ndxe3t3bsujiqh55vfhnzzkhjdcqwuwbomaxlkphls5kafq","plan_branch_cid":"baguqeera6oghmtekuafwk6huevfe3rwzwuhyr6usnytq5j4ftpi3ob6nqzra","selection_cid":"baguqeeramucfcnagjxknsblgl3hk6qkt72sptvu5flrcevnaw7hpi4a7jcda","interface_cid":"bafkreighs3jxy3kjd2hqy3u3qpxngtavydzxp6pq6pf3gilpxp3xnwtdeu","input_cid":"bafkreigjnrwvx2gqrijopnonygzap6tleqyjotegqa6yrelhlz3p3gjmea","tool":"repo.test","dependency_task_cids":["baguqeeraddx23hmyggltpg24jrrompxzv4mz4j65bgo7d2pvqhwssv3cyusa","baguqeeraddx23hmyggltpg24jrrompxzv4mz4j65bgo7d2pvqhwssv3cyusa"],"idempotency_key":"task-bad-003","resource_class":"cpu-small","deadline_ms":null,"expected_value_millionths":700000,"max_attempts":3,"execution_mode":"idempotent"},
+      "expected_error": "G_INVALID_ARTIFACT",
+      "expected_path": "/dependency_task_cids/1"
+    },
+    {
+      "id": "risk-model-factor-mismatch",
+      "kind": "RiskModel",
+      "valid": false,
+      "payload": {"schema":"mcp++/profile-g/risk-model@1","created_at_ms":1783872000000,"parents":[],"correlation_id":"bad-004","name":"bad-model","version":"1.0.0","factor_names":["policy_denials"],"weight_millionths":{"authority_failures":1000000},"saturation_millionths":{"policy_denials":1000000},"algorithm":"weighted-saturated-sum-v1","missing_evidence":"challenge","max_history_events":128,"risk_buckets":[500000,1000000]},
+      "expected_error": "G_INVALID_ARTIFACT",
+      "expected_path": "/weight_millionths"
+    },
+    {
+      "id": "evidence-expiry-inverted",
+      "kind": "RiskEvidence",
+      "valid": false,
+      "payload": {"schema":"mcp++/profile-g/risk-evidence@1","created_at_ms":1783872000500,"parents":[],"correlation_id":"bad-005","subject_cid":"baguqeerab25ufh5invebyjrq7lct3mojdt762xknihiqehaxsrcowz7h5yfq","evidence_type":"policy-denial","observed_cids":["baguqeeraq2xdlvmknkr3k5bn7fhptvyweim7aedksenodfkmd4dajkxmqboq"],"observer_did":"did:web:risk.example","observed_at_ms":1783872300000,"expires_at_ms":1783872000000,"classification":"trust-domain","redacted_cid":null,"signer_did":"did:web:risk.example","signature_alg":"EdDSA","signature":"invalid-for-semantic-test"},
+      "expected_error": "G_INVALID_ARTIFACT",
+      "expected_path": "/expires_at_ms"
+    },
+    {
+      "id": "assessment-score-overflow",
+      "kind": "RiskAssessment",
+      "valid": false,
+      "payload": {"schema":"mcp++/profile-g/risk-assessment@1","created_at_ms":1783872000600,"parents":[],"correlation_id":"bad-006","task_cid":"baguqeerab25ufh5invebyjrq7lct3mojdt762xknihiqehaxsrcowz7h5yfq","subject_did":"did:web:worker-a.example","model_cid":"baguqeerasnzmi4hovxk6zwody5gcwpfwgp4of4x226mskcqpodlffnvyexsa","evidence_cids":[],"factor_millionths":{"policy_denials":0},"score_millionths":1000001,"confidence_millionths":900000,"action":"allow","assessed_at_ms":1783872000600,"expires_at_ms":1783872300000},
+      "expected_error": "G_INVALID_ARTIFACT",
+      "expected_path": "/score_millionths"
+    },
+    {
+      "id": "proposal-candidates-wrong-order",
+      "kind": "ScheduleProposal",
+      "valid": false,
+      "payload": {"schema":"mcp++/profile-g/schedule-proposal@1","created_at_ms":1783872000700,"parents":[],"correlation_id":"bad-007","task_cid":"baguqeerab25ufh5invebyjrq7lct3mojdt762xknihiqehaxsrcowz7h5yfq","risk_assessment_cid":"baguqeerarhai66qctco3qudgjbsap2asfdo23lqdumfsspsstdgqkc6zfw3q","selection_policy_cid":"baguqeeraqi2bfupkzntzkyra4uzjlhybarqdav6iq4cimpfdrz6ndch5vaja","policy_decision_cid":"baguqeeraq2xdlvmknkr3k5bn7fhptvyweim7aedksenodfkmd4dajkxmqboq","logical_epoch":1,"priority_tuple":[0,1,0,0,-700000,-900000,0,"baguqeerab25ufh5invebyjrq7lct3mojdt762xknihiqehaxsrcowz7h5yfq"],"candidates":[{"peer_did":"did:web:worker-b.example","record_cid":"baguqeeraodhioh4khu73isn4hq5m4zkhz3yc37du77si3ejfgktsjp634w4q","capability_fit_millionths":500000,"expected_finish_ms":1783872100000,"risk_bucket":1},{"peer_did":"did:web:worker-a.example","record_cid":"baguqeeraodhioh4khu73isn4hq5m4zkhz3yc37du77si3ejfgktsjp634w4q","capability_fit_millionths":900000,"expected_finish_ms":1783872060000,"risk_bucket":0}]},
+      "expected_error": "G_INVALID_ARTIFACT",
+      "expected_path": "/candidates/1"
+    },
+    {
+      "id": "claim-lease-too-long",
+      "kind": "TaskClaim",
+      "valid": false,
+      "negotiated_limits": {"min_lease_ms":5000,"max_lease_ms":300000},
+      "payload": {"schema":"mcp++/profile-g/task-claim@1","created_at_ms":1783872000800,"parents":[],"correlation_id":"bad-008","task_cid":"baguqeerab25ufh5invebyjrq7lct3mojdt762xknihiqehaxsrcowz7h5yfq","proposal_cid":"baguqeera5titpc6j3qjqachqbvmnwxjg6yg3kwjuusnzjgxx433krwrkfpvq","claimant_did":"did:web:worker-a.example","record_cid":"baguqeeraodhioh4khu73isn4hq5m4zkhz3yc37du77si3ejfgktsjp634w4q","logical_epoch":1,"requested_lease_ms":300001,"risk_bucket":0,"capability_fit_millionths":900000,"expected_finish_ms":1783872060000,"proof_cid":"bafkreigbzwrggyucrnusmzisauvzpszxfhr3auxevxshycq6gob557tty4","policy_decision_cid":"baguqeeraq2xdlvmknkr3k5bn7fhptvyweim7aedksenodfkmd4dajkxmqboq","attempt":1},
+      "expected_error": "G_LIMIT_EXCEEDED",
+      "expected_path": "/requested_lease_ms"
+    },
+    {
+      "id": "resolution-accepted-without-lease",
+      "kind": "ClaimResolution",
+      "valid": false,
+      "payload": {"schema":"mcp++/profile-g/claim-resolution@1","created_at_ms":1783872001000,"parents":[],"correlation_id":"bad-009","task_cid":"baguqeerab25ufh5invebyjrq7lct3mojdt762xknihiqehaxsrcowz7h5yfq","logical_epoch":1,"considered_claim_cids":["baguqeeraxdwm25h6grgd5elfisj62hggt2nwg7hy3uhnfuuij4rxlpivytza"],"accepted_claim_cid":null,"outcome":"accepted","fencing_token":1,"lease_expires_at_ms":null,"attestation_cids":[],"quorum_policy_cid":"baguqeeral4e25gvyz7tmtk4ammolgwolvvjyswsrrufs3fhjljo2bipyy5rq","policy_decision_cid":"baguqeeraq2xdlvmknkr3k5bn7fhptvyweim7aedksenodfkmd4dajkxmqboq","coordination_receipt_cid":null,"retry_not_before_ms":0,"resolver_did":"did:web:resolver.example"},
+      "expected_error": "G_INVALID_ARTIFACT",
+      "expected_path": "/accepted_claim_cid"
+    },
+    {
+      "id": "success-receipt-without-output",
+      "kind": "TaskReceipt",
+      "valid": false,
+      "payload": {"schema":"mcp++/profile-g/task-receipt@1","created_at_ms":1783872050000,"parents":[],"correlation_id":"bad-010","task_cid":"baguqeerab25ufh5invebyjrq7lct3mojdt762xknihiqehaxsrcowz7h5yfq","claim_cid":"baguqeeraxdwm25h6grgd5elfisj62hggt2nwg7hy3uhnfuuij4rxlpivytza","resolution_cid":"baguqeera6755lbj5cgka4bc2xr6e264ogjjzi66n4inyzwcvlvy4n4bp3eja","fencing_token":1,"profile_b_receipt_cid":"bafkreidpgkdasegkb6zkedd73ikdmzvqtw7y3njdqgk4scsyn62uf7ymvu","output_cid":null,"status":"succeeded","failure_class":"none","attempt":1,"started_at_ms":1783872001100,"finished_at_ms":1783872050000,"resource_use_cid":"bafkreic55fjrt4lum7ww3rmojyfrnqizhij3gxla3relz4dl62335256nq","provider":"ipfs_accelerate_py","provider_version":"3.2.0","next_state":"complete"},
+      "expected_error": "G_INVALID_ARTIFACT",
+      "expected_path": "/output_cid"
+    }
+  ]
+}

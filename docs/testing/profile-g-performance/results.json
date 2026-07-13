@@ -1,0 +1,105 @@
+{
+  "acceptance_thresholds": {
+    "maximum_duplicate_completion_events": 0,
+    "maximum_policy_bypasses": 0,
+    "maximum_recovery_ms": 5001,
+    "maximum_starved_tasks": 0,
+    "maximum_wait_ms": 1000,
+    "minimum_jain_fairness": 0.99,
+    "minimum_throughput_gain": 2.5
+  },
+  "accepted": true,
+  "checks": {
+    "all_faults_recovered": true,
+    "bounded_duplicates": true,
+    "bounded_recovery": true,
+    "bounded_wait": true,
+    "converged": true,
+    "fairness": true,
+    "no_policy_bypass": true,
+    "no_starvation": true,
+    "throughput_gain": true
+  },
+  "measurement_contract": {
+    "fault_recovery": "deterministic clock from isolation to a majority-issued successor fence",
+    "harness_rate": "wall-clock durable harness rate; diagnostic only and not compared with the baseline",
+    "scheduled_capacity": "task_count / declared service-time makespan; deterministic and used for the gain gate"
+  },
+  "metrics": {
+    "baseline": {
+      "name": "single-owner-fifo",
+      "parallelism": 1,
+      "scheduled_makespan_ms": 3000,
+      "scheduled_throughput_tasks_per_second": 10.0
+    },
+    "fairness": {
+      "completed_by_peer": {
+        "did:web:peer-a.example": 10,
+        "did:web:peer-b.example": 10,
+        "did:web:peer-c.example": 10
+      },
+      "jain_index": 1.0,
+      "maximum_wait_ms": 980,
+      "service_jain_index": 0.995157,
+      "service_ms_by_peer": {
+        "did:web:peer-a.example": 920,
+        "did:web:peer-b.example": 990,
+        "did:web:peer-c.example": 1090
+      },
+      "starved_tasks": 0
+    },
+    "fault_recovery": {
+      "injected_faults": 3,
+      "maximum_recovery_ms": 5001,
+      "recovered_faults": 3,
+      "recoveries": [
+        {
+          "failed_peer": "did:web:peer-c.example",
+          "new_fencing_token": 2,
+          "recovery_ms": 5001,
+          "stale_fence_rejected": true,
+          "takeover_peer": "did:web:peer-a.example",
+          "task_index": 8
+        },
+        {
+          "failed_peer": "did:web:peer-a.example",
+          "new_fencing_token": 2,
+          "recovery_ms": 5001,
+          "stale_fence_rejected": true,
+          "takeover_peer": "did:web:peer-b.example",
+          "task_index": 18
+        },
+        {
+          "failed_peer": "did:web:peer-b.example",
+          "new_fencing_token": 2,
+          "recovery_ms": 5001,
+          "stale_fence_rejected": true,
+          "takeover_peer": "did:web:peer-c.example",
+          "task_index": 28
+        }
+      ]
+    },
+    "profile_g": {
+      "harness_elapsed_seconds": 1.066187,
+      "harness_tasks_per_second": 28.137657,
+      "parallelism": 3,
+      "scheduled_makespan_ms": 1090,
+      "scheduled_throughput_tasks_per_second": 27.522936,
+      "throughput_gain": 2.752294
+    },
+    "safety": {
+      "completion_retry_attempts": 30,
+      "duplicate_attempts": 60,
+      "duplicate_completion_events": 0,
+      "frontiers_converged": true,
+      "policy_bypasses": 0,
+      "policy_denials": 3,
+      "replay_attempts": 30
+    }
+  },
+  "peer_count": 3,
+  "publication_date": "2026-07-12",
+  "schema": "mcp++/profile-g/performance-report@1",
+  "task_count": 30,
+  "workload_id": "profile-g-three-peer-exclusive-v1"
+}

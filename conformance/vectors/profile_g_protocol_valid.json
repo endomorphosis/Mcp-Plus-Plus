@@ -1,0 +1,123 @@
+{
+  "model": "DAGEvent",
+  "payload": {"event_type":"envelope","event_cid":"bafkreify4h4axvyk4b4ey6cvurixgg3ul7o3m52j2i7wg67jbavxl2kxlm","parents":[],"timestamp":1783872000,"payload":{"profile":"mcp++/risk-scheduling","suite":"protocol-valid"}},
+  "schema": "mcp++/profile-g/conformance-suite@1",
+  "profile": "mcp++/risk-scheduling@1.0",
+  "cases": [
+    {
+      "id": "capability-negotiation",
+      "kind": "InitializeResultCapability",
+      "valid": true,
+      "input": {"requested":{"mcp++/risk-scheduling":{"versions":["1.0"]}}},
+      "expected": {"version":"1.0","artifact_schema_major":1,"lease_clock":"unix-ms-with-logical-epoch","transports":["jsonrpc-http","mcp+p2p"]}
+    },
+    {
+      "id": "wire-bindings",
+      "kind": "MethodBinding",
+      "valid": true,
+      "bindings": [
+        ["mcp++/risk/profile","GET","/mcp/risk/profile"],
+        ["mcp++/goals/create","POST","/mcp/goals"],
+        ["mcp++/goals/get","GET","/mcp/goals/{cid}"],
+        ["mcp++/goals/list","GET","/mcp/goals"],
+        ["mcp++/goals/decompose","POST","/mcp/goals/{cid}/decompose"],
+        ["mcp++/goals/select","POST","/mcp/goals/{cid}/select"],
+        ["mcp++/tasks/create","POST","/mcp/tasks"],
+        ["mcp++/tasks/get","GET","/mcp/tasks/{cid}"],
+        ["mcp++/tasks/list","GET","/mcp/tasks"],
+        ["mcp++/tasks/ready","GET","/mcp/tasks/ready"],
+        ["mcp++/risk/assess","POST","/mcp/risk/assess"],
+        ["mcp++/risk/evidence","GET","/mcp/risk/evidence"],
+        ["mcp++/risk/history","GET","/mcp/risk/history"],
+        ["mcp++/neighborhood/query","POST","/mcp/neighborhood/query"],
+        ["mcp++/neighborhood/attest","POST","/mcp/neighborhood/attest"],
+        ["mcp++/schedule/frontier","GET","/mcp/schedule/frontier"],
+        ["mcp++/schedule/status","GET","/mcp/schedule/status/{task_cid}"],
+        ["mcp++/schedule/propose","POST","/mcp/schedule/proposals"],
+        ["mcp++/schedule/claim","POST","/mcp/schedule/claims"],
+        ["mcp++/schedule/renew","POST","/mcp/schedule/claims/{claim_cid}/renew"],
+        ["mcp++/schedule/release","POST","/mcp/schedule/claims/{claim_cid}/release"],
+        ["mcp++/schedule/resolve","POST","/mcp/schedule/resolutions"],
+        ["mcp++/schedule/reconcile","POST","/mcp/schedule/reconcile"]
+      ]
+    },
+    {
+      "id": "mutation-envelope",
+      "kind": "MutationRequest",
+      "valid": true,
+      "method": "mcp++/schedule/claim",
+      "params": {"artifact_cid":"baguqeerakks7bnxojgffzvzkytumof6wj45v4f4pla66djy34k2wiwh4i35a","idempotency_key":"claim-task-001-epoch-1","correlation_id":"goal-001","parents":["baguqeerarcdez4ae6sb7twykqtabmqpwobyvepa3v7z25dk7pbmzem4zvjwq"],"proof_cid":"bafkreigbzwrggyucrnusmzisauvzpszxfhr3auxevxshycq6gob557tty4","policy_decision_cid":"baguqeeraq2xdlvmknkr3k5bn7fhptvyweim7aedksenodfkmd4dajkxmqboq"},
+      "expected_result_keys": ["artifact","artifact_cid","event_cid","replayed"]
+    },
+    {
+      "id": "same-epoch-conflict",
+      "kind": "ClaimConflict",
+      "valid": true,
+      "claims": [
+        {"claim_cid":"baguqeera3wpmlpa64k3lyv6q42qscmwv7aps5ca4gehhpc5q6so6wx22qqva","logical_epoch":1,"risk_bucket":0,"capability_fit_millionths":800000,"expected_finish_ms":1783872050000,"claimant_did":"did:web:worker-b.example"},
+        {"claim_cid":"baguqeeraxdwm25h6grgd5elfisj62hggt2nwg7hy3uhnfuuij4rxlpivytza","logical_epoch":1,"risk_bucket":0,"capability_fit_millionths":900000,"expected_finish_ms":1783872060000,"claimant_did":"did:web:worker-a.example"}
+      ],
+      "expected_winner_cid": "baguqeeraxdwm25h6grgd5elfisj62hggt2nwg7hy3uhnfuuij4rxlpivytza"
+    },
+    {
+      "id": "weighted-saturated-risk",
+      "kind": "RiskCalculation",
+      "valid": true,
+      "algorithm": "weighted-saturated-sum-v1",
+      "factor_millionths": {"authority_failures":0,"policy_denials":250000},
+      "weight_millionths": {"authority_failures":600000,"policy_denials":400000},
+      "saturation_millionths": {"authority_failures":1000000,"policy_denials":1000000},
+      "risk_buckets": [250000,500000,750000,1000000],
+      "expected_score_millionths": 100000,
+      "expected_risk_bucket": 0
+    },
+    {
+      "id": "cid-final-tie-break",
+      "kind": "ClaimConflict",
+      "valid": true,
+      "claims": [
+        {"claim_cid":"baguqeera3wpmlpa64k3lyv6q42qscmwv7aps5ca4gehhpc5q6so6wx22qqva","logical_epoch":2,"risk_bucket":1,"capability_fit_millionths":800000,"expected_finish_ms":1783872050000,"claimant_did":"did:web:worker-a.example"},
+        {"claim_cid":"baguqeeraxdwm25h6grgd5elfisj62hggt2nwg7hy3uhnfuuij4rxlpivytza","logical_epoch":2,"risk_bucket":1,"capability_fit_millionths":800000,"expected_finish_ms":1783872050000,"claimant_did":"did:web:worker-a.example"}
+      ],
+      "expected_winner_cid": "baguqeera3wpmlpa64k3lyv6q42qscmwv7aps5ca4gehhpc5q6so6wx22qqva"
+    },
+    {
+      "id": "bounded-archive-page",
+      "kind": "BoundedPage",
+      "valid": true,
+      "result": {"items":[],"limit":100,"next_cursor":"eyJzbmFwc2hvdCI6ImJhZ3VxIn0","truncated":true,"archive_boundaries":["baguqeerab2z6g273etontoy5dpwocuysc22zkoni7xqx52acesxqmu6jfkrq"]}
+    },
+    {
+      "id": "idempotent-replay",
+      "kind": "Idempotency",
+      "valid": true,
+      "key_scope": ["did:web:worker-a.example","mcp++/schedule/claim","claim-task-001-epoch-1"],
+      "canonical_request": {"method":"mcp++/schedule/claim","params":{"artifact_cid":"baguqeerakks7bnxojgffzvzkytumof6wj45v4f4pla66djy34k2wiwh4i35a","idempotency_key":"claim-task-001-epoch-1"}},
+      "canonical_request_hash": "sha256:01258f777efc3a44ce9ef853460b92a0b6287a7718619afa177500549b0684b9",
+      "first": {"artifact_cid":"baguqeerakks7bnxojgffzvzkytumof6wj45v4f4pla66djy34k2wiwh4i35a","replayed":false},
+      "second": {"artifact_cid":"baguqeerakks7bnxojgffzvzkytumof6wj45v4f4pla66djy34k2wiwh4i35a","replayed":true}
+    },
+    {
+      "id": "provider-unavailable-fallback",
+      "kind": "ProviderChain",
+      "valid": true,
+      "domain": "formal-logic",
+      "attempts": [
+        {"adapter":"package","outcome":"unavailable"},
+        {"adapter":"cli","outcome":"unavailable"},
+        {"adapter":"mcp","outcome":"success","contract_version":"1","provider":"ipfs_datasets_py","provider_version":"3.2.0"}
+      ],
+      "expected_adapter": "mcp"
+    },
+    {
+      "id": "http-libp2p-parity",
+      "kind": "TransportParity",
+      "valid": true,
+      "jsonrpc_method": "mcp++/schedule/status",
+      "params": {"task_cid":"baguqeerab25ufh5invebyjrq7lct3mojdt762xknihiqehaxsrcowz7h5yfq","limit":100},
+      "semantic_result": {"fencing_token":1,"resolution_cid":"baguqeera7nzz5ku74zuktkrcikmyi3klgbwfvyyxknal7w4uetfqxd5skjjq","state":"leased","task_cid":"baguqeerab25ufh5invebyjrq7lct3mojdt762xknihiqehaxsrcowz7h5yfq"},
+      "expected_semantic_result_digest": "sha256:edfea1cc7b86fb268e69beac1558732d7300e0ebb774632ece6b1703dbb2a761",
+      "transports": ["jsonrpc-http","mcp+p2p"]
+    }
+  ]
+}
