@@ -126,3 +126,42 @@ Implementations MAY model “on behalf of” / “speaks-for” relationships as
 - Authorization MUST be checked at execution time, not just at delegation time.
 - Evaluators MUST have access to sufficient context (via `context_cids[]`) to make a correct decision.
 - Policy evaluation should be sandboxed and resource-limited.
+
+## 10. Profile D Policy-Evaluation ZKP Certificate (Normative)
+
+Profile D names the optional policy-evaluation proof profile
+`profile_d_policy_evaluation@v1`. It allows a peer to prove the public
+commitments of an evaluated policy decision without disclosing the private
+policy text, request context, evaluator trace, or witness.
+
+The public statement schema is `mcp++/profile-d-policy-zkp-statement@1` and
+MUST contain exactly:
+
+- `circuit_ref`
+- `policy_commitment`
+- `context_commitment`
+- `decision_commitment`
+- `verdict`
+- `obligations_commitment`
+
+Commitments MUST use canonical compact, recursively key-sorted UTF-8 JSON and
+SHA-256. The decision commitment MUST bind the verdict and the complete ordered
+obligation list. The certificate schema is
+`mcp++/profile-d-policy-zkp-certificate@1`; its `public_inputs` value MUST be
+identical to `public_statement`.
+
+A certificate MUST be `statement_only`, with `proof: null`,
+`verified: false`, and `zero_knowledge: false`, unless all of the following
+admission gates are true:
+
+1. The circuit is production-admitted.
+2. The trusted setup is production-admitted.
+3. The verification key is production-admitted.
+4. A cryptographic verifier accepts the proof against the complete public
+   statement and an explicitly admitted circuit/key allowlist.
+
+Implementations MUST fail closed. Structural validation, deterministic test
+fixtures, simulated proofs, or a self-declared admission flag are insufficient
+to label a certificate verified or zero knowledge. Consumers MUST treat
+statement-only certificates as provenance commitments only; they do not grant
+authorization and do not prove the private policy relation.
