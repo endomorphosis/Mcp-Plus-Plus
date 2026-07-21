@@ -485,7 +485,6 @@ hardware, authenticate their portable attestations, publish all public
 intermediate artifacts for multiple auditors, pin the approved genesis and
 final transcript hashes through separate channels, and require at least one
 auditor that did not participate in generation.
-
 ## 12. Conformance fixture
 
 The portable-manifest conformance fixture is
