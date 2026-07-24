@@ -22,9 +22,9 @@ This draft is the top-level profile registry. The component details live in thes
 - [Profile B: CID-Native Execution Artifacts](cid-native-artifacts.md)
 - [Profile C: Capability Delegation (UCAN)](ucan-delegation.md)
 - [Profile D: Temporal Deontic Policy Evaluation](temporal-deontic-policy.md)
-- [Profile F: Event DAG Provenance, Archival, and Compaction](event-dag-ordering.md)
-- [Risk Scoring, Neighborhood Consensus, and Scheduling](risk-scheduling.md)
 - [Profile E: `mcp+p2p` Transport Binding](transport-mcp-p2p.md)
+- [Profile F: Event DAG Provenance, Archival, and Compaction](event-dag-ordering.md)
+- [Profile G: Risk Scoring, Neighborhood Consensus, and Scheduling](risk-scheduling.md)
 
 ---
 
