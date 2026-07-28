@@ -570,3 +570,234 @@ pub struct DAGEvent {
     /// Event payload
     pub payload: serde_json::Value,
 }
+
+// ========== Canonical session, audit, and proof wire models ==========
+
+/// Deterministic Profile E transport/session error code.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(transparent)]
+pub struct SessionErrorCode(pub u16);
+
+impl<'de> Deserialize<'de> for SessionErrorCode {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let code = u16::deserialize(deserializer)?;
+        if matches!(
+            code,
+            1001 | 1002 | 1003 | 1004 | 2001 | 2002 | 2003 | 3001 | 4001 | 4002 | 4003
+        ) {
+            Ok(Self(code))
+        } else {
+            Err(<D::Error as serde::de::Error>::custom(format!(
+                "non-canonical session error code {code}"
+            )))
+        }
+    }
+}
+
+/// Canonical structured Profile E error envelope.
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+pub struct SessionError {
+    /// Canonical session error code.
+    pub code: SessionErrorCode,
+    /// Human-readable error.
+    #[validate(min_length = 1)]
+    pub message: String,
+    /// Optional structured error data.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub data: Option<serde_json::Value>,
+}
+
+/// Five well-known MCP++ pub/sub topic identifiers.
+pub const MCP_PUBSUB_TOPICS: [&str; 5] = [
+    "mcp/interface/announce",
+    "mcp/receipt/announce",
+    "mcp/coord/signal",
+    "mcp/delegation/merge",
+    "mcp/policy/update",
+];
+
+/// Canonical Profile E pub/sub bus message.
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+pub struct BusMessage {
+    /// Topic on which the message was published.
+    #[validate(min_length = 1)]
+    pub topic: String,
+    /// Serializable application payload.
+    pub payload: serde_json::Value,
+    /// ISO-8601 publication time.
+    #[validate(min_length = 1)]
+    pub published_at: String,
+    /// Content-addressed message identifier.
+    #[validate(pattern = r"^sha256:[0-9a-f]{64}$")]
+    pub message_cid: String,
+    /// Optional UCAN proof from the publisher.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ucan_token: Option<String>,
+}
+
+/// Canonical Profile D audit decision.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AuditDecision {
+    /// Permit the intent.
+    Allow,
+    /// Reject the intent.
+    Deny,
+    /// Permit the intent subject to obligations.
+    AllowWithObligations,
+}
+
+/// Canonical Profile D policy audit log entry.
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+pub struct AuditEntry {
+    /// One-based monotone sequence number.
+    #[validate(minimum = 1)]
+    pub seq: u64,
+    /// Unix timestamp in milliseconds.
+    pub timestamp: u64,
+    /// ISO-8601 wall clock.
+    #[validate(min_length = 1)]
+    pub timestamp_iso: String,
+    /// Evaluated policy CID.
+    #[validate(min_length = 1)]
+    pub policy_cid: String,
+    /// Evaluated intent CID.
+    #[validate(min_length = 1)]
+    pub intent_cid: String,
+    /// Audit decision.
+    pub decision: AuditDecision,
+    /// Optional actor identifier.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub actor: Option<String>,
+    /// Invoked tool.
+    #[validate(min_length = 1)]
+    pub tool: String,
+    /// Human-readable decision justification.
+    pub justification: String,
+    /// Obligations attached to the decision.
+    pub obligations: Vec<String>,
+    /// Content-addressed entry identifier.
+    #[validate(pattern = r"^sha256:[0-9a-f]{64}$")]
+    pub entry_cid: String,
+    /// Forward-compatible additional data.
+    pub extra: HashMap<String, serde_json::Value>,
+}
+
+/// Canonical proof outcome taxonomy.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ProofReason {
+    /// Formula was proved valid.
+    Proved,
+    /// Formula was refuted.
+    Refuted,
+    /// Formula is satisfiable.
+    Sat,
+    /// Formula is unsatisfiable.
+    Unsat,
+    /// Prover could not decide.
+    Unknown,
+    /// Proof budget was exceeded.
+    Timeout,
+    /// Prover returned an error.
+    Error,
+}
+
+/// Canonical local/WASM proof backend identifier.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum WasmProverId {
+    /// Z3 compiled to WASM.
+    #[serde(rename = "z3-wasm")]
+    Z3Wasm,
+    /// cvc5 compiled to WASM.
+    #[serde(rename = "cvc5-wasm")]
+    Cvc5Wasm,
+    /// Coq via jsCoq.
+    #[serde(rename = "coq-jscoq")]
+    CoqJscoq,
+    /// Lean 4 compiled to WASM.
+    #[serde(rename = "lean4-wasm")]
+    Lean4Wasm,
+    /// Lurk compiled to WASM.
+    #[serde(rename = "lurk-wasm")]
+    LurkWasm,
+    /// Neural proof backend.
+    #[serde(rename = "neural")]
+    Neural,
+    /// Result served from a proof cache.
+    #[serde(rename = "cache-hit")]
+    CacheHit,
+}
+
+/// Result emitted by a canonical local/WASM proof backend.
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+pub struct WasmProofResult {
+    /// True when the formula was proved valid.
+    pub proved: bool,
+    /// True when a satisfying model exists.
+    pub sat: bool,
+    /// True when the formula is unsatisfiable.
+    pub unsat: bool,
+    /// Proof outcome.
+    pub reason: ProofReason,
+    /// Producing prover.
+    pub prover_id: WasmProverId,
+    /// Proof duration in milliseconds.
+    #[validate(minimum = 0.0)]
+    pub proof_time_ms: f64,
+    /// Optional counter-example model.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model: Option<HashMap<String, serde_json::Value>>,
+    /// Optional unsatisfiable core.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unsat_core: Option<Vec<String>>,
+    /// Prover-specific metadata.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub meta: Option<HashMap<String, serde_json::Value>>,
+}
+
+/// Canonical zero-knowledge proof backend.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ZKProofBackend {
+    /// Lurk.
+    Lurk,
+    /// Nova.
+    Nova,
+    /// Sphinx.
+    Sphinx,
+    /// Plonky3.
+    Plonky3,
+    /// Circom.
+    Circom,
+}
+
+/// Content-addressed zero-knowledge proof artifact.
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+pub struct ZKProofArtifact {
+    /// Producing proof backend.
+    pub backend: ZKProofBackend,
+    /// Proved statement.
+    #[validate(min_length = 1)]
+    pub statement: String,
+    /// Serialized proof bytes as base64url.
+    #[validate(min_length = 1)]
+    pub proof_b64: String,
+    /// Verification key CID.
+    #[validate(pattern = r"^sha256:[0-9a-f]{64}$")]
+    pub vk_cid: String,
+    /// Public proof inputs.
+    pub public_inputs: Vec<serde_json::Value>,
+    /// Content-addressed artifact identifier.
+    #[validate(pattern = r"^sha256:[0-9a-f]{64}$")]
+    pub artifact_cid: String,
+    /// Proof duration in milliseconds.
+    #[validate(minimum = 0.0)]
+    pub proof_time_ms: f64,
+    /// Optional Lurk s-expression.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lurk_expr: Option<String>,
+}

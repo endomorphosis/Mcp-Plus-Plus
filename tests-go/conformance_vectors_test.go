@@ -31,6 +31,11 @@ func TestConformanceVectors(t *testing.T) {
 		if err := json.Unmarshal(raw, &vec); err != nil {
 			t.Fatalf("%s: %v", f.Name(), err)
 		}
+		if vec.Model == "" && len(vec.Payload) == 0 {
+			// Profile-specific suites have dedicated codecs and omit the
+			// canonical {model, payload} envelope.
+			continue
+		}
 		var target interface{}
 		switch vec.Model {
 		case "InitializeResult":
@@ -45,6 +50,16 @@ func TestConformanceVectors(t *testing.T) {
 			target = &DAGEvent{}
 		case "ExecutionReceipt":
 			target = &ExecutionReceipt{}
+		case "SessionError":
+			target = &SessionError{}
+		case "BusMessage":
+			target = &BusMessage{}
+		case "AuditEntry":
+			target = &AuditEntry{}
+		case "WasmProofResult":
+			target = &WasmProofResult{}
+		case "ZKProofArtifact":
+			target = &ZKProofArtifact{}
 		default:
 			t.Fatalf("unknown model %s in %s", vec.Model, f.Name())
 		}
@@ -56,7 +71,7 @@ func TestConformanceVectors(t *testing.T) {
 		}
 		n++
 	}
-	if n < 6 {
+	if n < 11 {
 		t.Fatalf("expected vectors, got %d", n)
 	}
 }

@@ -14,6 +14,7 @@ lazy_static = "1.4"
 
 [dev-dependencies]
 pretty_assertions = "1.4"
+sha2 = "0.10"
 
 [profile.dev]
 opt-level = 0

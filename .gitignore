@@ -55,7 +55,6 @@ Cargo.lock
 *.pdb
 
 # Go
-tests-go/go.sum
 tests-ts/coverage/
 tests-ts/node_modules/
 **/*.test.ts.disabled

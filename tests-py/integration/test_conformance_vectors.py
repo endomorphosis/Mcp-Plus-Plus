@@ -15,6 +15,11 @@ from validators.models import (
     Delegation,
     DAGEvent,
     ExecutionReceipt,
+    SessionError,
+    BusMessage,
+    AuditEntry,
+    WasmProofResult,
+    ZKProofArtifact,
 )
 
 _MODELS = {
@@ -24,6 +29,11 @@ _MODELS = {
     "Delegation": Delegation,
     "DAGEvent": DAGEvent,
     "ExecutionReceipt": ExecutionReceipt,
+    "SessionError": SessionError,
+    "BusMessage": BusMessage,
+    "AuditEntry": AuditEntry,
+    "WasmProofResult": WasmProofResult,
+    "ZKProofArtifact": ZKProofArtifact,
 }
 
 _VEC_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "conformance", "vectors")
@@ -34,6 +44,10 @@ def _vectors():
         if fn.endswith(".json"):
             with open(os.path.join(_VEC_DIR, fn)) as f:
                 v = json.load(f)
+            if "model" not in v and "payload" not in v:
+                # Profile-specific suites have dedicated codecs and omit the
+                # canonical {model, payload} envelope.
+                continue
             yield fn, v["model"], v["payload"]
 
 

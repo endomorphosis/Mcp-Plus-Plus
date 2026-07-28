@@ -90,23 +90,26 @@ export class TransportValidator {
       metadata: {},
     };
 
-    if (!frame.length) {
+    const declaredLength = frame['length'];
+    const frameMessage = frame['message'];
+
+    if (!declaredLength) {
       result.isValid = false;
       result.errors.push('Missing length field');
     }
 
-    if (!frame.message) {
+    if (!frameMessage) {
       result.isValid = false;
       result.errors.push('Missing message field');
     }
 
     // Check length matches message size
-    if (frame.message && frame.length) {
-      const messageStr = JSON.stringify(frame.message);
+    if (frameMessage && typeof declaredLength === 'number') {
+      const messageStr = JSON.stringify(frameMessage);
       const actualLength = messageStr.length;
-      if (actualLength !== frame.length) {
+      if (actualLength !== declaredLength) {
         result.warnings.push(
-          `Length mismatch: declared ${frame.length}, actual ${actualLength}`
+          `Length mismatch: declared ${declaredLength}, actual ${actualLength}`
         );
       }
     }

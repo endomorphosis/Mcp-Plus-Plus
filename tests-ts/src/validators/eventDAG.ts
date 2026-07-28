@@ -58,14 +58,14 @@ export class EventDAGValidator {
     }
 
     // Check for missing parent references
-    const eventCids = new Set(events.map(e => e.event_cid));
+    const eventCids = new Set(events.map(e => e['event_cid']));
     for (const event of events) {
-      const parents = event.parents as string[];
+      const parents = event['parents'] as string[];
       if (parents) {
         for (const parent of parents) {
           if (!eventCids.has(parent)) {
             result.isValid = false;
-            result.errors.push(`Event ${event.event_cid} references missing parent: ${parent}`);
+            result.errors.push(`Event ${event['event_cid']} references missing parent: ${parent}`);
           }
         }
       }
@@ -89,8 +89,8 @@ export class EventDAGValidator {
 
     // Build adjacency list
     for (const event of events) {
-      const cid = event.event_cid as string;
-      const parents = (event.parents as string[]) || [];
+      const cid = event['event_cid'] as string;
+      const parents = (event['parents'] as string[]) || [];
       graph.set(cid, parents);
     }
 
@@ -117,7 +117,7 @@ export class EventDAGValidator {
     };
 
     for (const event of events) {
-      const cid = event.event_cid as string;
+      const cid = event['event_cid'] as string;
       if (!visited.has(cid)) {
         if (dfs(cid)) {
           return true;
@@ -139,8 +139,8 @@ export class EventDAGValidator {
 
     const timestamps = new Map<string, number>();
     for (const event of events) {
-      const cid = event.event_cid as string;
-      const timestamp = event.timestamp as number;
+      const cid = event['event_cid'] as string;
+      const timestamp = event['timestamp'] as number;
       if (timestamp !== undefined) {
         timestamps.set(cid, timestamp);
       }
@@ -148,9 +148,9 @@ export class EventDAGValidator {
 
     // Check that children have timestamps >= parents
     for (const event of events) {
-      const cid = event.event_cid as string;
+      const cid = event['event_cid'] as string;
       const timestamp = timestamps.get(cid);
-      const parents = (event.parents as string[]) || [];
+      const parents = (event['parents'] as string[]) || [];
 
       if (timestamp !== undefined) {
         for (const parent of parents) {

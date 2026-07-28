@@ -60,17 +60,17 @@ export class MCPIDLValidator {
       metadata: {},
     };
 
-    if (!request.jsonrpc || request.jsonrpc !== '2.0') {
+    if (!request['jsonrpc'] || request['jsonrpc'] !== '2.0') {
       result.isValid = false;
       result.errors.push('Missing or invalid jsonrpc field');
     }
 
-    if (request.method !== 'interfaces/list') {
+    if (request['method'] !== 'interfaces/list') {
       result.isValid = false;
       result.errors.push('Method must be interfaces/list');
     }
 
-    if (!request.id) {
+    if (!request['id']) {
       result.isValid = false;
       result.errors.push('Missing id field');
     }
@@ -87,23 +87,23 @@ export class MCPIDLValidator {
       metadata: {},
     };
 
-    if (!request.jsonrpc || request.jsonrpc !== '2.0') {
+    if (!request['jsonrpc'] || request['jsonrpc'] !== '2.0') {
       result.isValid = false;
       result.errors.push('Missing or invalid jsonrpc field');
     }
 
-    if (request.method !== 'interfaces/get') {
+    if (request['method'] !== 'interfaces/get') {
       result.isValid = false;
       result.errors.push('Method must be interfaces/get');
     }
 
-    if (!request.id) {
+    if (!request['id']) {
       result.isValid = false;
       result.errors.push('Missing id field');
     }
 
-    const params = request.params as Record<string, unknown>;
-    if (!params || !params.interface_cid) {
+    const params = request['params'] as Record<string, unknown> | undefined;
+    if (!params || !params['interface_cid']) {
       result.isValid = false;
       result.errors.push('Missing interface_cid in params');
     }
@@ -120,23 +120,23 @@ export class MCPIDLValidator {
       metadata: {},
     };
 
-    if (!request.jsonrpc || request.jsonrpc !== '2.0') {
+    if (!request['jsonrpc'] || request['jsonrpc'] !== '2.0') {
       result.isValid = false;
       result.errors.push('Missing or invalid jsonrpc field');
     }
 
-    if (request.method !== 'interfaces/compat') {
+    if (request['method'] !== 'interfaces/compat') {
       result.isValid = false;
       result.errors.push('Method must be interfaces/compat');
     }
 
-    if (!request.id) {
+    if (!request['id']) {
       result.isValid = false;
       result.errors.push('Missing id field');
     }
 
-    const params = request.params as Record<string, unknown>;
-    if (!params || !params.client_cid || !params.server_cid) {
+    const params = request['params'] as Record<string, unknown> | undefined;
+    if (!params || !params['client_cid'] || !params['server_cid']) {
       result.isValid = false;
       result.errors.push('Missing client_cid or server_cid in params');
     }

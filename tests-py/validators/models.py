@@ -443,3 +443,106 @@ class P2PMessage(BaseModel):
     error: Optional[str] = Field(None, description="Error string (responses)")
     sender: Optional[str] = Field(None, description="Sender peer id")
     timestamp: Optional[Union[int, float, str]] = Field(None, description="Emit time")
+
+
+# ============================================================================
+# Canonical session, audit, and proof wire models
+# ============================================================================
+
+SessionErrorCode = Literal[
+    1001, 1002, 1003, 1004,
+    2001, 2002, 2003,
+    3001,
+    4001, 4002, 4003,
+]
+
+
+class SessionError(BaseModel):
+    """Deterministic Profile E session error envelope."""
+    model_config = ConfigDict(extra='allow', strict=True)
+
+    code: SessionErrorCode = Field(..., description="Canonical session error code")
+    message: str = Field(..., min_length=1, description="Human-readable error")
+    data: Optional[Any] = Field(None, description="Optional structured error data")
+
+
+MCP_PUBSUB_TOPICS = (
+    "mcp/interface/announce",
+    "mcp/receipt/announce",
+    "mcp/coord/signal",
+    "mcp/delegation/merge",
+    "mcp/policy/update",
+)
+
+
+class BusMessage(BaseModel):
+    """Profile E pub/sub bus wire message."""
+    model_config = ConfigDict(extra='allow', strict=True)
+
+    topic: str = Field(..., min_length=1)
+    payload: Any = Field(...)
+    published_at: str = Field(..., min_length=1)
+    message_cid: str = Field(..., pattern=r"^sha256:[0-9a-f]{64}$")
+    ucan_token: Optional[str] = None
+
+
+AuditDecision = Literal["allow", "deny", "allow_with_obligations"]
+
+
+class AuditEntry(BaseModel):
+    """Profile D policy audit log entry."""
+    model_config = ConfigDict(extra='allow', strict=True)
+
+    seq: int = Field(..., gt=0)
+    timestamp: int = Field(..., ge=0)
+    timestamp_iso: str = Field(..., min_length=1)
+    policy_cid: str = Field(..., min_length=1)
+    intent_cid: str = Field(..., min_length=1)
+    decision: AuditDecision
+    actor: Optional[str] = None
+    tool: str = Field(..., min_length=1)
+    justification: str
+    obligations: List[str]
+    entry_cid: str = Field(..., pattern=r"^sha256:[0-9a-f]{64}$")
+    extra: Dict[str, Any]
+
+
+ProofReason = Literal[
+    "proved", "refuted", "sat", "unsat", "unknown", "timeout", "error",
+]
+WasmProverId = Literal[
+    "z3-wasm", "cvc5-wasm", "coq-jscoq", "lean4-wasm",
+    "lurk-wasm", "neural", "cache-hit",
+]
+
+
+class WasmProofResult(BaseModel):
+    """Result emitted by a canonical local/WASM proof backend."""
+    model_config = ConfigDict(extra='allow', strict=True)
+
+    proved: bool
+    sat: bool
+    unsat: bool
+    reason: ProofReason
+    prover_id: WasmProverId
+    proof_time_ms: float = Field(..., ge=0)
+    model: Optional[Dict[str, Any]] = None
+    unsat_core: Optional[List[str]] = None
+    meta: Optional[Dict[str, Any]] = None
+
+
+ZKProofBackend = Literal["lurk", "nova", "sphinx", "plonky3", "circom"]
+
+
+class ZKProofArtifact(BaseModel):
+    """Content-addressed zero-knowledge proof artifact."""
+    model_config = ConfigDict(extra='allow', strict=True)
+
+    backend: ZKProofBackend
+    statement: str = Field(..., min_length=1)
+    proof_b64: str = Field(..., min_length=1)
+    vk_cid: str = Field(..., pattern=r"^sha256:[0-9a-f]{64}$")
+    public_inputs: List[Any]
+    artifact_cid: str = Field(..., pattern=r"^sha256:[0-9a-f]{64}$")
+    proof_time_ms: float = Field(..., ge=0)
+    lurk_expr: Optional[str] = None

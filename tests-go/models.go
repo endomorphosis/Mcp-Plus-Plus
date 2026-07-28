@@ -6,6 +6,8 @@ package testsmcp
 
 import (
 	"encoding/json"
+	"fmt"
+	"regexp"
 	"time"
 )
 
@@ -220,9 +222,9 @@ type PolicyConstraint struct {
 type DecisionType string
 
 const (
-	DecisionAllow                 DecisionType = "allow"
-	DecisionDeny                  DecisionType = "deny"
-	DecisionAllowWithObligations  DecisionType = "allow_with_obligations"
+	DecisionAllow                DecisionType = "allow"
+	DecisionDeny                 DecisionType = "deny"
+	DecisionAllowWithObligations DecisionType = "allow_with_obligations"
 )
 
 // PolicyDecision represents the result of policy evaluation.
@@ -345,3 +347,108 @@ const (
 	ErrInternalError  int = -32603
 	ErrServerError    int = -32000
 )
+
+// ============================================================================
+// Canonical session, audit, and proof wire models
+// ============================================================================
+
+var sha256CIDPattern = regexp.MustCompile(`^sha256:[0-9a-f]{64}$`)
+
+// SHA256CID is the canonical sha256:<64-lowercase-hex> content identifier.
+// Validation happens while decoding so every consumer, not only this test
+// harness, rejects malformed wire values.
+type SHA256CID string
+
+// UnmarshalJSON enforces the canonical SHA-256 CID wire representation.
+func (cid *SHA256CID) UnmarshalJSON(data []byte) error {
+	var value string
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	if !sha256CIDPattern.MatchString(value) {
+		return fmt.Errorf("invalid SHA-256 CID %q", value)
+	}
+	*cid = SHA256CID(value)
+	return nil
+}
+
+// SessionErrorCode is a deterministic Profile E transport/session error code.
+type SessionErrorCode int
+
+// SessionError is the canonical structured Profile E error envelope.
+type SessionError struct {
+	Code    SessionErrorCode `json:"code" validate:"required,oneof=1001 1002 1003 1004 2001 2002 2003 3001 4001 4002 4003"`
+	Message string           `json:"message" validate:"required,min=1"`
+	Data    interface{}      `json:"data,omitempty"`
+}
+
+// MCPPubSubTopics lists the five well-known MCP++ bus topics.
+var MCPPubSubTopics = [...]string{
+	"mcp/interface/announce",
+	"mcp/receipt/announce",
+	"mcp/coord/signal",
+	"mcp/delegation/merge",
+	"mcp/policy/update",
+}
+
+// BusMessage is the canonical Profile E pub/sub bus message.
+type BusMessage struct {
+	Topic       string      `json:"topic" validate:"required,min=1"`
+	Payload     interface{} `json:"payload" validate:"required"`
+	PublishedAt string      `json:"published_at" validate:"required,min=1"`
+	MessageCID  SHA256CID   `json:"message_cid" validate:"required"`
+	UCANToken   string      `json:"ucan_token,omitempty"`
+}
+
+// AuditDecision is a canonical Profile D policy decision.
+type AuditDecision string
+
+// AuditEntry is a canonical Profile D policy audit log entry.
+type AuditEntry struct {
+	Seq           uint64                 `json:"seq" validate:"required,gte=1"`
+	Timestamp     uint64                 `json:"timestamp"`
+	TimestampISO  string                 `json:"timestamp_iso" validate:"required,min=1"`
+	PolicyCID     string                 `json:"policy_cid" validate:"required,min=1"`
+	IntentCID     string                 `json:"intent_cid" validate:"required,min=1"`
+	Decision      AuditDecision          `json:"decision" validate:"required,oneof=allow deny allow_with_obligations"`
+	Actor         string                 `json:"actor,omitempty"`
+	Tool          string                 `json:"tool" validate:"required,min=1"`
+	Justification string                 `json:"justification"`
+	Obligations   []string               `json:"obligations"`
+	EntryCID      SHA256CID              `json:"entry_cid" validate:"required"`
+	Extra         map[string]interface{} `json:"extra"`
+}
+
+// ProofReason is the canonical proof outcome taxonomy.
+type ProofReason string
+
+// WasmProverID identifies a canonical local/WASM proof backend.
+type WasmProverID string
+
+// WasmProofResult is emitted by a canonical local/WASM proof backend.
+type WasmProofResult struct {
+	Proved      bool                   `json:"proved"`
+	Sat         bool                   `json:"sat"`
+	Unsat       bool                   `json:"unsat"`
+	Reason      ProofReason            `json:"reason" validate:"required,oneof=proved refuted sat unsat unknown timeout error"`
+	ProverID    WasmProverID           `json:"prover_id" validate:"required,oneof=z3-wasm cvc5-wasm coq-jscoq lean4-wasm lurk-wasm neural cache-hit"`
+	ProofTimeMS float64                `json:"proof_time_ms" validate:"gte=0"`
+	Model       map[string]interface{} `json:"model,omitempty"`
+	UnsatCore   []string               `json:"unsat_core,omitempty"`
+	Meta        map[string]interface{} `json:"meta,omitempty"`
+}
+
+// ZKProofBackend identifies a canonical zero-knowledge proof backend.
+type ZKProofBackend string
+
+// ZKProofArtifact is a content-addressed zero-knowledge proof artifact.
+type ZKProofArtifact struct {
+	Backend      ZKProofBackend `json:"backend" validate:"required,oneof=lurk nova sphinx plonky3 circom"`
+	Statement    string         `json:"statement" validate:"required,min=1"`
+	ProofBase64  string         `json:"proof_b64" validate:"required,min=1"`
+	VKCID        SHA256CID      `json:"vk_cid" validate:"required"`
+	PublicInputs []interface{}  `json:"public_inputs"`
+	ArtifactCID  SHA256CID      `json:"artifact_cid" validate:"required"`
+	ProofTimeMS  float64        `json:"proof_time_ms" validate:"gte=0"`
+	LurkExpr     string         `json:"lurk_expr,omitempty"`
+}

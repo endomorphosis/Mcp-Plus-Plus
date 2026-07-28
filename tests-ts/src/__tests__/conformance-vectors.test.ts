@@ -12,6 +12,11 @@ import {
   DelegationSchema,
   DAGEventSchema,
   ExecutionReceiptSchema,
+  SessionErrorSchema,
+  BusMessageSchema,
+  AuditEntrySchema,
+  WasmProofResultSchema,
+  ZKProofArtifactSchema,
 } from '../models';
 
 const MODELS: Record<string, any> = {
@@ -21,14 +26,24 @@ const MODELS: Record<string, any> = {
   Delegation: DelegationSchema,
   DAGEvent: DAGEventSchema,
   ExecutionReceipt: ExecutionReceiptSchema,
+  SessionError: SessionErrorSchema,
+  BusMessage: BusMessageSchema,
+  AuditEntry: AuditEntrySchema,
+  WasmProofResult: WasmProofResultSchema,
+  ZKProofArtifact: ZKProofArtifactSchema,
 };
 
 const VEC_DIR = join(__dirname, '..', '..', '..', 'conformance', 'vectors');
 
 describe('conformance vectors', () => {
-  const files = readdirSync(VEC_DIR).filter((f) => f.endsWith('.json'));
-  it.each(files)('%s validates against its model', (fn) => {
-    const v = JSON.parse(readFileSync(join(VEC_DIR, fn), 'utf8'));
+  const vectors = readdirSync(VEC_DIR)
+    .filter((fn) => fn.endsWith('.json'))
+    .map((fn) => [fn, JSON.parse(readFileSync(join(VEC_DIR, fn), 'utf8'))] as const)
+    // Profile-specific suites have their own codecs and intentionally omit the
+    // canonical {model, payload} envelope.
+    .filter(([, v]) => 'model' in v || 'payload' in v);
+
+  it.each(vectors)('%s validates against its model', (fn, v) => {
     const schema = MODELS[v.model];
     expect(schema, `unknown model ${v.model}`).toBeDefined();
     expect(() => schema.parse(v.payload)).not.toThrow();

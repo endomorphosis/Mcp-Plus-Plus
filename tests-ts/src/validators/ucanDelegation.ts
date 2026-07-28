@@ -72,7 +72,11 @@ export class UCANValidator {
 
     // Validate each token
     for (let i = 0; i < tokens.length; i++) {
-      const tokenResult = this.validateToken(tokens[i]);
+      const token = tokens[i];
+      if (token === undefined) {
+        continue;
+      }
+      const tokenResult = this.validateToken(token);
       if (!tokenResult.isValid) {
         result.isValid = false;
         result.errors.push(`Token ${i}: ${tokenResult.errors.join(', ')}`);
@@ -81,8 +85,13 @@ export class UCANValidator {
 
     // Check chain continuity (aud of token[i] should match iss of token[i+1])
     for (let i = 0; i < tokens.length - 1; i++) {
-      const currentAud = tokens[i].aud;
-      const nextIss = tokens[i + 1].iss;
+      const current = tokens[i];
+      const next = tokens[i + 1];
+      if (current === undefined || next === undefined) {
+        continue;
+      }
+      const currentAud = current['aud'];
+      const nextIss = next['iss'];
       if (currentAud !== nextIss) {
         result.isValid = false;
         result.errors.push(
@@ -105,17 +114,17 @@ export class UCANValidator {
     };
 
     // Check required fields
-    if (!invocation.interface_cid) {
+    if (!invocation['interface_cid']) {
       result.isValid = false;
       result.errors.push('Missing interface_cid');
     }
 
-    if (!invocation.input_cid) {
+    if (!invocation['input_cid']) {
       result.isValid = false;
       result.errors.push('Missing input_cid');
     }
 
-    if (!invocation.proof_cid) {
+    if (!invocation['proof_cid']) {
       result.isValid = false;
       result.errors.push('Missing proof_cid for invocation');
     }
