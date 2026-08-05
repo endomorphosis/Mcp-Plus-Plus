@@ -1,6 +1,6 @@
 # MCP++: CID-Native, Contract-Driven Execution Profiles for MCP
 
-**Status:** Draft (Non-Normative / Discussion)
+**Status:** Draft (Non-Normative / Discussion) — Profiles A-H interoperability candidate
 
 ---
 
@@ -25,6 +25,7 @@ This draft is the top-level profile registry. The component details live in thes
 - [Profile E: `mcp+p2p` Transport Binding](transport-mcp-p2p.md)
 - [Profile F: Event DAG Provenance, Archival, and Compaction](event-dag-ordering.md)
 - [Profile G: Risk Scoring, Neighborhood Consensus, and Scheduling](risk-scheduling.md)
+- [Profile H: x402 Payments and Paid Capability Access](x402-payments.md)
 
 ---
 
@@ -344,6 +345,7 @@ Method names and the execution result shape are canonical and MUST match:
 | D (policy) | `mcp++/policy/evaluate` | `POST /mcp/policy/evaluate` | `decision`, `obligations[]`, `allowed` |
 | E (P2P) | `mcp++/p2p/peers` | `GET /mcp/p2p/peers` | `peers[]`, `protocol` |
 | F (Event DAG) | `mcp++/dag/{frontier,history,provenance,append,compact,archive,archives,certificate/get,certificate/verify,inclusion,zk/status,zk/prove,zk/verify}` | `GET /mcp/dag/{frontier,history,provenance/{cid},archives,certificates/{cid},inclusion/{cid},zk/status}`; `POST /mcp/dag/{append,compact,archive,certificates/verify,zk/prove,zk/verify}` | bounded `frontier[]`/`events[]`/`chain[]`, archive boundaries, certificate CIDs, and optional verifier-backed ZK certificates |
+| H (x402 payments) | `mcp++/payments/{profile,catalog,quote,verify,settle,receipt/get,entitlement/get,usage/get,refund/request,reconcile}` | HTTP 402 + `PAYMENT-REQUIRED` / `PAYMENT-SIGNATURE` / `PAYMENT-RESPONSE`; REST paid dispatch under `/mcp` | `PaymentQuote`, `PaymentAuthorization`, `SettlementReceipt`, `PaidEntitlement`, `AccessReceipt` (see [docs/spec/x402-payments.md](x402-payments.md)) |
 
 The `mcp++/execute` `receipt` object MUST include `success` and SHOULD include
 `receipt_cid`, `output_cid`, `error`, `duration_ms`; signed receipts add
@@ -352,7 +354,13 @@ CIDs in these payloads MUST satisfy the CID format regex in
 `cid-native-artifacts.md`.
 Capability negotiation keys are: `mcp++/mcp-idl`, `mcp++/cid-envelope`,
 `mcp++/ucan`, `mcp++/deontic-policy`, `mcp++/event-dag` (Profile F),
-`mcp++/p2p-transport`.
+`mcp++/p2p-transport`, `mcp++/x402-payments` (Profile H).
+
+Profile H over Profile E carries the same decoded x402 objects as the HTTP
+binding. The libp2p representation is an MCP++ transport binding and
+**MUST NOT be represented as upstream x402 HTTP conformance**. Claim both only
+when the HTTP side passes upstream vectors and object translation passes
+Profile H parity vectors.
 
 ### A.1 Canonical Error Codes (Normative)
 
