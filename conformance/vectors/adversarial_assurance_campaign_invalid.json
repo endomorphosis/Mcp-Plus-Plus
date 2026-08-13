@@ -1,0 +1,172 @@
+{
+  "schema": "mcp++/adversarial-assurance/conformance-suite@1",
+  "suite": "adversarial-assurance-campaign-invalid",
+  "schema_ref": "schemas/adversarial_assurance_campaign.schema.json",
+  "interface_id": "MutationCampaignPlan@1",
+  "description": "Flat canonical invalid vectors for the shared mutation campaign plan wire. Each case must fail closed under adversarial_assurance_campaign.schema.json (unknown fields, unknown enums, missing required identity).",
+  "cases": [
+    {
+      "id": "unknown-field-fail-closed",
+      "valid": false,
+      "expected_error": "additionalProperties",
+      "payload": {
+        "schema": "ipfs-datasets.software-contracts.adversarial-assurance-mutation-campaign-plan@1",
+        "interface_id": "MutationCampaignPlan@1",
+        "header": {
+          "schema": "ipfs-datasets.software-contracts.adversarial-assurance-artifact-header@1",
+          "interface_id": "AssuranceArtifactHeader@1",
+          "artifact_kind": "mutation_campaign_plan",
+          "repository_id": "repository:sha256:3df67b4e7399635ecc20dc65888405eda8c32c7c28053e691fce8aa2aacaff4b",
+          "repository_state_cid": "bafkreicssskybdf32rmzlbtge5bxyv4v6c6eac322pbrsr3azlb4fkxiqi",
+          "terminal_status": "complete",
+          "execution_mode": "live",
+          "header_cid": "bafkreihtwdlu4jntm7yl2mgsfzqgr4on37vr7inuld2dql2p4rmqafybti"
+        },
+        "plan_id": "aae_campaign_plan_example",
+        "policy_id": "aae_campaign_policy_example",
+        "policy_version": "1",
+        "policy_cid": "bafkreify4h4axvyk4b4ey6cvurixgg3ul7o3m52j2i7wg67jbavxl2kxlm",
+        "repository_id": "repository:sha256:3df67b4e7399635ecc20dc65888405eda8c32c7c28053e691fce8aa2aacaff4b",
+        "repository_state_cid": "bafkreicssskybdf32rmzlbtge5bxyv4v6c6eac322pbrsr3azlb4fkxiqi",
+        "baseline_receipt_cid": "bafkreiguks7mmvwte4ruaslbai7ntsz4g4rbnb6ebneyuv5t535jhrgf6q",
+        "seed_config": {
+          "schema": "ipfs-datasets.software-contracts.adversarial-assurance-seed-config-binding@1",
+          "seed": 42,
+          "config_cid": "bafkreigjnrwvx2gqrijopnonygzap6tleqyjotegqa6yrelhlz3p3gjmea",
+          "binding_cid": "bafkreighs3jxy3kjd2hqy3u3qpxngtavydzxp6pq6pf3gilpxp3xnwtdeu"
+        },
+        "budget": {
+          "schema": "ipfs-datasets.software-contracts.adversarial-assurance-campaign-budget@1",
+          "max_targets": 8,
+          "max_operators": 4,
+          "max_total_candidates": 64,
+          "max_candidates_per_target": 8,
+          "max_wall_time_seconds": 3600,
+          "budget_cid": "bafkreihxr7fom7kkvgmbt72ysh6tyogrligyxf6uo7mlrecazjb2v3pnty"
+        },
+        "target_cids": [
+          "bafkreigbzwrggyucrnusmzisauvzpszxfhr3auxevxshycq6gob557tty4"
+        ],
+        "operator_cids": [
+          "bafkreiepz7gpm5nr6c75hholweybkbjp5av4khaahqlfuqijixerhw5sxy"
+        ],
+        "candidate_cids": [],
+        "admitted_risk_classes": [
+          "authorization"
+        ],
+        "require_sandbox": true,
+        "require_rollback": true,
+        "plan_cid": "bafkreicssskybdf32rmzlbtge5bxyv4v6c6eac322pbrsr3azlb4fkxiqi",
+        "unknown_authority_field": "must-fail-closed"
+      }
+    },
+    {
+      "id": "unknown-risk-class-enum-fail-closed",
+      "valid": false,
+      "expected_error": "enum",
+      "payload": {
+        "schema": "ipfs-datasets.software-contracts.adversarial-assurance-mutation-campaign-plan@1",
+        "interface_id": "MutationCampaignPlan@1",
+        "header": {
+          "schema": "ipfs-datasets.software-contracts.adversarial-assurance-artifact-header@1",
+          "interface_id": "AssuranceArtifactHeader@1",
+          "artifact_kind": "mutation_campaign_plan",
+          "repository_id": "repository:sha256:3df67b4e7399635ecc20dc65888405eda8c32c7c28053e691fce8aa2aacaff4b",
+          "repository_state_cid": "bafkreicssskybdf32rmzlbtge5bxyv4v6c6eac322pbrsr3azlb4fkxiqi",
+          "terminal_status": "complete",
+          "execution_mode": "live",
+          "header_cid": "bafkreihtwdlu4jntm7yl2mgsfzqgr4on37vr7inuld2dql2p4rmqafybti"
+        },
+        "plan_id": "aae_campaign_plan_example",
+        "policy_id": "aae_campaign_policy_example",
+        "policy_version": "1",
+        "policy_cid": "bafkreify4h4axvyk4b4ey6cvurixgg3ul7o3m52j2i7wg67jbavxl2kxlm",
+        "repository_id": "repository:sha256:3df67b4e7399635ecc20dc65888405eda8c32c7c28053e691fce8aa2aacaff4b",
+        "repository_state_cid": "bafkreicssskybdf32rmzlbtge5bxyv4v6c6eac322pbrsr3azlb4fkxiqi",
+        "baseline_receipt_cid": "bafkreiguks7mmvwte4ruaslbai7ntsz4g4rbnb6ebneyuv5t535jhrgf6q",
+        "seed_config": {
+          "schema": "ipfs-datasets.software-contracts.adversarial-assurance-seed-config-binding@1",
+          "seed": 42,
+          "config_cid": "bafkreigjnrwvx2gqrijopnonygzap6tleqyjotegqa6yrelhlz3p3gjmea",
+          "binding_cid": "bafkreighs3jxy3kjd2hqy3u3qpxngtavydzxp6pq6pf3gilpxp3xnwtdeu"
+        },
+        "budget": {
+          "schema": "ipfs-datasets.software-contracts.adversarial-assurance-campaign-budget@1",
+          "max_targets": 8,
+          "max_operators": 4,
+          "max_total_candidates": 64,
+          "max_candidates_per_target": 8,
+          "max_wall_time_seconds": 3600,
+          "budget_cid": "bafkreihxr7fom7kkvgmbt72ysh6tyogrligyxf6uo7mlrecazjb2v3pnty"
+        },
+        "target_cids": [
+          "bafkreigbzwrggyucrnusmzisauvzpszxfhr3auxevxshycq6gob557tty4"
+        ],
+        "operator_cids": [
+          "bafkreiepz7gpm5nr6c75hholweybkbjp5av4khaahqlfuqijixerhw5sxy"
+        ],
+        "candidate_cids": [],
+        "admitted_risk_classes": [
+          "not_a_real_risk_class"
+        ],
+        "require_sandbox": true,
+        "require_rollback": true,
+        "plan_cid": "bafkreicssskybdf32rmzlbtge5bxyv4v6c6eac322pbrsr3azlb4fkxiqi"
+      }
+    },
+    {
+      "id": "sandbox-false-fail-closed",
+      "valid": false,
+      "expected_error": "const",
+      "payload": {
+        "schema": "ipfs-datasets.software-contracts.adversarial-assurance-mutation-campaign-plan@1",
+        "interface_id": "MutationCampaignPlan@1",
+        "header": {
+          "schema": "ipfs-datasets.software-contracts.adversarial-assurance-artifact-header@1",
+          "interface_id": "AssuranceArtifactHeader@1",
+          "artifact_kind": "mutation_campaign_plan",
+          "repository_id": "repository:sha256:3df67b4e7399635ecc20dc65888405eda8c32c7c28053e691fce8aa2aacaff4b",
+          "repository_state_cid": "bafkreicssskybdf32rmzlbtge5bxyv4v6c6eac322pbrsr3azlb4fkxiqi",
+          "terminal_status": "complete",
+          "execution_mode": "live",
+          "header_cid": "bafkreihtwdlu4jntm7yl2mgsfzqgr4on37vr7inuld2dql2p4rmqafybti"
+        },
+        "plan_id": "aae_campaign_plan_example",
+        "policy_id": "aae_campaign_policy_example",
+        "policy_version": "1",
+        "policy_cid": "bafkreify4h4axvyk4b4ey6cvurixgg3ul7o3m52j2i7wg67jbavxl2kxlm",
+        "repository_id": "repository:sha256:3df67b4e7399635ecc20dc65888405eda8c32c7c28053e691fce8aa2aacaff4b",
+        "repository_state_cid": "bafkreicssskybdf32rmzlbtge5bxyv4v6c6eac322pbrsr3azlb4fkxiqi",
+        "baseline_receipt_cid": "bafkreiguks7mmvwte4ruaslbai7ntsz4g4rbnb6ebneyuv5t535jhrgf6q",
+        "seed_config": {
+          "schema": "ipfs-datasets.software-contracts.adversarial-assurance-seed-config-binding@1",
+          "seed": 42,
+          "config_cid": "bafkreigjnrwvx2gqrijopnonygzap6tleqyjotegqa6yrelhlz3p3gjmea",
+          "binding_cid": "bafkreighs3jxy3kjd2hqy3u3qpxngtavydzxp6pq6pf3gilpxp3xnwtdeu"
+        },
+        "budget": {
+          "schema": "ipfs-datasets.software-contracts.adversarial-assurance-campaign-budget@1",
+          "max_targets": 8,
+          "max_operators": 4,
+          "max_total_candidates": 64,
+          "max_candidates_per_target": 8,
+          "max_wall_time_seconds": 3600,
+          "budget_cid": "bafkreihxr7fom7kkvgmbt72ysh6tyogrligyxf6uo7mlrecazjb2v3pnty"
+        },
+        "target_cids": [
+          "bafkreigbzwrggyucrnusmzisauvzpszxfhr3auxevxshycq6gob557tty4"
+        ],
+        "operator_cids": [
+          "bafkreiepz7gpm5nr6c75hholweybkbjp5av4khaahqlfuqijixerhw5sxy"
+        ],
+        "candidate_cids": [],
+        "admitted_risk_classes": [
+          "authorization"
+        ],
+        "require_sandbox": false,
+        "require_rollback": true,
+        "plan_cid": "bafkreicssskybdf32rmzlbtge5bxyv4v6c6eac322pbrsr3azlb4fkxiqi"
+      }
+    }
+  ]
+}
