@@ -5,8 +5,14 @@ so the four mirrors cannot drift. This is the Python side.
 """
 import json
 import os
+import sys
+from pathlib import Path
 
 import pytest
+
+_TESTS_PY = Path(__file__).resolve().parents[1]
+if str(_TESTS_PY) not in sys.path:
+    sys.path.insert(0, str(_TESTS_PY))
 
 from validators.models import (
     InitializeResult,

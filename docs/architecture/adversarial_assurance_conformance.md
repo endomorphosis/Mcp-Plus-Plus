@@ -205,7 +205,17 @@ PY
 }
 ```
 
-## 7. Follow-on (out of scope for AAE-013)
+## 7. Isolated-worktree Python import bootstrap
+
+The declared AAE-013 validation command runs pytest from the superproject
+root. Isolated supervisor worktrees do not put `tests-py/` on `PYTHONPATH`,
+so `from validators.models import ...` raised `ModuleNotFoundError` and
+consumed four attempts before any schema or vector was judged. The existing
+Python conformance file now inserts its own `tests-py` directory at the front
+of `sys.path` before that import. That is a path bootstrap only: the closed
+canonical model map is unchanged.
+
+## 8. Follow-on (out of scope for AAE-013)
 
 - Register AAE model names in the four harness model maps only when a consumer task owns that rewrite and can keep fail-closed parity.
 - Bind kit/accelerate verification paths to the admitted schemas without inventing local envelopes.
