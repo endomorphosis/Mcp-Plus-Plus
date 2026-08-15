@@ -1,0 +1,417 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcp-plus-plus.dev/schemas/canonicalization/mcpp-jcs-v1.schema.json",
+  "title": "MCP++ mcpp-jcs-v1 canonicalization algorithm metadata (McppJcsV1@1)",
+  "description": "Machine-readable contract for the MCP++ 1.0 canonicalization algorithm identifier mcpp-jcs-v1 (RFC 8785 JCS). Describes algorithm declaration, digest/CID binding defaults, migration records, and the ban on silent CID changes. Normative prose: ipfs_accelerate_py/mcplusplus/docs/spec/canonicalization-mcpp-jcs-v1.md. Authority: ADR-0002, plan KD-5.",
+  "$comment": "Interface label: McppJcsV1@1. The string mcpp-jcs-v1 MUST NOT be reused for non-RFC-8785 behavior. Historical algorithms remain readable; promotion requires an explicit migration record.",
+  "$defs": {
+    "algorithmId": {
+      "type": "string",
+      "const": "mcpp-jcs-v1",
+      "description": "Normative algorithm identifier. Equals RFC 8785 JSON Canonicalization Scheme (JCS). Immutable: incompatible changes require a new id (e.g. mcpp-jcs-v2)."
+    },
+    "historicalAlgorithmId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._+:@/-]{0,127}$",
+      "description": "Any non-empty algorithm id recorded at mint time for historical artifacts. MUST NOT be silently rewritten to mcpp-jcs-v1."
+    },
+    "anyAlgorithmId": {
+      "oneOf": [
+        { "$ref": "#/$defs/algorithmId" },
+        { "$ref": "#/$defs/historicalAlgorithmId" }
+      ]
+    },
+    "cid": {
+      "type": "string",
+      "description": "IPFS CID string. CIDv1 base32 (b…) preferred for new mints; CIDv0 (Qm…) remains readable when historical.",
+      "pattern": "^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58,})$",
+      "minLength": 46,
+      "maxLength": 128
+    },
+    "multicodecName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "description": "Multicodec name for the content-addressed payload. Default for new mcpp-jcs-v1 portable payloads is raw."
+    },
+    "multihashName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "description": "Multihash name. Default for new mcpp-jcs-v1 portable payloads is sha2-256."
+    },
+    "hexDigest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "Lowercase hex-encoded sha2-256 digest of the canonical UTF-8 bytes."
+    },
+    "iso8601": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 64,
+      "description": "UTC timestamp (ISO-8601) for migration or mint records."
+    },
+    "rfc8785Reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["standard", "name"],
+      "properties": {
+        "standard": {
+          "type": "string",
+          "const": "RFC 8785",
+          "description": "JCS standard identifier."
+        },
+        "name": {
+          "type": "string",
+          "const": "JSON Canonicalization Scheme",
+          "description": "Full standard name."
+        },
+        "url": {
+          "type": "string",
+          "const": "https://www.rfc-editor.org/rfc/rfc8785",
+          "description": "Authoritative specification URL."
+        }
+      }
+    },
+    "encodingRules": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Declarative flags summarizing normative encoding rules for validators and vector tooling. Implementations still MUST match RFC 8785 byte-for-byte.",
+      "required": [
+        "utf8",
+        "no_bom",
+        "no_trailing_newline",
+        "no_insignificant_whitespace",
+        "object_key_order",
+        "reject_duplicate_keys",
+        "reject_nan_infinity",
+        "reject_cycles",
+        "negative_zero_per_jcs"
+      ],
+      "properties": {
+        "utf8": {
+          "type": "boolean",
+          "const": true,
+          "description": "Canonical bytes are UTF-8 of the JCS text."
+        },
+        "no_bom": {
+          "type": "boolean",
+          "const": true,
+          "description": "Byte-order mark MUST NOT appear."
+        },
+        "no_trailing_newline": {
+          "type": "boolean",
+          "const": true,
+          "description": "Canonical text has no trailing newline."
+        },
+        "no_insignificant_whitespace": {
+          "type": "boolean",
+          "const": true,
+          "description": "No spaces after ':' or ',', no indentation."
+        },
+        "object_key_order": {
+          "type": "string",
+          "const": "utf16-code-unit-lexicographic",
+          "description": "Object member order per RFC 8785 (lexicographic order of UTF-16 code units of names)."
+        },
+        "reject_duplicate_keys": {
+          "type": "boolean",
+          "const": true,
+          "description": "Duplicate object keys on untrusted parse fail closed."
+        },
+        "reject_nan_infinity": {
+          "type": "boolean",
+          "const": true,
+          "description": "NaN and ±Infinity are not JSON numbers and fail closed."
+        },
+        "reject_cycles": {
+          "type": "boolean",
+          "const": true,
+          "description": "Cyclic structures fail closed."
+        },
+        "negative_zero_per_jcs": {
+          "type": "boolean",
+          "const": true,
+          "description": "Negative zero is serialized per RFC 8785 number rules (not a free-form platform dump)."
+        },
+        "null_is_token": {
+          "type": "boolean",
+          "const": true,
+          "description": "null serializes as the token null; absence of a key is distinct."
+        },
+        "arrays_preserve_order": {
+          "type": "boolean",
+          "const": true,
+          "description": "Array element order is preserved."
+        }
+      }
+    },
+    "cidDefaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Default CID construction for new portable payloads under ADR-0002 when using mcpp-jcs-v1. Profiles may declare a different multicodec explicitly.",
+      "required": ["cid_version", "multicodec", "multihash", "multibase"],
+      "properties": {
+        "cid_version": {
+          "type": "integer",
+          "const": 1,
+          "description": "CIDv1 required for new normative mints."
+        },
+        "multicodec": {
+          "type": "string",
+          "const": "raw",
+          "description": "Default multicodec 0x55 (raw) over canonical payload bytes."
+        },
+        "multicodec_code": {
+          "type": "integer",
+          "const": 85,
+          "description": "0x55 raw."
+        },
+        "multihash": {
+          "type": "string",
+          "const": "sha2-256",
+          "description": "Default multihash 0x12."
+        },
+        "multihash_code": {
+          "type": "integer",
+          "const": 18,
+          "description": "0x12 sha2-256."
+        },
+        "multibase": {
+          "type": "string",
+          "const": "base32",
+          "description": "Preferred string form: lowercase base32 (b prefix)."
+        }
+      }
+    },
+    "silentCidChangePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["forbidden", "historical_readable", "promotion_requires_migration_record"],
+      "properties": {
+        "forbidden": {
+          "type": "boolean",
+          "const": true,
+          "description": "Silent re-canonicalization that changes a stored CID without an explicit migration record is forbidden."
+        },
+        "historical_readable": {
+          "type": "boolean",
+          "const": true,
+          "description": "Historical algorithm/CID pairs remain readable under the algorithm recorded at mint time."
+        },
+        "promotion_requires_migration_record": {
+          "type": "boolean",
+          "const": true,
+          "description": "Promotion to mcpp-jcs-v1 mints a new CID and records source/target linkage; in-place rewrite is forbidden."
+        }
+      }
+    },
+    "algorithmDeclaration": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Metadata object declaring that a value, vector, or mint path uses mcpp-jcs-v1.",
+      "required": ["algorithm", "interface", "standard"],
+      "properties": {
+        "algorithm": { "$ref": "#/$defs/algorithmId" },
+        "interface": {
+          "type": "string",
+          "const": "McppJcsV1@1",
+          "description": "Task/interface label for McppJcsV1@1 conformance."
+        },
+        "standard": { "$ref": "#/$defs/rfc8785Reference" },
+        "encoding": { "$ref": "#/$defs/encodingRules" },
+        "cid_defaults": { "$ref": "#/$defs/cidDefaults" },
+        "silent_cid_change_policy": { "$ref": "#/$defs/silentCidChangePolicy" },
+        "spec_path": {
+          "type": "string",
+          "const": "ipfs_accelerate_py/mcplusplus/docs/spec/canonicalization-mcpp-jcs-v1.md",
+          "description": "In-tree normative prose path."
+        },
+        "adr": {
+          "type": "string",
+          "const": "ipfs_accelerate_py/mcplusplus/docs/architecture/decisions/0002-crypto-canonical.md",
+          "description": "Binding ADR for the crypto/canonical suite."
+        }
+      }
+    },
+    "canonicalIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Pinned identity of a single logical value under mcpp-jcs-v1 (used by golden vectors).",
+      "required": ["algorithm", "canonical_utf8"],
+      "properties": {
+        "algorithm": { "$ref": "#/$defs/algorithmId" },
+        "canonical_utf8": {
+          "type": "string",
+          "description": "Exact JCS text (UTF-8 logical string). Implementations MUST produce this exact text for the vector input."
+        },
+        "canonical_sha256": { "$ref": "#/$defs/hexDigest" },
+        "cid": { "$ref": "#/$defs/cid" },
+        "multicodec": { "$ref": "#/$defs/multicodecName" },
+        "multihash": { "$ref": "#/$defs/multihashName" }
+      }
+    },
+    "migrationRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Explicit promotion record from a historical algorithm/CID to mcpp-jcs-v1. Required whenever content is re-minted under the new algorithm.",
+      "required": [
+        "schema",
+        "source_cid",
+        "source_algorithm",
+        "target_cid",
+        "target_algorithm"
+      ],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "mcp++/canonicalization/migration@1",
+          "description": "Migration record schema marker."
+        },
+        "source_cid": { "$ref": "#/$defs/cid" },
+        "source_algorithm": { "$ref": "#/$defs/historicalAlgorithmId" },
+        "source_multicodec": { "$ref": "#/$defs/multicodecName" },
+        "target_cid": { "$ref": "#/$defs/cid" },
+        "target_algorithm": { "$ref": "#/$defs/algorithmId" },
+        "target_multicodec": { "$ref": "#/$defs/multicodecName" },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "description": "Human- or machine-readable reason for promotion."
+        },
+        "migrated_at": { "$ref": "#/$defs/iso8601" },
+        "silent_rewrite": {
+          "type": "boolean",
+          "const": false,
+          "description": "MUST be false. Silent in-place CID rewrite is forbidden."
+        }
+      }
+    },
+    "historicalReadBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Declares that a stored artifact must be verified under its historical algorithm, not re-canonicalized under mcpp-jcs-v1.",
+      "required": ["cid", "algorithm", "verify_with_recorded_algorithm"],
+      "properties": {
+        "cid": { "$ref": "#/$defs/cid" },
+        "algorithm": { "$ref": "#/$defs/anyAlgorithmId" },
+        "multicodec": { "$ref": "#/$defs/multicodecName" },
+        "verify_with_recorded_algorithm": {
+          "type": "boolean",
+          "const": true,
+          "description": "Readers MUST use the recorded algorithm for digest/CID/signature verification."
+        },
+        "allow_silent_recanonicalization": {
+          "type": "boolean",
+          "const": false,
+          "description": "MUST be false. Forbids silent CID changes."
+        }
+      }
+    }
+  },
+  "oneOf": [
+    {
+      "title": "Algorithm declaration",
+      "$ref": "#/$defs/algorithmDeclaration"
+    },
+    {
+      "title": "Canonical identity (vector pinning)",
+      "$ref": "#/$defs/canonicalIdentity"
+    },
+    {
+      "title": "Migration record",
+      "$ref": "#/$defs/migrationRecord"
+    },
+    {
+      "title": "Historical read binding",
+      "$ref": "#/$defs/historicalReadBinding"
+    },
+    {
+      "title": "Bundle document",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "algorithm", "interface", "silent_cid_change_policy"],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "mcp++/canonicalization/mcpp-jcs-v1@1",
+          "description": "Top-level document marker for a full algorithm bundle."
+        },
+        "algorithm": { "$ref": "#/$defs/algorithmId" },
+        "interface": {
+          "type": "string",
+          "const": "McppJcsV1@1"
+        },
+        "standard": { "$ref": "#/$defs/rfc8785Reference" },
+        "encoding": { "$ref": "#/$defs/encodingRules" },
+        "cid_defaults": { "$ref": "#/$defs/cidDefaults" },
+        "silent_cid_change_policy": { "$ref": "#/$defs/silentCidChangePolicy" },
+        "spec_path": {
+          "type": "string",
+          "const": "ipfs_accelerate_py/mcplusplus/docs/spec/canonicalization-mcpp-jcs-v1.md"
+        },
+        "adr": {
+          "type": "string",
+          "const": "ipfs_accelerate_py/mcplusplus/docs/architecture/decisions/0002-crypto-canonical.md"
+        },
+        "migration": {
+          "description": "Optional embedded migration record when this document accompanies a promotion.",
+          "$ref": "#/$defs/migrationRecord"
+        }
+      }
+    }
+  ],
+  "examples": [
+    {
+      "schema": "mcp++/canonicalization/mcpp-jcs-v1@1",
+      "algorithm": "mcpp-jcs-v1",
+      "interface": "McppJcsV1@1",
+      "standard": {
+        "standard": "RFC 8785",
+        "name": "JSON Canonicalization Scheme",
+        "url": "https://www.rfc-editor.org/rfc/rfc8785"
+      },
+      "encoding": {
+        "utf8": true,
+        "no_bom": true,
+        "no_trailing_newline": true,
+        "no_insignificant_whitespace": true,
+        "object_key_order": "utf16-code-unit-lexicographic",
+        "reject_duplicate_keys": true,
+        "reject_nan_infinity": true,
+        "reject_cycles": true,
+        "negative_zero_per_jcs": true,
+        "null_is_token": true,
+        "arrays_preserve_order": true
+      },
+      "cid_defaults": {
+        "cid_version": 1,
+        "multicodec": "raw",
+        "multicodec_code": 85,
+        "multihash": "sha2-256",
+        "multihash_code": 18,
+        "multibase": "base32"
+      },
+      "silent_cid_change_policy": {
+        "forbidden": true,
+        "historical_readable": true,
+        "promotion_requires_migration_record": true
+      },
+      "spec_path": "ipfs_accelerate_py/mcplusplus/docs/spec/canonicalization-mcpp-jcs-v1.md",
+      "adr": "ipfs_accelerate_py/mcplusplus/docs/architecture/decisions/0002-crypto-canonical.md"
+    },
+    {
+      "schema": "mcp++/canonicalization/migration@1",
+      "source_cid": "bafkreifzjut3te2nhyekklss27nh3k72ysco7y32koao5eei66wof36n5e",
+      "source_algorithm": "profile-g-dag-json-local",
+      "target_cid": "bafkreigh2akiscaildcqabsyg3dfr6chu3fgpregiymsck7e7aqa4s52zy",
+      "target_algorithm": "mcpp-jcs-v1",
+      "reason": "promote-to-mcpplusplus-1.0-suite",
+      "migrated_at": "2026-08-15T00:00:00Z",
+      "silent_rewrite": false
+    }
+  ]
+}
