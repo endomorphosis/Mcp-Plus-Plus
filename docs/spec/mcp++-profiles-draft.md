@@ -14,6 +14,8 @@ MCP++ addresses two practical pressures observed in production deployments:
 
 MCP++ introduces modernized solutions inspired by historical distributed systems (e.g., interface repositories and brokers), implemented in a content-addressed, capability-secure, and policy-aware manner suitable for AI-native systems.
 
+**Profiles A–H are abstract.** They define execution semantics (contracts, envelopes, delegation, policy, provenance, risk/scheduling, payments) **without** requiring a specific MCP protocol revision or a specific carriage transport. How profiles are advertised, discovered, and activated on the wire is specified by **versioned MCP bindings** and optional **transport bindings**—not by inlining one historical MCP lifecycle into this registry. See [bindings/README.md](bindings/README.md) and ADR-0006.
+
 ## 1.1 Spec Chapters
 
 This draft is the top-level profile registry. The component details live in these chapters:
@@ -27,12 +29,32 @@ This draft is the top-level profile registry. The component details live in thes
 - [Profile G: Risk Scoring, Neighborhood Consensus, and Scheduling](risk-scheduling.md)
 - [Profile H: x402 Payments and Paid Capability Access](x402-payments.md)
 
+### 1.2 MCP version bindings (referenced, not inlined)
+
+MCP application lifecycle and revision-specific capability carriage live under
+[docs/spec/bindings/](bindings/README.md). This registry **MUST NOT** treat any
+single handshake as the only normative negotiation path for Profiles A–H.
+
+| Binding id | MCP revision | Lifecycle shape | Role |
+| --- | --- | --- | --- |
+| `mcp-binding/legacy-2024-11-05` | `2024-11-05` (initialize-era) | Session `initialize` / `notifications/initialized` | **Legacy.** Documented in [bindings/mcp-legacy-2024-11-05.md](bindings/mcp-legacy-2024-11-05.md) (MCPP-020). |
+| `mcp-binding/2026-07-28` | `2026-07-28` | Stateless per-request `_meta`; **no** initialize | **Current.** Documented in [bindings/mcp-2026-07-28.md](bindings/mcp-2026-07-28.md) (MCPP-021). |
+
+A peer **MAY** support both bindings. Dual support, downgrade rejection, and
+version-forgery fail-closed rules are normative in ADR-0006 and the binding
+documents—not restated as profile law here.
+
+Transport negotiation (for example libp2p stream protocol IDs under Profile E)
+is a **carriage handshake**. It is **not** a substitute for, and **MUST NOT**
+be conflated with, an MCP application-level initialize exchange.
+
 ---
 
 ## 2. Terminology
 
 - **CID**: Content Identifier (immutable, hash-addressed reference to canonicalized content).
-- **Profile**: An optional, negotiable MCP capability that adds semantics without changing core MCP messages.
+- **Profile**: An optional, negotiable MCP++ capability that adds execution semantics without changing baseline MCP message formats for peers that do not advertise the profile.
+- **Binding**: A versioned document/module that maps abstract profile keys and objects onto a specific MCP protocol revision (and, separately where needed, a carriage transport).
 - **Interface Descriptor**: A canonical, content-addressed contract describing a tool/resource interface.
 - **Execution Envelope**: A CID-native wrapper around an MCP invocation.
 - **Event DAG**: A directed acyclic graph of execution events linked by causal references.
@@ -44,16 +66,75 @@ Normative keywords **MUST**, **SHOULD**, and **MAY** are used as described in RF
 
 ## 3. Compatibility Model
 
-MCP++ profiles are negotiated during MCP initialization using existing capability negotiation mechanisms. Implementations that do not support MCP++ MUST continue to interoperate using baseline MCP semantics.
+### 3.1 Baseline interoperability
 
-The `initialize` handshake is normative: clients send `InitializeParams`
-(`protocolVersion` `2024-11-05`, `clientInfo`, `capabilities` with desired
-profiles under `capabilities.experimental` as `{"mcp++/<profile>": true}`); the
-server replies with `InitializeResult` (`protocolVersion`, `serverInfo`,
-`capabilities.experimental` echoing the supported subset). Both shapes are
-validated by the `InitializeParams`/`InitializeResult` spec models.
+Implementations that do not support MCP++ **MUST** continue to interoperate
+using baseline MCP semantics for the MCP revision they speak. No MCP++ profile
+modifies or invalidates existing MCP JSON-RPC message formats for peers that
+have not negotiated the corresponding profile.
 
-No MCP++ profile modifies or invalidates existing MCP JSON-RPC message formats.
+### 3.2 Profile independence (normative)
+
+Profiles **A–H** describe *what* is offered (object models, methods, CIDs,
+policy and proof requirements). They **MUST NOT** require:
+
+1. A specific MCP `protocolVersion` value as the sole legal revision.
+2. The legacy `initialize` / `notifications/initialized` exchange as the only
+   capability negotiation path.
+3. A specific carriage transport (HTTP, stdio, SSE, `mcp+p2p`, or otherwise)
+   for their abstract semantics to be valid.
+
+MCP revision mechanics, handshake vs per-request `_meta`, discovery RPCs, and
+HTTP header bindings are **binding-local**. See [bindings/README.md](bindings/README.md).
+
+### 3.3 Capability advertisement (abstract keys)
+
+MCP++ profile support is advertised using stable capability keys (or equivalent
+extension identifiers documented by the active binding). The wire placement of
+those keys depends on the selected binding:
+
+| Capability key | Profile |
+| --- | --- |
+| `mcp++/mcp-idl` | A — MCP-IDL |
+| `mcp++/cid-envelope` | B — CID-native envelopes |
+| `mcp++/ucan` | C — UCAN delegation |
+| `mcp++/deontic-policy` | D — temporal deontic policy |
+| `mcp++/p2p-transport` | E — `mcp+p2p` carriage (optional) |
+| `mcp++/event-dag` | F — Event DAG provenance / archival / compaction |
+| `mcp++/risk-scheduling` | G — risk scoring / neighborhood coordination / scheduling |
+| `mcp++/x402-payments` | H — x402 payments |
+
+**Legacy binding placement (informative, not exclusive):** under
+`mcp-binding/legacy-2024-11-05`, clients and servers may exchange these keys
+during the session `initialize` handshake (for example under
+`capabilities.experimental` as `{"mcp++/<profile>": true}`, or under a nested
+`capabilities["mcp++"].profiles` list). Exact shapes are normative only in the
+legacy binding document and in historical vectors such as
+`initialize_result.json`.
+
+**Current binding placement (informative, not exclusive):** under
+`mcp-binding/2026-07-28`, the same abstract keys ride per-request `_meta`
+(and related discovery / extension mechanisms). There is **no** initialize
+handshake on that path. Exact key tables are normative only in the current
+binding document.
+
+Implementations that claim MCP++ 1.0 dual-binding support **MUST** name the
+binding id(s) they speak when advertising capabilities (see ADR-0006).
+Supporting initialize alone without naming `mcp-binding/legacy-2024-11-05` is
+non-conformant for MCP++ 1.0 claims.
+
+### 3.4 Negotiation outcomes
+
+Regardless of binding:
+
+1. The intersection of client-offered and server-offered MCP++ profile keys is
+   the set of profiles that may be used on subsequent requests.
+2. A peer **MAY** support a subset of Profiles A–H.
+3. Profile methods and object models in chapters A–H apply only after the
+   corresponding profile key is mutually available under the active binding.
+4. Forged binding ids, silent downgrade between bindings, or treating initialize
+   as current MCP behavior when only `mcp-binding/2026-07-28` is claimed **MUST**
+   fail closed (binding and dual-peer rules; not re-specified per profile).
 
 ---
 
@@ -162,7 +243,16 @@ See: [docs/spec/temporal-deontic-policy.md](temporal-deontic-policy.md)
 
 ### 8.1 Transport Semantics
 
-The `mcp+p2p` transport profile defines carriage of MCP JSON-RPC messages over a peer-to-peer substrate (specifically, a libp2p binding in this draft). Message semantics remain unchanged.
+The `mcp+p2p` transport profile defines **carriage** of MCP JSON-RPC messages
+over a peer-to-peer substrate (specifically, a libp2p binding in this draft).
+Message semantics for Profiles A–D, F–H remain unchanged.
+
+Profile E is an **optional transport binding**, not an MCP application lifecycle.
+libp2p stream protocol negotiation is a carriage handshake. It **MUST NOT** be
+read as requiring the legacy MCP `initialize` exchange as the only path to
+activate other MCP++ profiles. Which MCP revision binding rides over a
+`mcp+p2p` stream is selected by the peers' declared MCP bindings
+([bindings/README.md](bindings/README.md)), not by Profile E alone.
 
 ### 8.2 Eventing
 
@@ -176,10 +266,12 @@ See: [docs/spec/transport-mcp-p2p.md](transport-mcp-p2p.md)
 
 ### 9.1 Capability and Profile Name (Normative)
 
-Profile F is negotiated with the capability key `mcp++/event-dag`. The stable
-wire key remains intentionally short for compatibility; implementations MUST
-expose the profile name **"Profile F: Event DAG Provenance, Archival, and
-Compaction"** in profile metadata and documentation.
+Profile F is advertised with the abstract capability key `mcp++/event-dag`
+(see §3.3). The stable wire key remains intentionally short for compatibility;
+implementations MUST expose the profile name **"Profile F: Event DAG
+Provenance, Archival, and Compaction"** in profile metadata and documentation.
+How the key is carried (session initialize vs per-request `_meta` vs discovery)
+is binding-local.
 
 Profile F defines a bounded-retention Event DAG. It preserves auditability
 without requiring every peer to keep, load, or traverse the entire execution
@@ -326,19 +418,33 @@ Implementations MAY adopt MCP++ profiles independently:
 
 ## 15. Conclusion
 
-MCP++ extends MCP into federated, multi-agent domains by introducing contract clarity, immutable provenance, explicit delegation, and policy-aware execution—without deprecating or breaking existing MCP deployments.
+MCP++ extends MCP into federated, multi-agent domains by introducing contract
+clarity, immutable provenance, explicit delegation, and policy-aware
+execution—without deprecating or breaking existing MCP deployments. Profile
+semantics stay stable across MCP revisions; version-specific lifecycle lives in
+named bindings under [bindings/](bindings/README.md).
 
 ---
 
-## Appendix A: HTTP/JSON-RPC Wire Binding (Normative)
+## Appendix A: HTTP/JSON-RPC Method Surface (Normative)
 
-To enable third-party interoperability, conformant servers expose the
-profiles over a JSON-RPC 2.0 `POST /mcp` dispatcher and parallel REST paths.
-Method names and the execution result shape are canonical and MUST match:
+This appendix freezes **profile method names, REST paths, and result fields**
+for third-party interoperability. It is **not** a complete MCP application
+lifecycle specification.
+
+**Lifecycle is binding-local.** Session initialize, per-request `_meta`,
+`server/discover`, and HTTP version headers are specified only in the versioned
+MCP binding documents under [bindings/](bindings/README.md). This appendix
+**MUST NOT** be read as requiring `initialize` as the only negotiation path for
+Profiles A–H.
+
+To enable third-party interoperability, conformant servers expose the profiles
+over a JSON-RPC 2.0 `POST /mcp` dispatcher and parallel REST paths. Method
+names and the execution result shape are canonical and MUST match:
 
 | Profile | JSON-RPC method | REST path | Result fields |
 |---|---|---|---|
-| handshake | `initialize` | — | `capabilities.experimental{mcp++/*}` |
+| capability / discovery (binding-local) | See active MCP binding — legacy: `initialize`; current: per-request `_meta` and `server/discover` (and related) | — | binding-local capability advertisement of abstract keys in §3.3 |
 | A (IDL) | `tools/list` | `GET /mcp/interfaces` | `interfaces[]` |
 | B (CID exec) | `tools/call`, `mcp++/execute` | `POST /mcp/execute` | `output`, `envelope_cid`, `event_cid`, `receipt` |
 | C (UCAN) | `mcp++/ucan/validate` | `POST /mcp/ucan/{delegate,revoke,validate}` | `valid`, `chain[]` |
@@ -352,12 +458,14 @@ The `mcp++/execute` `receipt` object MUST include `success` and SHOULD include
 `signature`. CID-native deployments require `receipt_cid` + `output_cid`. All
 CIDs in these payloads MUST satisfy the CID format regex in
 `cid-native-artifacts.md`.
-Capability negotiation keys are: `mcp++/mcp-idl`, `mcp++/cid-envelope`,
-`mcp++/ucan`, `mcp++/deontic-policy`, `mcp++/event-dag` (Profile F),
-`mcp++/p2p-transport`, `mcp++/x402-payments` (Profile H).
+
+Abstract capability keys (binding-independent identifiers) are listed in §3.3:
+`mcp++/mcp-idl`, `mcp++/cid-envelope`, `mcp++/ucan`, `mcp++/deontic-policy`,
+`mcp++/event-dag` (Profile F), `mcp++/p2p-transport`, `mcp++/risk-scheduling`,
+`mcp++/x402-payments` (Profile H).
 
 Profile H over Profile E carries the same decoded x402 objects as the HTTP
-binding. The libp2p representation is an MCP++ transport binding and
+carriage. The libp2p representation is an MCP++ **transport** binding and
 **MUST NOT be represented as upstream x402 HTTP conformance**. Claim both only
 when the HTTP side passes upstream vectors and object translation passes
 Profile H parity vectors.
