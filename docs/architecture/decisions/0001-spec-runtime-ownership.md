@@ -3,20 +3,25 @@
 - **Status:** Accepted
 - **Date:** 2026-08-15
 - **Last verified:** 2026-08-15
+- **Task:** MCPP-013 (authoritative design record for KD-1 / REQ-OWN-01)
+- **Interface:** `SpecRuntimeOwnership@1`
 - **Deciders:** MCP++ 1.0 gap-closure program (MCPP-G020); sealed plan Key Decision KD-1 and §2 Repository ownership
 - **Scope:** Which package owns normative MCP++ 1.0 schemas, cross-language conformance vectors, validators, compatibility matrices, interoperability tests, and release bundles; which packages own runtime adapters only; the ban on forking a second unofficial protocol inside any single runtime; and the installability of Mcp-Plus-Plus as a standalone conformance package.
-- **Non-goals:** Mandatory crypto suite and `mcpp-jcs-v1` (ADR-0002 / MCPP-014); conformance-level ladder (ADR-0003 / MCPP-015); state modes and CRDT/consensus backends (ADR-0004 / MCPP-016); DurableExecutor product choice (ADR-0005 / MCPP-017); dual MCP bindings and A2A extension URI (ADR-0006 / MCPP-018); concrete adapter implementations, CLI packaging, or three-peer demos (later waves).
+- **Non-goals:** Mandatory crypto suite and `mcpp-jcs-v1` (ADR-0002 / MCPP-014); conformance-level ladder (ADR-0003 / MCPP-015); state modes and CRDT/consensus backends (ADR-0004 / MCPP-016); DurableExecutor product choice (ADR-0005 / MCPP-017); dual MCP bindings and A2A extension URI values (ADR-0006 / MCPP-018); concrete adapter implementations, CLI packaging, or three-peer demos (later waves). Binding *documents* and A2A extension *schemas* still land under Mcp-Plus-Plus ownership per this ADR; only the binding/URI *choices* are out of scope here.
 - **Supersedes:** none
 - **Superseded-by:** none
 - **Related guides:**
   - Sealed plan: `docs/architecture/MCPPLUSPLUS_1_0_GAP_CLOSURE_PLAN.md` (§2 Repository ownership; §4 file-disjointness; §5 KD-1; §7 lane assignment)
   - Traceability matrix: `ipfs_accelerate_py/mcplusplus/docs/roadmap/mcplusplus-1.0-gap-closure.md` (REQ-OWN-01)
+  - Official MCP / A2A note (MCPP-010): `docs/reports/mcplusplus-1.0-gap-closure/baseline/official-mcp-a2a.md`
   - Profile inventory: `docs/reports/mcplusplus-1.0-gap-closure/baseline/profiles-a-h-inventory.md`
   - Forest pin: `docs/reports/mcplusplus-1.0-gap-closure/baseline/repository-forest.json`
+  - Nested architecture overview: `ipfs_accelerate_py/mcplusplus/docs/architecture/overview.md`
   - Sibling ADRs that rest on this ownership split: `0002-crypto-canonical.md` … `0006-bindings-a2a.md`
 - **Source anchors:**
-  - `docs/architecture/MCPPLUSPLUS_1_0_GAP_CLOSURE_PLAN.md` — §2; KD-1; §7 file-disjointness rules
-  - `ipfs_accelerate_py/mcplusplus/docs/roadmap/mcplusplus-1.0-gap-closure.md` — REQ-OWN-01
+  - `docs/architecture/MCPPLUSPLUS_1_0_GAP_CLOSURE_PLAN.md` — §2; KD-1 (“Spec repo owns schemas, vectors, validators, matrices. Runtimes own adapters.”); KD-17 release-bundle packaging; §7 file-disjointness rules
+  - `ipfs_accelerate_py/mcplusplus/docs/roadmap/mcplusplus-1.0-gap-closure.md` — REQ-OWN-01 → MCPP-013
+  - `docs/reports/mcplusplus-1.0-gap-closure/baseline/official-mcp-a2a.md` — official MCP/A2A facts consumed by adapters; normative binding text remains in the spec tree
   - Nested spec tree: `ipfs_accelerate_py/mcplusplus/` (schemas, `conformance/vectors/`, `tests-{py,ts,go,rs}/`, docs)
   - Runtime adapter locations: `ipfs_accelerate_py/mcp_server/`, `ipfs_datasets_py/`, `ipfs_kit_py/`, SwissKnife checkout
   - Remote: https://github.com/endomorphosis/Mcp-Plus-Plus (canonical protocol / conformance home)
@@ -82,8 +87,14 @@ package, and any peer that must reject unofficial protocol forks.
 
 ## Decision
 
-**Mcp-Plus-Plus owns schemas, vectors, validators, matrices, interoperability
-tests, and release bundles. Runtimes own adapters only.**
+**Mcp-Plus-Plus owns schemas, vectors, validators, matrices, and release
+bundles. Runtimes own adapters only.**
+
+Expanded ownership (same decision, fully stated): Mcp-Plus-Plus also owns
+cross-language conformance vectors’ normative home, interoperability test
+gates that admit forest claims, and the package identity of KD-17 release
+bundles (Evidence Core, Secure Delegation, Federated Mesh, Commerce, Verified
+Execution). Runtimes never take ownership of those asset classes.
 
 MCP++ 1.0 treats the Mcp-Plus-Plus repository (nested in this program as
 `ipfs_accelerate_py/mcplusplus/`) as the **single normative and conformance
@@ -91,6 +102,12 @@ home**. Runtime repositories (accelerate, datasets, kit, SwissKnife) host
 **adapters** that consume that package’s schemas, vectors, and validators.
 They MUST NOT mint a second unofficial protocol, a second set of normative
 schemas, or a second release identity for the same profile version.
+
+Acceptance alignment (MCPP-013): this Decision is satisfied only when the
+bold rule above holds for every MCP++ 1.0 profile version under active
+design—schemas, vectors, validators, matrices, and release bundles live in
+Mcp-Plus-Plus; product code in accelerate/datasets/kit/SwissKnife is adapter
+code only.
 
 ### 1. Spec / conformance package ownership (Mcp-Plus-Plus)
 
@@ -102,6 +119,7 @@ schemas, or a second release identity for the same profile version.
 | Validators (structural and higher levels) | Mcp-Plus-Plus | `ipfs_accelerate_py/mcplusplus/tests-{py,ts,go,rs}/` and declared validator packages | Call / wrap; not claim a private validator as the forest admission bar |
 | Compatibility / traceability matrices | Mcp-Plus-Plus (+ program evidence under accelerate `docs/reports/…` for gap-closure receipts) | Matrix: `ipfs_accelerate_py/mcplusplus/docs/roadmap/mcplusplus-1.0-gap-closure.md` | Contribute runtime rows only when the claim is scored against Mcp-Plus-Plus levels (ADR-0003) |
 | Interoperability tests (four-language / multi-peer gates) | Mcp-Plus-Plus | Nested tree tests and harnesses | Supply runtime adapter harnesses that still assert against shared vectors |
+| Dual MCP binding documents and A2A extension schemas | Mcp-Plus-Plus | Nested `docs/spec/` (and future binding chapters); official facts only in program note `official-mcp-a2a.md` | Implement dual bindings and advertise the verified A2A URI; do not relocate normative binding text into a runtime-only tree |
 | Release bundles (Evidence Core, Secure Delegation, Federated Mesh, Commerce, Verified Execution) | Mcp-Plus-Plus packaging (KD-17) | Nested tree release artifacts when published | Depend on published bundle versions; not re-brand a runtime slice as the official MCP++ 1.0 bundle |
 
 Rules:
@@ -248,14 +266,17 @@ of the following hold:
 | No large implementation dump in spec tree | Plan §2 paragraph after role list | Conformance package integrity |
 | Nested tree already holds multi-language validators + vectors | `tests-{py,ts,go,rs}/`; `conformance/vectors/` | Current-tree force |
 | Runtime adapter code already lives outside nested tree | inventory; `ipfs_*_py/**/mcplusplus*`; SwissKnife adapters | Adapter homes |
-| Matrix tracks ownership as MCPP-013 | REQ-OWN-01 → MCPP-013 | This ADR completes the design record |
+| Matrix tracks ownership as MCPP-013 | REQ-OWN-01 → MCPP-013 | This ADR is the MCPP-013 design record |
 | Sibling ADRs defer ownership to ADR-0001 | Non-goals in 0002–0006 | Cross-ADR consistency |
+| Official MCP/A2A facts do not move binding ownership into runtimes | `official-mcp-a2a.md` (MCPP-010) | Program note is evidence; normative binding docs stay in Mcp-Plus-Plus |
 | Forest / gitlink pin for nested tree | `repository-forest.json`; inventory header | Revision discipline |
+| KD-17 names release bundles under the conformance packaging story | Plan KD-17 | Bundle identity is package-owned, not runtime-owned |
 
 Evidence classes used: sealed plan key decision and repository-ownership
-section (design authority), traceability matrix (MCPP-012), baseline inventory
-and forest pin (tree reality). This ADR does **not** claim packaging or
-forest-wide higher-level conformance is complete.
+section (design authority), official MCP/A2A note (program evidence consumed by
+adapters), traceability matrix (MCPP-012), baseline inventory and forest pin
+(tree reality). This ADR does **not** claim packaging or forest-wide
+higher-level conformance is complete.
 
 ## Verification
 
@@ -309,7 +330,8 @@ When superseding: create a new ADR number; set this file to **Superseded** with
 ### Interface label
 
 Task interface id: **`SpecRuntimeOwnership@1`** — the normative checklist in
-Decision §4.
+Decision §4. MCPP-013 is complete when this Accepted ADR exists at the
+declared path and the Decision statement matches the task acceptance rule.
 
 ### Sealed defaults preserved
 
@@ -318,6 +340,14 @@ them. Mcp-Plus-Plus remains the sole normative and conformance home; runtimes
 remain adapter owners only; large implementations stay out of the
 specification tree; and installability of the conformance package remains a
 first-class design constraint. Refinements (path table, local-vs-forest
-evidence labeling, program receipts vs package assets) stay inside that
-default and cite current-tree evidence from MCPP-012 and the baseline
-inventory.
+evidence labeling, program receipts vs package assets, official-note
+citation) stay inside that default and cite current-tree evidence from
+MCPP-010, MCPP-012, and the baseline inventory.
+
+### Recovery provenance
+
+An earlier recovery task (MCPP-091) seeded this path so sibling Wave-3 ADRs
+could reference ADR-0001. **MCPP-013** remains the authoritative board task
+for the ownership decision; this revision is the MCPP-013 deliverable
+(Accepted ADR with rejection of monorepo-only, per-runtime-schema, and
+spec-tree-implementation alternatives, plus implementation consequences).
