@@ -1,0 +1,328 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcp-plus-plus.dev/schemas/adversarial-assurance/campaign.schema.json",
+  "title": "MCP++ adversarial-assurance mutation campaign plan (shared wire) v1",
+  "description": "Language-neutral, fail-closed JSON Schema for the shared MutationCampaignPlan@1 wire identity (AAE-013). Mirrors the datasets-owned contract without application payloads, MCP++ profiles, or runtime code. Unknown fields and unsupported enums fail closed. Canonical CIDs remain datasets content-authority; this schema only constrains shared wire shape.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "interface_id",
+    "header",
+    "plan_id",
+    "policy_id",
+    "policy_version",
+    "policy_cid",
+    "repository_id",
+    "repository_state_cid",
+    "baseline_receipt_cid",
+    "seed_config",
+    "budget",
+    "target_cids",
+    "operator_cids",
+    "candidate_cids",
+    "admitted_risk_classes",
+    "require_sandbox",
+    "require_rollback",
+    "plan_cid"
+  ],
+  "properties": {
+    "schema": {
+      "const": "ipfs-datasets.software-contracts.adversarial-assurance-mutation-campaign-plan@1"
+    },
+    "interface_id": {
+      "const": "MutationCampaignPlan@1"
+    },
+    "header": {
+      "$ref": "#/$defs/assuranceArtifactHeader"
+    },
+    "plan_id": {
+      "$ref": "#/$defs/token"
+    },
+    "policy_id": {
+      "$ref": "#/$defs/token"
+    },
+    "policy_version": {
+      "$ref": "#/$defs/versionToken"
+    },
+    "policy_cid": {
+      "$ref": "#/$defs/cid"
+    },
+    "repository_id": {
+      "$ref": "#/$defs/repositoryId"
+    },
+    "repository_state_cid": {
+      "$ref": "#/$defs/cid"
+    },
+    "baseline_receipt_cid": {
+      "$ref": "#/$defs/cid"
+    },
+    "seed_config": {
+      "$ref": "#/$defs/seedConfigBinding"
+    },
+    "budget": {
+      "$ref": "#/$defs/campaignBudget"
+    },
+    "target_cids": {
+      "$ref": "#/$defs/cidListNonEmpty"
+    },
+    "operator_cids": {
+      "$ref": "#/$defs/cidListNonEmpty"
+    },
+    "candidate_cids": {
+      "$ref": "#/$defs/cidList"
+    },
+    "admitted_risk_classes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/mutationRiskClass"
+      },
+      "uniqueItems": true,
+      "minItems": 1,
+      "maxItems": 16
+    },
+    "require_sandbox": {
+      "const": true
+    },
+    "require_rollback": {
+      "const": true
+    },
+    "notes": {
+      "$ref": "#/$defs/nfcStringOrNull"
+    },
+    "metadata": {
+      "$ref": "#/$defs/strictObject"
+    },
+    "plan_cid": {
+      "$ref": "#/$defs/cid"
+    }
+  },
+  "$defs": {
+    "cid": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 128,
+      "pattern": "^b[a-z2-7]+$"
+    },
+    "cidList": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/cid"
+      },
+      "uniqueItems": true,
+      "maxItems": 4096
+    },
+    "cidListNonEmpty": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/cid"
+      },
+      "uniqueItems": true,
+      "minItems": 1,
+      "maxItems": 4096
+    },
+    "token": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_.:/+-]{0,127}$"
+    },
+    "versionToken": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$"
+    },
+    "repositoryId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/+-]{0,255}$"
+    },
+    "nfcString": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 16384
+    },
+    "nfcStringOrNull": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/nfcString"
+        }
+      ]
+    },
+    "strictObject": {
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "type": "null"
+          },
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "integer"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "array"
+          },
+          {
+            "type": "object"
+          }
+        ]
+      }
+    },
+    "assuranceTerminalStatus": {
+      "type": "string",
+      "enum": [
+        "complete",
+        "rejected",
+        "invalid",
+        "stale",
+        "inconclusive",
+        "evaluation_failed",
+        "human_review_required",
+        "unavailable",
+        "cancelled",
+        "simulated"
+      ]
+    },
+    "executionMode": {
+      "type": "string",
+      "enum": [
+        "live",
+        "simulated",
+        "replay"
+      ]
+    },
+    "mutationRiskClass": {
+      "type": "string",
+      "enum": [
+        "critical_security",
+        "authorization",
+        "durability",
+        "financial_legal",
+        "distributed_transition",
+        "proof_receipt_trust",
+        "critical_invariant",
+        "high",
+        "medium",
+        "local_bug",
+        "low"
+      ]
+    },
+    "assuranceArtifactHeader": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "interface_id",
+        "artifact_kind",
+        "repository_id",
+        "repository_state_cid",
+        "terminal_status",
+        "execution_mode",
+        "header_cid"
+      ],
+      "properties": {
+        "schema": {
+          "const": "ipfs-datasets.software-contracts.adversarial-assurance-artifact-header@1"
+        },
+        "interface_id": {
+          "const": "AssuranceArtifactHeader@1"
+        },
+        "artifact_kind": {
+          "const": "mutation_campaign_plan"
+        },
+        "repository_id": {
+          "$ref": "#/$defs/repositoryId"
+        },
+        "repository_state_cid": {
+          "$ref": "#/$defs/cid"
+        },
+        "terminal_status": {
+          "$ref": "#/$defs/assuranceTerminalStatus"
+        },
+        "execution_mode": {
+          "$ref": "#/$defs/executionMode"
+        },
+        "header_cid": {
+          "$ref": "#/$defs/cid"
+        }
+      }
+    },
+    "seedConfigBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "seed",
+        "config_cid",
+        "binding_cid"
+      ],
+      "properties": {
+        "schema": {
+          "const": "ipfs-datasets.software-contracts.adversarial-assurance-seed-config-binding@1"
+        },
+        "seed": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "config_cid": {
+          "$ref": "#/$defs/cid"
+        },
+        "binding_cid": {
+          "$ref": "#/$defs/cid"
+        }
+      }
+    },
+    "campaignBudget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "max_targets",
+        "max_operators",
+        "max_total_candidates",
+        "max_candidates_per_target",
+        "max_wall_time_seconds",
+        "budget_cid"
+      ],
+      "properties": {
+        "schema": {
+          "const": "ipfs-datasets.software-contracts.adversarial-assurance-campaign-budget@1"
+        },
+        "max_targets": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "max_operators": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "max_total_candidates": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1048576
+        },
+        "max_candidates_per_target": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "max_wall_time_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 604800
+        },
+        "budget_cid": {
+          "$ref": "#/$defs/cid"
+        }
+      }
+    }
+  }
+}

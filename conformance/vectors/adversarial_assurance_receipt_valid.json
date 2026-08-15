@@ -1,0 +1,67 @@
+{
+  "schema": "mcp++/adversarial-assurance/conformance-suite@1",
+  "suite": "adversarial-assurance-receipt-valid",
+  "schema_ref": "schemas/adversarial_assurance_receipt.schema.json",
+  "interface_id": "AssuranceCampaignReceipt@1",
+  "description": "Flat canonical valid vector for the shared AssuranceCampaignReceipt@1 wire. Omits the {model,payload} envelope so existing py/go/rs/ts model maps fail closed on unknown models while still discovering this suite. Cases validate against adversarial_assurance_receipt.schema.json.",
+  "cases": [
+    {
+      "id": "campaign-receipt-minimal-valid",
+      "valid": true,
+      "payload": {
+        "schema": "ipfs-datasets.software-contracts.adversarial-assurance-campaign-receipt@1",
+        "interface_id": "AssuranceCampaignReceipt@1",
+        "header": {
+          "schema": "ipfs-datasets.software-contracts.adversarial-assurance-artifact-header@1",
+          "interface_id": "AssuranceArtifactHeader@1",
+          "artifact_kind": "assurance_campaign_receipt",
+          "repository_id": "repository:sha256:3df67b4e7399635ecc20dc65888405eda8c32c7c28053e691fce8aa2aacaff4b",
+          "repository_state_cid": "bafkreicssskybdf32rmzlbtge5bxyv4v6c6eac322pbrsr3azlb4fkxiqi",
+          "terminal_status": "complete",
+          "execution_mode": "live",
+          "header_cid": "bafkreihtwdlu4jntm7yl2mgsfzqgr4on37vr7inuld2dql2p4rmqafybti"
+        },
+        "receipt_id": "aae_campaign_receipt_example",
+        "campaign_plan_cid": "bafkreify4h4axvyk4b4ey6cvurixgg3ul7o3m52j2i7wg67jbavxl2kxlm",
+        "campaign_policy_cid": "bafkreiguks7mmvwte4ruaslbai7ntsz4g4rbnb6ebneyuv5t535jhrgf6q",
+        "campaign_policy_version": "1",
+        "admitted_set_cid": "bafkreigjnrwvx2gqrijopnonygzap6tleqyjotegqa6yrelhlz3p3gjmea",
+        "expected_detection_sets_cid": "bafkreighs3jxy3kjd2hqy3u3qpxngtavydzxp6pq6pf3gilpxp3xnwtdeu",
+        "outcomes_cid": "bafkreihxr7fom7kkvgmbt72ysh6tyogrligyxf6uo7mlrecazjb2v3pnty",
+        "survivor_reports_cid": "bafkreigbzwrggyucrnusmzisauvzpszxfhr3auxevxshycq6gob557tty4",
+        "vacuity_findings_cid": "bafkreiepz7gpm5nr6c75hholweybkbjp5av4khaahqlfuqijixerhw5sxy",
+        "held_out_evaluation_cid": "bafkreicssskybdf32rmzlbtge5bxyv4v6c6eac322pbrsr3azlb4fkxiqi",
+        "held_out_result": "passed",
+        "authorization_cid": "bafkreihtwdlu4jntm7yl2mgsfzqgr4on37vr7inuld2dql2p4rmqafybti",
+        "expected_old_revision": "0",
+        "seal_scope": [
+          "campaign_policy",
+          "admitted_set",
+          "outcomes",
+          "campaign_receipt"
+        ],
+        "seal_status": "unavailable",
+        "seal_evidence_cid": null,
+        "gap_reports_cid": null,
+        "input_artifact_cids": [
+          "bafkreify4h4axvyk4b4ey6cvurixgg3ul7o3m52j2i7wg67jbavxl2kxlm"
+        ],
+        "signature": {
+          "schema": "ipfs-datasets.software-contracts.adversarial-assurance-receipt-signature-binding@1",
+          "signer_identity": "did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH",
+          "key_identity": "did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH",
+          "audience": "adversarial_assurance_engine",
+          "action": "seal_campaign",
+          "signature_algorithm": "EdDSA",
+          "signature_authority": "ipfs-datasets.profile-g.ed25519-did-key@1",
+          "signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+          "signature_verification_status": "verified",
+          "binding_cid": "bafkreiguks7mmvwte4ruaslbai7ntsz4g4rbnb6ebneyuv5t535jhrgf6q"
+        },
+        "notes": null,
+        "metadata": {},
+        "receipt_cid": "bafkreigjnrwvx2gqrijopnonygzap6tleqyjotegqa6yrelhlz3p3gjmea"
+      }
+    }
+  ]
+}
