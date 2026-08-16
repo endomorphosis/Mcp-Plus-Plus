@@ -1,0 +1,567 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcp-plus-plus.dev/schemas/confidential/encrypted-artifact-ref-1.schema.json",
+  "title": "MCP++ EncryptedArtifactRef@1",
+  "description": "Portable reference to a confidential, content-addressed ciphertext artifact and its KeyEnvelope@1. Carries ciphertext CID, AEAD/key-wrap algorithm, recipients and unwrap capabilities, plaintext schema CID, optional protected digest, disclosure and retention policy CIDs, and redaction metadata (plan KD-15). Ciphertext integrity is verifiable without disclosure. Receipts MAY attest use by referencing this ref or its ciphertext_cid without embedding plaintext. Schema acceptance is structural only (ADR-0003). Interfaces: EncryptedArtifactRef@1, KeyEnvelope@1. Normative prose: ipfs_accelerate_py/mcplusplus/docs/spec/cid-native-artifacts.md.",
+  "$comment": "Interface labels: EncryptedArtifactRef@1, KeyEnvelope@1. Schema marker: mcp++/confidential/encrypted-artifact-ref@1. Nested KeyEnvelope marker: mcp++/confidential/key-envelope@1. Content addressing is not publication; revocation does not erase historical ciphertext (see cid-native-artifacts.md §9).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "ciphertext_cid",
+    "algorithm",
+    "key_envelope",
+    "plaintext_schema_cid"
+  ],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "mcp++/confidential/encrypted-artifact-ref@1",
+      "description": "Closed schema marker for EncryptedArtifactRef@1."
+    },
+    "ciphertext_cid": {
+      "$ref": "#/$defs/cid",
+      "description": "CID of the AEAD ciphertext bytes (ciphertext || authentication tag as defined by algorithm.ciphertext_layout). Integrity of the addressed bytes is verified by content addressing independently of key access. MUST NOT address plaintext."
+    },
+    "algorithm": {
+      "$ref": "#/$defs/encryptionAlgorithm",
+      "description": "Content AEAD and key-wrap parameters used for this artifact. Downgrade to unauthenticated or empty algorithms is forbidden."
+    },
+    "key_envelope": {
+      "$ref": "#/$defs/keyEnvelope",
+      "description": "KeyEnvelope@1: wrapped content keys, recipients, and capability bindings that authorize unwrap. Structural presence does not imply the caller may decrypt."
+    },
+    "plaintext_schema_cid": {
+      "$ref": "#/$defs/cid",
+      "description": "CID of the JSON Schema (or type descriptor) that the plaintext MUST satisfy after successful decrypt and decode. Enables structural validation of plaintext without storing it on the ref."
+    },
+    "protected_digest": {
+      "anyOf": [
+        { "$ref": "#/$defs/protectedDigest" },
+        { "type": "null" }
+      ],
+      "description": "Optional authenticated commitment to the plaintext (or canonical plaintext). When present, decryptors MUST verify it after unwrap. Because digests enable offline guessing of low-entropy plaintext, emitters MUST only include this field when disclosure_policy_cid (or the active DisclosurePolicy) permits it. Null or absent means no plaintext digest is published on the ref."
+    },
+    "disclosure_policy_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "CID of the DisclosurePolicy document controlling who may observe plaintext, when protected_digest may appear, log/Event-DAG export rules, and authorized redaction. Null means no extra policy document; it does NOT mean open disclosure."
+    },
+    "retention_policy_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "CID of the retention / archival policy for ciphertext, key material, and decrypt caches. Null means no extra retention document; local stores MUST still avoid plaintext fallback caches (KD-15)."
+    },
+    "redaction": {
+      "anyOf": [
+        { "$ref": "#/$defs/redactionMetadata" },
+        { "type": "null" }
+      ],
+      "description": "Redaction metadata for export and projection surfaces. Describes how public views MUST treat this ref; MUST NOT itself contain plaintext."
+    },
+    "recipients": {
+      "type": "array",
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/recipientDescriptor" },
+      "description": "Optional top-level recipient summary (DID / kid / capability). When present MUST be consistent with key_envelope.wrapped_keys recipients. Prefer the envelope as the authoritative wrap list."
+    },
+    "access_caps": {
+      "type": "array",
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/capabilityRef" },
+      "description": "Optional top-level capability references authorizing decrypt/unwrap. Unioned with key_envelope.access_caps at evaluation time. Transport identity alone never grants unwrap (KD-14)."
+    },
+    "issuer": {
+      "anyOf": [
+        { "$ref": "#/$defs/did" },
+        { "type": "null" }
+      ],
+      "description": "Optional DID of the principal that sealed this artifact (encryptor / publisher of the ref)."
+    },
+    "created_at_ms": {
+      "anyOf": [
+        { "$ref": "#/$defs/timestampMs" },
+        { "type": "null" }
+      ],
+      "description": "Optional wall-clock mint time (epoch milliseconds). Informational; causal order comes from Event DAG / parents."
+    },
+    "canonicalization": {
+      "type": "string",
+      "const": "mcpp-jcs-v1",
+      "description": "Canonicalization algorithm used when content-addressing this EncryptedArtifactRef object itself. Required on new mints of the ref document."
+    },
+    "ref_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "Self-address of this EncryptedArtifactRef once content-addressed. Optional on the wire before addressing; when set MUST match the CID of the canonical ref bytes under the declared canonicalization."
+    },
+    "parents": {
+      "type": "array",
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/cid" },
+      "description": "Optional causal parents (prior refs, re-wrap events, or Event DAG nodes)."
+    },
+    "correlation_id": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Optional non-secret correlation hook. MUST NOT encode plaintext or key material."
+    },
+    "label": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "maxLength": 256,
+      "description": "Optional non-secret human label or classification tag (e.g. workload id class). MUST NOT embed secrets or recoverable plaintext."
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Non-authoritative annotations. MUST NOT carry plaintext, raw DEKs, unwrapped keys, or a second algorithm/envelope that contradicts top-level fields.",
+      "additionalProperties": true,
+      "propertyNames": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "not": {
+          "enum": [
+            "schema",
+            "ciphertext_cid",
+            "algorithm",
+            "key_envelope",
+            "plaintext",
+            "plaintext_b64",
+            "dek",
+            "content_key",
+            "raw_key"
+          ]
+        }
+      }
+    }
+  },
+  "$defs": {
+    "cid": {
+      "type": "string",
+      "description": "IPFS CID. CIDv1 base32 (b…) preferred for new mints; CIDv0 (Qm…) remains readable when historical.",
+      "pattern": "^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58,})$",
+      "minLength": 46,
+      "maxLength": 128
+    },
+    "did": {
+      "type": "string",
+      "pattern": "^did:[a-z0-9]+:[A-Za-z0-9._:%-]+(?:[/?#][^\\u0000]*)?$",
+      "minLength": 7,
+      "maxLength": 512
+    },
+    "timestampMs": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "b64url": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 8192,
+      "description": "Unpadded base64url (RFC 4648 §5) binary encoding.",
+      "pattern": "^[A-Za-z0-9_-]+$"
+    },
+    "hexDigest": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 128,
+      "description": "Lowercase or uppercase hex digest (sha2-256 = 64 hex chars; longer only for explicitly larger hashes).",
+      "pattern": "^[0-9a-fA-F]{64,128}$"
+    },
+    "contentAead": {
+      "type": "string",
+      "description": "Closed set of content AEAD algorithms for new mints. Authenticated encryption is mandatory.",
+      "enum": [
+        "AES-256-GCM",
+        "ChaCha20-Poly1305"
+      ]
+    },
+    "keyWrapAlg": {
+      "type": "string",
+      "description": "Closed set of content-key wrap algorithms for new mints.",
+      "enum": [
+        "X25519-HKDF-SHA256-AES-256-GCM",
+        "X25519-HKDF-SHA256-ChaCha20-Poly1305",
+        "direct-AES-256-GCM",
+        "direct-ChaCha20-Poly1305",
+        "UCAN-cap-unwrap"
+      ]
+    },
+    "ciphertextLayout": {
+      "type": "string",
+      "description": "How nonce/IV and tag are packaged under ciphertext_cid.",
+      "enum": [
+        "nonce_prepended_ciphertext_tag",
+        "nonce_separate_ciphertext_tag",
+        "raw_ciphertext_tag"
+      ]
+    },
+    "encryptionAlgorithm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "content_aead",
+        "key_wrap"
+      ],
+      "properties": {
+        "content_aead": {
+          "$ref": "#/$defs/contentAead",
+          "description": "AEAD used to encrypt the canonical plaintext bytes."
+        },
+        "key_wrap": {
+          "$ref": "#/$defs/keyWrapAlg",
+          "description": "Default key-wrap algorithm for wrapped content keys. Per-recipient overrides MAY appear on wrapped_keys[].key_wrap."
+        },
+        "ciphertext_layout": {
+          "$ref": "#/$defs/ciphertextLayout",
+          "description": "Layout of bytes addressed by ciphertext_cid. Default for new mints: nonce_prepended_ciphertext_tag."
+        },
+        "aead_nonce_b64url": {
+          "$ref": "#/$defs/b64url",
+          "description": "AEAD nonce/IV when ciphertext_layout is nonce_separate_ciphertext_tag or raw_ciphertext_tag. MUST be unique per content key. Forbidden to reuse a nonce with the same content key."
+        },
+        "aead_tag_length": {
+          "type": "integer",
+          "enum": [16],
+          "description": "Authentication tag length in bytes. Fixed at 16 for the closed AEAD set."
+        },
+        "hkdf_info": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 256,
+          "description": "Optional HKDF info/context label binding the content key derivation (e.g. mcp++/confidential/content-key@1)."
+        },
+        "aad_binding": {
+          "type": "string",
+          "description": "What is bound as AEAD additional authenticated data (AAD). Prevents cut-and-paste of ciphertext under a different schema or ref.",
+          "enum": [
+            "none",
+            "plaintext_schema_cid",
+            "ciphertext_cid_placeholder",
+            "plaintext_schema_cid+issuer",
+            "ref_canonical_body"
+          ]
+        }
+      }
+    },
+    "protectedDigest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "alg",
+        "digest"
+      ],
+      "properties": {
+        "alg": {
+          "type": "string",
+          "enum": ["sha2-256"],
+          "description": "Hash algorithm over the digest input. sha2-256 only for new mints (ADR-0002 alignment)."
+        },
+        "digest": {
+          "description": "Digest bytes as unpadded base64url or hex.",
+          "anyOf": [
+            { "$ref": "#/$defs/b64url" },
+            { "$ref": "#/$defs/hexDigest" }
+          ]
+        },
+        "binding": {
+          "type": "string",
+          "enum": [
+            "raw-plaintext",
+            "canonical-plaintext-mcpp-jcs-v1"
+          ],
+          "description": "Whether the digest covers raw decrypted bytes or mcpp-jcs-v1 canonical plaintext. Default for structured JSON plaintext: canonical-plaintext-mcpp-jcs-v1."
+        }
+      }
+    },
+    "redactionMetadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "never-export-plaintext",
+            "authorized-plaintext-only",
+            "commitment-only",
+            "redact-on-export",
+            "public-ciphertext-ref"
+          ],
+          "description": "How projections and logs MUST treat this artifact. commitment-only and public-ciphertext-ref allow publishing ciphertext_cid / ref_cid without plaintext."
+        },
+        "public_fields": {
+          "type": "array",
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "schema",
+              "ciphertext_cid",
+              "ref_cid",
+              "plaintext_schema_cid",
+              "algorithm.content_aead",
+              "disclosure_policy_cid",
+              "retention_policy_cid",
+              "redaction.mode",
+              "label",
+              "correlation_id",
+              "protected_digest"
+            ]
+          },
+          "description": "Optional allow-list of fields safe to echo on public surfaces when mode permits. protected_digest only when disclosure policy allows."
+        },
+        "redaction_receipt_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ],
+          "description": "Optional CID of a redaction / export receipt attesting what was stripped."
+        },
+        "notes": {
+          "type": ["string", "null"],
+          "maxLength": 512,
+          "description": "Non-secret operator note. MUST NOT contain plaintext fragments."
+        }
+      }
+    },
+    "capabilityRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "ucan_proof_cid",
+            "delegation_cid",
+            "ability_token",
+            "inline_ability"
+          ],
+          "description": "How the capability is represented."
+        },
+        "cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ],
+          "description": "Proof or delegation CID when kind is ucan_proof_cid or delegation_cid."
+        },
+        "ability": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 256,
+          "description": "Ability string (e.g. mcp++/confidential/decrypt, mcp++/confidential/unwrap-key)."
+        },
+        "resource": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 512,
+          "description": "Resource binding (typically ciphertext_cid, ref_cid, or a CID-prefix)."
+        }
+      }
+    },
+    "recipientDescriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "recipient"
+      ],
+      "properties": {
+        "recipient": {
+          "$ref": "#/$defs/did",
+          "description": "Recipient principal DID authorized to hold a wrapped content key."
+        },
+        "recipient_kid": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 256,
+          "description": "Key id of the recipient public key used for wrap."
+        },
+        "capability_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ],
+          "description": "Optional UCAN/delegation CID that further constrains this recipient's unwrap rights."
+        }
+      }
+    },
+    "wrappedKey": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "recipient",
+        "wrapped_key_b64url"
+      ],
+      "properties": {
+        "recipient": {
+          "$ref": "#/$defs/did",
+          "description": "DID of the principal for whom content_key is wrapped."
+        },
+        "recipient_kid": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 256,
+          "description": "Recipient key id used for this wrap."
+        },
+        "recipient_public_key_b64url": {
+          "anyOf": [
+            { "$ref": "#/$defs/b64url" },
+            { "type": "null" }
+          ],
+          "description": "Optional embedded recipient public key (e.g. X25519 32-byte key, unpadded base64url). Prefer did:key resolution when available."
+        },
+        "key_wrap": {
+          "anyOf": [
+            { "$ref": "#/$defs/keyWrapAlg" },
+            { "type": "null" }
+          ],
+          "description": "Per-recipient key-wrap override; null means use algorithm.key_wrap."
+        },
+        "wrapped_key_b64url": {
+          "$ref": "#/$defs/b64url",
+          "description": "Wrapped content key ciphertext (and wrap-layer tag if applicable), unpadded base64url. NEVER the raw content key."
+        },
+        "wrap_nonce_b64url": {
+          "anyOf": [
+            { "$ref": "#/$defs/b64url" },
+            { "type": "null" }
+          ],
+          "description": "Nonce for the wrap-layer AEAD when required by key_wrap."
+        },
+        "ephemeral_public_key_b64url": {
+          "anyOf": [
+            { "$ref": "#/$defs/b64url" },
+            { "type": "null" }
+          ],
+          "description": "Ephemeral X25519 public key for ECDH-based wraps."
+        },
+        "capability_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ],
+          "description": "Optional capability/delegation CID that must still validate at unwrap time for this recipient."
+        },
+        "expires_at_ms": {
+          "anyOf": [
+            { "$ref": "#/$defs/timestampMs" },
+            { "type": "null" }
+          ],
+          "description": "Optional wall-clock expiry for this wrap entry. After expiry, unwrap MUST fail closed even if ECDH would succeed. Does not erase ciphertext_cid."
+        }
+      }
+    },
+    "keyEnvelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "content_key_id",
+        "wrapped_keys"
+      ],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "mcp++/confidential/key-envelope@1",
+          "description": "Closed schema marker for KeyEnvelope@1."
+        },
+        "content_key_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "description": "Opaque identifier for the content encryption key (DEK) used under ciphertext_cid. Used for rotation and log correlation without revealing key bytes."
+        },
+        "wrapped_keys": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 256,
+          "items": { "$ref": "#/$defs/wrappedKey" },
+          "description": "One or more recipient-wrapped copies of the content key. Empty array is invalid: a sealed artifact MUST name at least one unwrap path."
+        },
+        "access_caps": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/capabilityRef" },
+          "description": "Capability references that authorize unwrap in addition to possession of a recipient private key. Evaluated fail-closed at decrypt time."
+        },
+        "epoch": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Key-envelope epoch for rotation. Higher epoch on a superseding ref indicates a re-wrap; historical refs retain their original envelope bytes."
+        },
+        "supersedes_content_key_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 256,
+          "description": "Optional prior content_key_id this envelope replaces after rotation. Does not invalidate already-distributed plaintext."
+        },
+        "revocation_binding": {
+          "anyOf": [
+            { "$ref": "#/$defs/revocationBinding" },
+            { "type": "null" }
+          ],
+          "description": "Optional binding to revocation discovery for unwrap capabilities or named key epochs. See honest revocation semantics in the spec."
+        },
+        "created_at_ms": {
+          "anyOf": [
+            { "$ref": "#/$defs/timestampMs" },
+            { "type": "null" }
+          ],
+          "description": "Optional envelope mint time (epoch ms)."
+        }
+      }
+    },
+    "revocationBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "delegation_ledger",
+            "content_key_epoch",
+            "wrap_expiry_only",
+            "none"
+          ],
+          "description": "How unwrap revocation is discovered. none means only wrap expiry / missing keys apply; it does NOT claim irrevocable access forever if outer UCAN policy still revokes."
+        },
+        "ledger_or_registry": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 256,
+          "description": "Logical revocation ledger/registry id when mode is delegation_ledger."
+        },
+        "revocation_policy_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ],
+          "description": "Optional CID of a document describing which RevocationRecord@1 sources are authoritative for this envelope's access_caps."
+        }
+      }
+    }
+  }
+}
