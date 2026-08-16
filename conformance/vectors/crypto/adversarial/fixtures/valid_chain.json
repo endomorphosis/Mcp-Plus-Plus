@@ -1,0 +1,68 @@
+{
+  "chain": [
+    {
+      "alg": "EdDSA",
+      "att": [
+        {
+          "ability": "tools/*",
+          "resource": "tenant-a/*"
+        },
+        {
+          "ability": "ucan/DELEGATE",
+          "resource": "*"
+        }
+      ],
+      "aud": "did:key:z6Mko9hTggMwjSTEaJaPUfE6tqcy2xvU6BnNq3e3o8qVBiyH",
+      "can_delegate": true,
+      "canonical_signing_bytes_hex": "7b22617474223a5b7b226162696c697479223a22746f6f6c732f2a222c227265736f75726365223a2274656e616e742d612f2a227d2c7b226162696c697479223a227563616e2f44454c4547415445222c227265736f75726365223a222a227d5d2c22617564223a226469643a6b65793a7a364d6b6f39685467674d776a535445614a615055664536747163793278765536426e4e713365336f38715642697948222c2263616e5f64656c6567617465223a747275652c22657870223a313830303030303330302c22697373223a226469643a6b65793a7a364d6b6f6e334e656364364e6b6b79666f476f48786964327a6e476335394c55334b376d756261526346624c664c58222c226e6266223a313739393939393939302c226e6e63223a226e6f6e63652d706172656e74222c22707266223a5b5d7d",
+      "exp": 1800000300,
+      "iss": "did:key:z6Mkon3Necd6NkkyfoGoHxid2znGc59LU3K7mubaRcFbLfLX",
+      "kid": "root-v1",
+      "nbf": 1799999990,
+      "nnc": "nonce-parent",
+      "prf": [],
+      "signature": "W_-8nxxQgpm2gZeaOVmuBHh6jpxQyTzFvzj-4diZKNOOhkMVSgzfVKcYN1M9IMmIIXBvlU_P2LMlm21MXZJQCg"
+    },
+    {
+      "alg": "EdDSA",
+      "att": [
+        {
+          "ability": "tools/call",
+          "resource": "tenant-a/bucket-a/documents/report.txt"
+        }
+      ],
+      "aud": "did:key:z6MkvRXNYcE7MMduynWTgeKbDaT1iijDSC8pZqXZc8rHPrf2",
+      "canonical_signing_bytes_hex": "7b22617474223a5b7b226162696c697479223a22746f6f6c732f63616c6c222c227265736f75726365223a2274656e616e742d612f6275636b65742d612f646f63756d656e74732f7265706f72742e747874227d5d2c22617564223a226469643a6b65793a7a364d6b7652584e596345374d4d6475796e575467654b624461543169696a44534338705a71585a6338724850726632222c226578656375746f72223a226469643a6b65793a7a364d6b6578656375746f724669787475726530303030303030303030303030303030303030303030303030303031222c22657870223a313830303030303330302c22697373223a226469643a6b65793a7a364d6b6f39685467674d776a535445614a615055664536747163793278765536426e4e713365336f38715642697948222c226e6266223a313739393939393939302c226e6e63223a226e6f6e63652d6368696c64222c22706f6c6963795f636964223a2262616679626569676479727a74357366703775646d37687537367568377932366e6633656675796c71616266336f636c67747179353566627a6469222c22707266223a5b22626166793831356632386538333738643035303337623466323561663931316431343165666236386364616163663532393130356462225d7d",
+      "executor": "did:key:z6MkexecutorFixture0000000000000000000000000001",
+      "exp": 1800000300,
+      "iss": "did:key:z6Mko9hTggMwjSTEaJaPUfE6tqcy2xvU6BnNq3e3o8qVBiyH",
+      "kid": "mid-v1",
+      "nbf": 1799999990,
+      "nnc": "nonce-child",
+      "policy_cid": "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+      "prf": [
+        "bafy815f28e8378d05037b4f25af911d141efb68cdaacf529105db"
+      ],
+      "signature": "HlAE6lTkRQb36jQj7ULPRTOYoe7Z9rp3BXcR7iOIGuyTfRDSKOqCbeYOEoHDifayBitk-34VfK3M7o6zcSdLDw"
+    }
+  ],
+  "delegation_cids": [
+    "bafy815f28e8378d05037b4f25af911d141efb68cdaacf529105db",
+    "bafy98dbbfdac7fb87a5e9d6e987d06144a61e6739d250df998441"
+  ],
+  "id": "valid_chain",
+  "issuer_public_keys": {
+    "did:key:z6Mko9hTggMwjSTEaJaPUfE6tqcy2xvU6BnNq3e3o8qVBiyH": "gTl3Dqh9F19Wo1Rmw0x-zMuNipG07jeiXfYPW4_Js5Q",
+    "did:key:z6Mkon3Necd6NkkyfoGoHxid2znGc59LU3K7mubaRcFbLfLX": "iojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1w"
+  },
+  "polarity": "positive",
+  "request": {
+    "audience": "did:key:z6MkvRXNYcE7MMduynWTgeKbDaT1iijDSC8pZqXZc8rHPrf2",
+    "budget": {},
+    "executor": "did:key:z6MkexecutorFixture0000000000000000000000000001",
+    "method": "tools/call",
+    "now": 1800000000,
+    "policy_cid": "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+    "resource": "tenant-a/bucket-a/documents/report.txt"
+  }
+}

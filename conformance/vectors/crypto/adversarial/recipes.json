@@ -1,0 +1,73 @@
+{
+  "interface": "AdversarialVector@1",
+  "note": "Compact index of negative cases. Full signed inputs live under fixtures/.",
+  "recipes": [
+    {
+      "case": "forged_signature",
+      "expected_fail_closed": true,
+      "fixture": "fixtures/forged_signature.json"
+    },
+    {
+      "case": "altered_bytes",
+      "expected_fail_closed": true,
+      "fixture": "fixtures/altered_bytes.json"
+    },
+    {
+      "case": "wrong_audience",
+      "expected_fail_closed": true,
+      "fixture": "fixtures/wrong_audience.json"
+    },
+    {
+      "case": "expanded_capabilities",
+      "expected_fail_closed": true,
+      "fixture": "fixtures/expanded_capabilities.json"
+    },
+    {
+      "case": "expanded_resources",
+      "expected_fail_closed": true,
+      "fixture": "fixtures/expanded_resources.json"
+    },
+    {
+      "case": "expired",
+      "expected_fail_closed": true,
+      "fixture": "fixtures/expired.json"
+    },
+    {
+      "case": "future_nbf",
+      "expected_fail_closed": true,
+      "fixture": "fixtures/future_nbf.json"
+    },
+    {
+      "case": "revoked",
+      "expected_fail_closed": true,
+      "fixture": "fixtures/revoked.json"
+    },
+    {
+      "case": "missing_proof",
+      "expected_fail_closed": true,
+      "fixture": "fixtures/missing_proof.json"
+    },
+    {
+      "case": "replay",
+      "expected_fail_closed": true,
+      "fixture": "fixtures/replay.json"
+    },
+    {
+      "case": "wrong_executor",
+      "expected_fail_closed": true,
+      "fixture": "fixtures/wrong_executor.json"
+    },
+    {
+      "case": "wrong_policy_cid",
+      "expected_fail_closed": true,
+      "fixture": "fixtures/wrong_policy_cid.json"
+    },
+    {
+      "case": "valid_peerid_invalid_ucan",
+      "expected_fail_closed": true,
+      "fixture": "fixtures/valid_peerid_invalid_ucan.json"
+    }
+  ],
+  "schema": "mcp++/conformance/adversarial-recipes@1",
+  "task_id": "MCPP-044"
+}

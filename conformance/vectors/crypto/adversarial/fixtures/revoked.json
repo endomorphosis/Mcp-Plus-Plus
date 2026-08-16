@@ -1,0 +1,65 @@
+{
+  "delegation_cid": "bafy32c16214f24a319dba20450abc1176ea82a0c9a702e3e829e4",
+  "expected_reason_codes": [
+    "revoked"
+  ],
+  "id": "revoked",
+  "issuer_public_keys": {
+    "did:key:z6MkhGok4PzLmtw1v5uW3Bpip8gHHifrCt42QJn4gEBfRVQG": "KeWDOpFaZCmk46eUhHXDOO9Dbrgr6JyS8FlwRAPbnVU",
+    "did:key:z6Mkon3Necd6NkkyfoGoHxid2znGc59LU3K7mubaRcFbLfLX": "iojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1w"
+  },
+  "languages": [
+    "python",
+    "typescript",
+    "go",
+    "rust"
+  ],
+  "layer": "revocation",
+  "polarity": "negative",
+  "request": {
+    "audience": "did:key:z6MkvRXNYcE7MMduynWTgeKbDaT1iijDSC8pZqXZc8rHPrf2",
+    "budget": {},
+    "executor": "did:key:z6MkexecutorFixture0000000000000000000000000001",
+    "method": "tools/call",
+    "now": 1800000000,
+    "policy_cid": "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+    "resource": "tenant-a/bucket-a/documents/report.txt"
+  },
+  "revocation_record": {
+    "alg": "EdDSA",
+    "canonical_signing_bytes_hex": "7b22646973636f76657279223a7b226d6574686f64223a226c6564676572222c227075626c69736865645f6174223a313739393939393939352c2272656769737472795f6964223a226d63702b2b2f7265766f636174696f6e2d6c65646765724031227d2c226566666563746976655f6174223a313739393939393939352c22697373756572223a226469643a6b65793a7a364d6b68476f6b34507a4c6d7477317635755733427069703867484869667243743432514a6e346745426652565147222c22726561736f6e223a22616476657273617269616c5f766563746f725f7265766f636174696f6e222c227265766f6b65645f64656c65676174696f6e5f636964223a22626166793332633136323134663234613331396462613230343530616263313137366561383261306339613730326533653832396534222c22736368656d61223a226d63702b2b2f64656c65676174696f6e2f7265766f636174696f6e2d7265636f72644031227d",
+    "discovery": {
+      "method": "ledger",
+      "published_at": 1799999995,
+      "registry_id": "mcp++/revocation-ledger@1"
+    },
+    "effective_at": 1799999995,
+    "issuer": "did:key:z6MkhGok4PzLmtw1v5uW3Bpip8gHHifrCt42QJn4gEBfRVQG",
+    "kid": "revoker-v1",
+    "reason": "adversarial_vector_revocation",
+    "revoked_delegation_cid": "bafy32c16214f24a319dba20450abc1176ea82a0c9a702e3e829e4",
+    "schema": "mcp++/delegation/revocation-record@1",
+    "signature": "y0mRXOBZ5EWOqPaYkgj97eckEt4hKqXA0xsmWW-Mj7WMj3YZagejTn5stFXaUIvz1VbtjOB57oH9s955m7moBA"
+  },
+  "token": {
+    "alg": "EdDSA",
+    "att": [
+      {
+        "ability": "tools/call",
+        "resource": "tenant-a/bucket-a/documents/report.txt"
+      }
+    ],
+    "aud": "did:key:z6MkvRXNYcE7MMduynWTgeKbDaT1iijDSC8pZqXZc8rHPrf2",
+    "canonical_signing_bytes_hex": "7b22617474223a5b7b226162696c697479223a22746f6f6c732f63616c6c222c227265736f75726365223a2274656e616e742d612f6275636b65742d612f646f63756d656e74732f7265706f72742e747874227d5d2c22617564223a226469643a6b65793a7a364d6b7652584e596345374d4d6475796e575467654b624461543169696a44534338705a71585a6338724850726632222c226578656375746f72223a226469643a6b65793a7a364d6b6578656375746f724669787475726530303030303030303030303030303030303030303030303030303031222c22657870223a313830303030303330302c22697373223a226469643a6b65793a7a364d6b6f6e334e656364364e6b6b79666f476f48786964327a6e476335394c55334b376d756261526346624c664c58222c226e6266223a313739393939393939302c226e6e63223a226e6f6e63652d7265766f6b6564222c22706f6c6963795f636964223a2262616679626569676479727a74357366703775646d37687537367568377932366e6633656675796c71616266336f636c67747179353566627a6469222c22707266223a5b5d7d",
+    "executor": "did:key:z6MkexecutorFixture0000000000000000000000000001",
+    "exp": 1800000300,
+    "iss": "did:key:z6Mkon3Necd6NkkyfoGoHxid2znGc59LU3K7mubaRcFbLfLX",
+    "kid": "root-v1",
+    "nbf": 1799999990,
+    "nnc": "nonce-revoked",
+    "policy_cid": "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+    "prf": [],
+    "signature": "9uv3JM3dGbIwvb7Gbg65ZwsqXGi5LyrjgPdNdSbfuUEXNgvy7jBw6-QDNMapirhxLCyz07pV1QWZTpaduZXZAw"
+  },
+  "token_signature_valid": true
+}
