@@ -140,3 +140,121 @@ MCP-IDL does not require P2P, but benefits from it:
 - Canonicalization standard (pick one; publish test vectors).
 - How to represent semantic compatibility beyond schema-level matching.
 - How to standardize a budget model for toolset slicing.
+
+## 10. Agent Advertisement (`AgentAdvertisement@1`)
+
+**Status:** Normative (MCP++ 1.0 discovery)  
+**Interface label:** `AgentAdvertisement@1`  
+**Schema marker:** `mcp++/discovery/agent-advertisement@1`  
+**Schema path:** `ipfs_accelerate_py/mcplusplus/schemas/discovery/agent-advertisement-1.schema.json`  
+**Related:** [a2a-extension.md](a2a-extension.md) (`AgentCardMapping@1`), goal `MCPP-G110`, tasks `MCPP-058`…`MCPP-061`
+
+Profile A Interface Descriptors say **what** can be executed (`interface_cid`). An **agent advertisement** says **who** claims to execute those interfaces, **where** they are reachable, and **under what** non-authoritative selection constraints (health, load, TTL, locality, price).
+
+Finding an advertisement is **not** permission to execute. A registry record is **never** execution authority (plan KD-14; MCPP-G110). UCAN / policy proofs authorize invocation; the advertisement only aids discovery and routing.
+
+### 10.1 Required fields (fail-closed)
+
+JSON Schema validation **MUST** reject advertisements that omit any of:
+
+| Field | Meaning |
+| --- | --- |
+| `identity` | Principal identity object (`did` required; optional `name`, `description`, `version`, `url`, `key_id`, `peer_id`) |
+| `ttl_ms` | Freshness TTL in milliseconds (1…604800000) |
+| `interface_cids` | List of MCP-IDL Interface Descriptor CIDs (array required; may be empty only when advertising presence without executable interfaces) |
+
+The closed schema marker `schema: "mcp++/discovery/agent-advertisement@1"` is also required.
+
+Registries **MUST** additionally reject **stale** records (past `expires_at_ms`, or past `published_at_ms + ttl_ms` when absolute expiry is omitted) and, when the deployment requires signed ads, **unsigned** or **invalidly signed** records. Health and load are **selection inputs**, not trust.
+
+### 10.2 Full field inventory
+
+| Field | Required | Role |
+| --- | --- | --- |
+| `schema` | yes | Schema marker |
+| `identity` | yes | Agent principal + display fields |
+| `ttl_ms` | yes | Advertisement TTL |
+| `interface_cids` | yes | Executable Interface Descriptor CIDs |
+| `endpoints` | no | Service URLs / multiaddrs by role |
+| `transports` | no | Accepted transport ids |
+| `mcp_versions` | no | ADR-0006 MCP binding ids |
+| `a2a_version` | no | A2A protocol version string |
+| `profiles` | no | MCP++ profile letters A–H |
+| `policy_languages` | no | Policy dialect ids |
+| `proof_systems` | no | Delegation / signature systems |
+| `runtimes` | no | Runtime family hints |
+| `accelerators` | no | Resource-class / accelerator hints |
+| `locality` | no | Region / zone / country / network |
+| `price` | no | Non-authorizing price hints |
+| `health` | no | Health snapshot (selection only) |
+| `load` | no | Utilization / capacity (selection only) |
+| `published_at_ms` / `expires_at_ms` | no | Publication and absolute expiry |
+| `trust_domain` | no | Trust-domain id and/or CID |
+| `residency` | no | Data residency / jurisdiction |
+| `confidentiality` | no | Encrypted-artifact / TEE claims |
+| `skills` | no | A2A skill projections |
+| `a2a_extension` | no | Projection of the execution extension entry |
+| `canonicalization` | no | `mcpp-jcs-v1` when content-addressed |
+| `signature` | no | Integrity signature block |
+| `metadata_cid` | no | Non-authoritative free-form metadata |
+
+### 10.3 Minimal valid example
+
+```json
+{
+  "schema": "mcp++/discovery/agent-advertisement@1",
+  "identity": {
+    "did": "did:web:agent.example",
+    "name": "example-git-agent"
+  },
+  "ttl_ms": 300000,
+  "interface_cids": [
+    "bafkreigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi"
+  ]
+}
+```
+
+Missing `identity`, missing `ttl_ms`, or missing `interface_cids` **MUST** fail schema validation.
+
+### 10.4 Mapping to A2A Agent Card (`AgentCardMapping@1`)
+
+MCP++ does **not** replace the A2A Agent Card. When an agent claims A2A interop with MCP++ execution evidence, the advertisement **projects onto** the card and the execution extension declared in [a2a-extension.md](a2a-extension.md) §4.1 and §6.1.
+
+| AgentAdvertisement@1 | A2A Agent Card surface | Notes |
+| --- | --- | --- |
+| `identity.name` | `AgentCard.name` | Display name |
+| `identity.description` | `AgentCard.description` | Human description |
+| `identity.version` | `AgentCard.version` | Card / agent version string |
+| `identity.url` or primary `endpoints[]` with `role: "a2a"` | `AgentCard.url` | Preferred public A2A endpoint |
+| `identity.did` / `key_id` | Card security schemes / auth material | DID is principal identity; PeerID is transport-only |
+| `skills[]` | `AgentCard.skills[]` | `id` / `name` / `tags` align with IDL methods and `semantic_tags[]` |
+| `skills[].interface_cid` / `method` | Skill `metadata` under the execution extension prefix | See a2a-extension.md §6.1 example |
+| `interface_cids` | `AgentExtension.params.interface_cids` | Primary executable contracts |
+| `profiles` | `AgentExtension.params.profiles` | MCP++ profile letters |
+| `mcp_versions` | `AgentExtension.params.mcp_bindings` | ADR-0006 binding ids only |
+| `a2a_extension.uri` | `AgentExtension.uri` | **MUST** be `https://mcplusplus.io/extensions/execution/v1` |
+| `a2a_extension.params.*` | `AgentExtension.params` | Envelope/receipt/state-ref markers, canonicalization, alias |
+| `a2a_version` | Card / capability version metadata | Informational; wire extension id remains the HTTPS URI |
+| `transports` / non-A2A `endpoints` | Deployment-specific; not core A2A card fields | MAY appear as additional card metadata |
+| `ttl_ms` / `expires_at_ms` | Registry freshness (not an A2A card field) | Cards may be cached separately; ads expire independently |
+| `health` / `load` / `locality` / `price` | Selection hints only | **MUST NOT** be treated as authorization |
+| `trust_domain` / `residency` / `confidentiality` | Policy / compliance selection | Still not execution authority |
+| `signature` | Card or registry integrity | Registry rules own verification |
+
+**Normative projection rules:**
+
+1. When publishing both an Agent Card and an `AgentAdvertisement@1`, `interface_cids` on the advertisement **SHOULD** be a superset of (or equal to) `a2a_extension.params.interface_cids` and skill-level `interface_cid` values.
+2. Skill `id` **SHOULD** match the IDL `methods[].name` (or a stable alias documented on the descriptor) when the skill is MCP-IDL-backed.
+3. Agents that claim MCP++ A2A interop **MUST** set `a2a_extension.uri` to `https://mcplusplus.io/extensions/execution/v1` (never the reverse-DNS alias alone). See a2a-extension.md §2.2.
+4. Descriptors and advertisements remain **not authority** (§8). Clients **MUST** obtain and verify delegation proofs before execution even when the card and advertisement agree.
+5. Reverse mapping (card → advertisement) **MAY** synthesize a minimal ad from card identity, skills, and extension params for registry bootstrap; synthesized ads **MUST** still carry a concrete `ttl_ms` and the required fields of §10.1.
+
+### 10.5 Relationship to Interface Repository APIs
+
+| Mechanism | Answers |
+| --- | --- |
+| `interfaces/list` / `get` / `compat` (§5) | What contracts exist and whether they are compatible |
+| `AgentAdvertisement@1` + registry (MCPP-059+) | Which agents claim to run which `interface_cid`s, where, and for how long |
+| A2A Agent Card + execution extension | Public multi-agent discovery and lifecycle for A2A peers |
+
+Clients **SHOULD** resolve `interface_cid` contents via MCP-IDL (or CID fetch) rather than trusting free-form card text for input/output shapes.

@@ -1,0 +1,733 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcp-plus-plus.dev/schemas/discovery/agent-advertisement-1.schema.json",
+  "title": "MCP++ AgentAdvertisement@1",
+  "description": "Capability discovery record for an MCP++ agent or executor. Advertises identity, endpoints, transports, protocol versions, MCP++ profiles, interface CIDs, policy/proof/runtime hints, locality, price, health, load, TTL, trust domain, residency, and confidentiality. Mappable to A2A Agent Cards (AgentCardMapping@1). Interface: AgentAdvertisement@1. Normative prose: ipfs_accelerate_py/mcplusplus/docs/spec/mcp-idl.md §10. A registry record is never execution authority (KD-14; MCPP-G110).",
+  "$comment": "Schema marker: mcp++/discovery/agent-advertisement@1. Required: identity, ttl_ms, interface_cids. Health and load are selection inputs, not trust. Stale (past TTL/expiry) and unsigned advertisements MUST be rejected by registries (MCPP-059+).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "identity",
+    "ttl_ms",
+    "interface_cids"
+  ],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "mcp++/discovery/agent-advertisement@1",
+      "description": "Closed schema marker for AgentAdvertisement@1."
+    },
+    "identity": {
+      "$ref": "#/$defs/agentIdentity",
+      "description": "Principal identity of the advertised agent. Required. Maps to A2A AgentCard name/description/url/version and DID-bearing security material. Transport PeerID alone is never execution authority."
+    },
+    "ttl_ms": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 604800000,
+      "description": "Advertisement time-to-live in milliseconds from published_at_ms (or from receipt time when published_at_ms is omitted). Required. Registries MUST treat records past TTL/expiry as stale and reject them for selection."
+    },
+    "interface_cids": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/cid" },
+      "uniqueItems": true,
+      "minItems": 0,
+      "maxItems": 128,
+      "description": "MCP-IDL Interface Descriptor CIDs this agent will execute. Required list (may be empty only when the agent advertises presence without executable interfaces). Maps to A2A AgentExtension.params.interface_cids and skill metadata interface_cid."
+    },
+    "endpoints": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/endpoint" },
+      "maxItems": 32,
+      "description": "Reachable service endpoints (A2A URL, MCP HTTP/SSE, libp2p multiaddrs, etc.). Maps primarily to AgentCard.url and optional additional endpoint metadata."
+    },
+    "transports": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/transportId" },
+      "uniqueItems": true,
+      "maxItems": 16,
+      "description": "Transport identifiers the agent accepts (e.g. https, sse, stdio, mcp+p2p, libp2p)."
+    },
+    "mcp_versions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/mcpBindingId" },
+      "uniqueItems": true,
+      "maxItems": 2,
+      "description": "Named MCP binding ids (ADR-0006). Maps to AgentExtension.params.mcp_bindings when A2A interop is claimed."
+    },
+    "a2a_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "description": "A2A protocol version string the agent implements (e.g. \"1.0.0\"). Informational; wire extension identity remains the HTTPS URI."
+    },
+    "profiles": {
+      "$ref": "#/$defs/profileLetters",
+      "description": "MCP++ profile letters implemented by this agent. Maps to AgentExtension.params.profiles."
+    },
+    "policy_languages": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "uniqueItems": true,
+      "maxItems": 32,
+      "description": "Policy language / dialect ids the agent evaluates (e.g. temporal-deontic@1)."
+    },
+    "proof_systems": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "uniqueItems": true,
+      "maxItems": 32,
+      "description": "Proof / delegation systems accepted (e.g. ucan, EdDSA)."
+    },
+    "runtimes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "uniqueItems": true,
+      "maxItems": 32,
+      "description": "Runtime identifiers (language/runtime/executor family) for selection hints."
+    },
+    "accelerators": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "uniqueItems": true,
+      "maxItems": 32,
+      "description": "Accelerator / resource-class hints (e.g. cpu-small, gpu-a100, wasm)."
+    },
+    "locality": {
+      "$ref": "#/$defs/locality",
+      "description": "Geographic / network locality hints for routing. Selection input only."
+    },
+    "price": {
+      "$ref": "#/$defs/priceHint",
+      "description": "Optional non-authorizing price / payment hints (Profile H terms live in paid artifacts, not here)."
+    },
+    "health": {
+      "$ref": "#/$defs/health",
+      "description": "Optional health status. Selection input only — never trust or execution authority."
+    },
+    "load": {
+      "$ref": "#/$defs/load",
+      "description": "Optional load / capacity snapshot. Selection input only — never trust or execution authority."
+    },
+    "published_at_ms": {
+      "$ref": "#/$defs/timestampMs",
+      "description": "Wall-clock publication time (epoch ms). When present, expiry is published_at_ms + ttl_ms unless expires_at_ms is set."
+    },
+    "expires_at_ms": {
+      "$ref": "#/$defs/timestampMs",
+      "description": "Absolute expiry (epoch ms). When set, MUST be >= published_at_ms when both are present. Registries MUST reject records with expires_at_ms in the past."
+    },
+    "trust_domain": {
+      "$ref": "#/$defs/trustDomain",
+      "description": "Trust-domain boundary for neighborhood / policy scoping. Not a grant of authority."
+    },
+    "residency": {
+      "$ref": "#/$defs/residency",
+      "description": "Data residency / jurisdiction constraints the agent claims to honor."
+    },
+    "confidentiality": {
+      "$ref": "#/$defs/confidentiality",
+      "description": "Confidential execution / encrypted-artifact capabilities (Profile / confidential CID-native artifacts)."
+    },
+    "skills": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/skillProjection" },
+      "maxItems": 256,
+      "description": "Optional skill projections for A2A AgentCard.skills[] mapping (id/name/tags + interface_cid/method)."
+    },
+    "a2a_extension": {
+      "$ref": "#/$defs/a2aExtensionProjection",
+      "description": "Optional projection of the MCP++ A2A execution extension entry for AgentCard.capabilities.extensions[]."
+    },
+    "canonicalization": {
+      "type": "string",
+      "const": "mcpp-jcs-v1",
+      "description": "Canonicalization id when the advertisement itself is content-addressed."
+    },
+    "signature": {
+      "$ref": "#/$defs/signatureBlock",
+      "description": "Optional integrity signature over the canonical advertisement bytes. Registries that require signed ads MUST reject unsigned records."
+    },
+    "metadata_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "Optional CID of non-authoritative free-form metadata. MUST NOT carry authority or policy grants."
+    }
+  },
+  "$defs": {
+    "cid": {
+      "type": "string",
+      "description": "IPFS CID. CIDv1 base32 (b…) preferred for new mints; CIDv0 (Qm…) remains readable when historical.",
+      "pattern": "^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58,})$",
+      "minLength": 46,
+      "maxLength": 128
+    },
+    "did": {
+      "type": "string",
+      "pattern": "^did:[a-z0-9]+:[A-Za-z0-9._:%-]+(?:[/?#][^\\u0000]*)?$",
+      "minLength": 7,
+      "maxLength": 512,
+      "description": "DID-compatible identity (ADR-0002)."
+    },
+    "timestampMs": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "Unix epoch milliseconds (safe integer range)."
+    },
+    "url": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "pattern": "^(https?://|mcp\\+p2p://|libp2p://|/|multiaddr:).+",
+      "description": "HTTP(S) URL, mcp+p2p / libp2p URI, absolute path, or multiaddr:… form."
+    },
+    "profileLetter": {
+      "type": "string",
+      "enum": ["A", "B", "C", "D", "E", "F", "G", "H"],
+      "description": "Closed MCP++ profile letter set. Unknown letters fail closed."
+    },
+    "profileLetters": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/profileLetter" },
+      "uniqueItems": true,
+      "maxItems": 8
+    },
+    "mcpBindingId": {
+      "type": "string",
+      "enum": [
+        "mcp-binding/2026-07-28",
+        "mcp-binding/legacy-2024-11-05"
+      ],
+      "description": "Named dual MCP binding id (ADR-0006)."
+    },
+    "transportId": {
+      "type": "string",
+      "enum": [
+        "https",
+        "http",
+        "sse",
+        "stdio",
+        "websocket",
+        "mcp+p2p",
+        "libp2p",
+        "inprocess"
+      ],
+      "description": "Closed set of common transport identifiers. Additional transports use endpoint.role + endpoint.url without expanding this enum until a later schema revision."
+    },
+    "agentIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["did"],
+      "properties": {
+        "did": {
+          "$ref": "#/$defs/did",
+          "description": "Principal DID of the agent."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "description": "Human-readable agent name (AgentCard.name)."
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096,
+          "description": "Human-readable agent description (AgentCard.description)."
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Agent software / card version string (AgentCard.version)."
+        },
+        "key_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 256,
+          "description": "Verification key id when known."
+        },
+        "peer_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Optional transport PeerID (e.g. libp2p). NEVER grants execution authority (KD-14)."
+        },
+        "url": {
+          "anyOf": [
+            { "$ref": "#/$defs/url" },
+            { "type": "null" }
+          ],
+          "description": "Primary public agent URL when distinct from endpoints[] (AgentCard.url)."
+        }
+      }
+    },
+    "endpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url"],
+      "properties": {
+        "url": {
+          "$ref": "#/$defs/url",
+          "description": "Endpoint locator."
+        },
+        "role": {
+          "type": "string",
+          "enum": ["a2a", "mcp", "mcp+p2p", "health", "metrics", "other"],
+          "description": "Logical role of this endpoint."
+        },
+        "transport": {
+          "$ref": "#/$defs/transportId",
+          "description": "Transport used at this endpoint when known."
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000,
+          "description": "Lower values preferred when multiple endpoints share a role."
+        }
+      }
+    },
+    "locality": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "region": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Cloud / geo region code (e.g. us-west-2)."
+        },
+        "zone": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Availability zone or equivalent."
+        },
+        "country": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 2,
+          "pattern": "^[A-Z]{2}$",
+          "description": "ISO 3166-1 alpha-2 country code."
+        },
+        "network_hints": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "maxItems": 16,
+          "description": "Free-form network locality tags (ASN, colo, edge POP)."
+        }
+      }
+    },
+    "priceHint": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "currency": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Asset / currency identifier (informational; Profile H artifacts authorize settlement)."
+        },
+        "amount": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$",
+          "description": "Decimal amount string without leading zeros (except 0)."
+        },
+        "unit": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Billing unit (e.g. per-request, per-1k-tokens)."
+        },
+        "terms_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ],
+          "description": "Optional CID of full pricing terms (Profile H)."
+        }
+      }
+    },
+    "health": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["healthy", "degraded", "unhealthy", "unknown"],
+          "description": "Self-reported or observed health. Selection input only."
+        },
+        "evidence_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ],
+          "description": "Optional content-addressed health evidence."
+        },
+        "checked_at_ms": {
+          "anyOf": [
+            { "$ref": "#/$defs/timestampMs" },
+            { "type": "null" }
+          ],
+          "description": "When this health snapshot was taken."
+        },
+        "detail": {
+          "type": ["string", "null"],
+          "maxLength": 512,
+          "description": "Short non-authoritative health note."
+        }
+      }
+    },
+    "load": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "utilization_millionths": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000,
+          "description": "Current utilization in millionths (0 = idle, 1000000 = saturated)."
+        },
+        "capacity_millionths": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000,
+          "description": "Remaining capacity in millionths (aligned with NeighborhoodRecord capacity_millionths)."
+        },
+        "inflight": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000000,
+          "description": "In-flight tasks or requests."
+        },
+        "queue_depth": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000000,
+          "description": "Queued work items."
+        }
+      }
+    },
+    "trustDomain": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "description": "Stable trust-domain identifier string."
+        },
+        "cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ],
+          "description": "Optional content-addressed trust-domain descriptor (cf. NeighborhoodRecord.trust_domain_cid)."
+        }
+      }
+    },
+    "residency": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "data_regions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "uniqueItems": true,
+          "maxItems": 32,
+          "description": "Regions where data may reside or be processed."
+        },
+        "jurisdiction": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Primary legal jurisdiction claim."
+        },
+        "cross_border": {
+          "type": "boolean",
+          "description": "When false, agent claims no cross-border data transfer for the advertised interfaces."
+        }
+      }
+    },
+    "confidentiality": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "encrypted_artifacts": {
+          "type": "boolean",
+          "description": "Supports confidential / encrypted artifact refs."
+        },
+        "tee": {
+          "type": "boolean",
+          "description": "Claims TEE-backed execution when true."
+        },
+        "disclosure_policy": {
+          "type": "string",
+          "enum": ["public", "authorized", "commitment-only", "none"],
+          "description": "Default disclosure posture for outputs (aligned with Profile H disclosure vocabulary where applicable)."
+        },
+        "algorithms": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "uniqueItems": true,
+          "maxItems": 16,
+          "description": "Supported confidentiality algorithms / schemes."
+        }
+      }
+    },
+    "skillProjection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "description": "A2A skill id; SHOULD align with IDL methods[].name when MCP-IDL-backed."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "description": "Human skill name (AgentCard.skills[].name)."
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048,
+          "description": "Skill description."
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "uniqueItems": true,
+          "maxItems": 32,
+          "description": "Skill tags; SHOULD align with IDL semantic_tags[] when present."
+        },
+        "interface_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ],
+          "description": "MCP-IDL interface CID backing this skill."
+        },
+        "method": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 256,
+          "description": "IDL method / tool name for this skill."
+        },
+        "profiles": {
+          "$ref": "#/$defs/profileLetters",
+          "description": "Profiles required or preferred for this skill."
+        }
+      }
+    },
+    "a2aExtensionProjection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["uri"],
+      "properties": {
+        "uri": {
+          "type": "string",
+          "const": "https://mcplusplus.io/extensions/execution/v1",
+          "description": "Mandatory A2A AgentExtension.uri for MCP++ execution interop."
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "description": "Human-readable extension description."
+        },
+        "required": {
+          "type": "boolean",
+          "description": "When true, clients that do not activate the extension MUST be rejected fail-closed."
+        },
+        "params": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "profiles": { "$ref": "#/$defs/profileLetters" },
+            "envelope_schema": {
+              "type": "string",
+              "const": "mcp++/execution/envelope@1"
+            },
+            "receipt_schema": {
+              "type": "string",
+              "const": "mcp++/execution/receipt@1"
+            },
+            "state_ref_schema": {
+              "type": "string",
+              "const": "mcp++/state/state-ref@1"
+            },
+            "mcp_bindings": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/mcpBindingId" },
+              "uniqueItems": true,
+              "maxItems": 2
+            },
+            "interface_cids": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/cid" },
+              "uniqueItems": true,
+              "maxItems": 64
+            },
+            "canonicalization": {
+              "type": "string",
+              "const": "mcpp-jcs-v1"
+            },
+            "alias": {
+              "type": "string",
+              "const": "io.mcplusplus.execution@1"
+            }
+          }
+        }
+      }
+    },
+    "signatureBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["signer_did", "signature_alg", "signature"],
+      "properties": {
+        "signer_did": {
+          "$ref": "#/$defs/did",
+          "description": "DID of the signing principal. SHOULD match identity.did unless a delegated publisher is used."
+        },
+        "signature_alg": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Signature algorithm identifier (e.g. EdDSA)."
+        },
+        "signature": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096,
+          "description": "Signature bytes encoding (base64url or hex as agreed by the registry)."
+        },
+        "key_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 256,
+          "description": "Key id used for verification when not self-describing from signer_did."
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "schema": "mcp++/discovery/agent-advertisement@1",
+      "identity": {
+        "did": "did:web:agent.example",
+        "name": "example-git-agent",
+        "description": "Git status and diff via MCP-IDL.",
+        "version": "1.0.0",
+        "url": "https://agent.example/a2a"
+      },
+      "ttl_ms": 300000,
+      "published_at_ms": 1783872000000,
+      "expires_at_ms": 1783872300000,
+      "interface_cids": [
+        "bafkreigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi"
+      ],
+      "endpoints": [
+        {
+          "url": "https://agent.example/a2a",
+          "role": "a2a",
+          "transport": "https"
+        }
+      ],
+      "transports": ["https", "sse"],
+      "mcp_versions": ["mcp-binding/2026-07-28"],
+      "a2a_version": "1.0.0",
+      "profiles": ["A", "B", "C"],
+      "policy_languages": ["temporal-deontic@1"],
+      "proof_systems": ["ucan", "EdDSA"],
+      "runtimes": ["python"],
+      "accelerators": ["cpu-small"],
+      "locality": { "region": "us-west-2", "country": "US" },
+      "health": { "status": "healthy" },
+      "load": { "utilization_millionths": 250000, "capacity_millionths": 750000 },
+      "trust_domain": {
+        "id": "example-prod",
+        "cid": "bafkreihxs3rpfcxfqeltptfyem7tjye7ro3v2jirue2vipi4un56agm2du"
+      },
+      "residency": {
+        "data_regions": ["us-west-2"],
+        "jurisdiction": "US",
+        "cross_border": false
+      },
+      "confidentiality": {
+        "encrypted_artifacts": true,
+        "disclosure_policy": "authorized"
+      },
+      "skills": [
+        {
+          "id": "repo.status",
+          "name": "Repository status",
+          "tags": ["vcs", "git"],
+          "interface_cid": "bafkreigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+          "method": "repo.status"
+        }
+      ],
+      "a2a_extension": {
+        "uri": "https://mcplusplus.io/extensions/execution/v1",
+        "required": false,
+        "params": {
+          "profiles": ["A", "B", "C"],
+          "envelope_schema": "mcp++/execution/envelope@1",
+          "receipt_schema": "mcp++/execution/receipt@1",
+          "state_ref_schema": "mcp++/state/state-ref@1",
+          "mcp_bindings": ["mcp-binding/2026-07-28"],
+          "interface_cids": [
+            "bafkreigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi"
+          ],
+          "canonicalization": "mcpp-jcs-v1"
+        }
+      },
+      "canonicalization": "mcpp-jcs-v1"
+    }
+  ]
+}
