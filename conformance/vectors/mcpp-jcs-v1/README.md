@@ -28,8 +28,20 @@ Each case includes:
 
 Every listed category has **≥1 positive** and **≥1 negative** case.
 
+| Category | File | Notes |
+| --- | --- | --- |
+| numbers | `numbers.json` | ES6 forms, RFC 8785 sample; NaN/Infinity reject |
+| unicode | `unicode.json` | UTF-8 escapes, UTF-16 key sort; lone surrogate reject |
+| null | `null.json` | Present `null`; absent≠null; invalid `Null` token |
+| empty object | `empty-object.json` | `{}` / nested; whitespace non-canonical reject |
+| nested keys | `nested-keys.json` | Recursive sort; unsorted claim; cycles |
+| duplicate keys | `duplicate-keys.json` | Unique keys; top-level and nested duplicate reject |
+
+Positive cases pin `canonical_utf8`, hex/base64 bytes, sha2-256, and CIDv1 raw+sha2-256 so four-language runtimes can assert byte identity without re-deriving digests.
+
 ## Normative refs
 
 - `docs/spec/canonicalization-mcpp-jcs-v1.md`
 - `schemas/canonicalization/mcpp-jcs-v1.schema.json`
 - RFC 8785
+- Task: MCPP-025 (`suite_revision` in `manifest.json`)

@@ -3,8 +3,22 @@
   "interface": "GoldenVector@1",
   "algorithm": "mcpp-jcs-v1",
   "description": "Index of golden mcpp-jcs-v1 canonicalization vectors (MCPP-025).",
+  "task_id": "MCPP-025",
+  "suite_revision": "mcpp-jcs-v1-golden@1.0.1",
+  "published_for": "MCP++ 1.0 gap-closure canonical-vectors track",
   "spec_path": "ipfs_accelerate_py/mcplusplus/docs/spec/canonicalization-mcpp-jcs-v1.md",
   "vectors_dir": "ipfs_accelerate_py/mcplusplus/conformance/vectors/mcpp-jcs-v1",
+  "acceptance": {
+    "criteria": "At least one positive and one negative vector exist for numbers, Unicode, null, empty object, nested keys, and duplicate-key rejection.",
+    "categories_required": [
+      "numbers",
+      "unicode",
+      "null",
+      "empty_object",
+      "nested_keys",
+      "duplicate_keys"
+    ]
+  },
   "coverage": {
     "numbers": {
       "positive": 2,
@@ -16,7 +30,7 @@
     },
     "null": {
       "positive": 2,
-      "negative": 1
+      "negative": 2
     },
     "empty_object": {
       "positive": 2,
@@ -129,6 +143,16 @@
       "valid": false,
       "file": "null.json",
       "reason_code": "reject_absent_key_as_null",
+      "cid": null,
+      "sha256": null
+    },
+    {
+      "id": "null-negative-capitalized-null-token",
+      "category": "null",
+      "polarity": "negative",
+      "valid": false,
+      "file": "null.json",
+      "reason_code": "reject_invalid_json_literal",
       "cid": null,
       "sha256": null
     },

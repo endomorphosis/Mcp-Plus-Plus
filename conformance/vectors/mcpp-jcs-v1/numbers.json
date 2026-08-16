@@ -63,7 +63,15 @@
       "notes": [
         "Source values[1] is IEEE-754 negative zero; JCS output token is 0 (not -0).",
         "1e+30 and 1e-27 exercise scientific-notation thresholds."
-      ]
+      ],
+      "source_annotations": {
+        "values[1]": {
+          "ieee754": "negative_zero",
+          "bit_pattern_hex": "8000000000000000",
+          "jcs_token": "0",
+          "note": "JSON text cannot distinguish -0 from 0; language-native -0 MUST serialize as 0 under mcpp-jcs-v1."
+        }
+      }
     },
     {
       "id": "numbers-positive-rfc8785-appendix-sample",

@@ -133,6 +133,40 @@
           "b": 1
         }
       }
+    },
+    {
+      "id": "null-negative-capitalized-null-token",
+      "category": "null",
+      "polarity": "negative",
+      "valid": false,
+      "description": "Capitalized Null is not a JSON literal; mcpp-jcs-v1 parsers MUST fail closed on invalid null tokens.",
+      "source": null,
+      "source_json": "{\"a\":Null}",
+      "canonical_utf8": null,
+      "canonical_bytes_hex": null,
+      "canonical_bytes_base64": null,
+      "sha256": null,
+      "cid": null,
+      "signature_input": null,
+      "signature": null,
+      "signature_placeholder": {
+        "alg": "Ed25519",
+        "encoding": "base64url",
+        "value": null,
+        "note": "No signature over rejected input"
+      },
+      "expected_validator_result": {
+        "accept": false,
+        "reason_code": "reject_invalid_json_literal",
+        "detail": {
+          "token": "Null",
+          "note": "Only the four characters null (lowercase) are a JSON null literal (RFC 8259)."
+        }
+      },
+      "rejection": {
+        "condition": "invalid_null_token",
+        "source_json": "{\"a\":Null}"
+      }
     }
   ]
 }
