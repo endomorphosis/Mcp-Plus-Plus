@@ -104,9 +104,17 @@ Alias note: the archived notes refer to the signature array as `signatures[]`.
 
 ## 6. Receipt Object (CID’d)
 
-Receipts are the immutable outcome record, suitable for audit, disputes, and risk scoring.
+Receipts are the immutable outcome record, suitable for audit, disputes, risk
+scoring, and **cross-trust-domain independent verification**.
 
-### 6.1 Suggested Fields
+New portable work uses **ExecutionReceipt@1**
+(`schema: mcp++/execution/receipt@1`; see
+[execution-envelope.md](execution-envelope.md) §6 and
+`schemas/execution/execution-receipt-1.schema.json`). Profile B field names
+below remain readable historical shapes; adapters map them without rewriting
+historical CIDs (MCPP-031).
+
+### 6.1 Suggested Fields (Profile B historical)
 
 ```json
 {
@@ -121,9 +129,87 @@ Receipts are the immutable outcome record, suitable for audit, disputes, and ris
 }
 ```
 
-Receipts MUST be content-addressed and MAY be signed.
+Receipts **MUST** be content-addressed. Same-trust-domain receipts **MAY** be
+unsigned. Cross-trust-domain receipts **MUST** be signed (plan gate 15).
 
-## 6.2 Observability and Correlation (Non-Normative)
+### 6.2 Cross-trust-domain signed receipts (Normative, MCPP-045 / gate 15)
+
+**Interface:** `ReceiptVerifier@1`  
+**Conformance level:** `receipt-signed` (ADR-0003)  
+**Crypto:** ADR-0002 — Ed25519 over `mcpp-jcs-v1` canonical bytes
+
+When an execution crosses trust domains (requester trust domain ≠ executor
+trust domain, or any portable claim of cross-domain authority):
+
+1. The executor **MUST** mint an **ExecutionReceipt@1** (or an adapter-equivalent
+   receipt) that is content-addressed under `mcpp-jcs-v1`.
+2. The receipt **MUST** carry a non-null `signature` and `signature_alg` of
+   `Ed25519` (EdDSA wire alias accepted for verification).
+3. The signature **MUST** cover the detached receipt body under `mcpp-jcs-v1`:
+   all fields **except** `signature`, `signature_alg`, and `receipt_cid` (the
+   self-address is assigned after signing).
+4. Verifiers **MUST** fail closed on:
+   - missing / null / empty signature on a cross-domain receipt
+     (`unsigned_cross_domain_receipt`);
+   - undecodable or non-verifying signature (`invalid_signature`);
+   - CID mismatch when loading by `receipt_cid` (`cid_mismatch`).
+5. Same-trust-domain receipts **MAY** set `signature` / `signature_alg` to
+   `null`. Such receipts **MUST NOT** be scored as `receipt-signed`.
+6. Presence of a `signature` string field is **structural only**. A green
+   structural validator is **not** `receipt-signed` (ADR-0003; KD-6).
+
+#### 6.2.1 Transport identity is never execution authority (KD-14)
+
+| Layer | Identifies | Grants execution authority? |
+| --- | --- | --- |
+| TLS client certificate | Transport peer | **No** |
+| libp2p / P2P PeerID | Transport peer | **No** |
+| `executor.peer_id` on a receipt | Optional transport hint | **No** |
+| UCAN / `DelegationProof@1` / `delegation_cid` | Capability authority | **Yes** (when cryptographically verified) |
+| Receipt Ed25519 signature | Executor attestation of outcomes | Attests outcomes; does **not** replace UCAN |
+
+Normative rules:
+
+1. A valid TLS session or authenticated PeerID **MUST NOT** admit cross-domain
+   execution or receipt acceptance when the UCAN / delegation proof is missing,
+   expired, revoked, forged, or otherwise invalid.
+2. The deny reason set for “transport looks fine, authority does not” **MUST**
+   include `peerid_not_authority` (and typically `invalid_ucan` or
+   `missing_authority_proof`). This aligns with adversarial vector
+   `valid_peerid_invalid_ucan` (MCPP-044).
+3. Cross-domain receipts **SHOULD** bind a non-null `delegation_cid` (or
+   equivalent proof CID list on `proofs` / envelope `authority.proof_cids`).
+   `delegation_cid: null` is reserved for same-trust local receipts.
+4. Payment, PeerID, and TLS **MUST NOT** be treated as substitutes for Profile C
+   authority checks at execution time or at receipt admission.
+
+#### 6.2.2 Independent verification by CID
+
+A third party that did **not** observe the executor’s transport session **MUST**
+be able to validate a cross-domain receipt using only:
+
+1. The receipt bytes (or a content store lookup keyed by `receipt_cid`);
+2. The executor’s public key (resolved from `executor.did` / `key_id`, never from
+   PeerID alone);
+3. Optional authority material referenced by `delegation_cid` / `proofs`.
+
+**Interface obligations for `ReceiptVerifier@1`:**
+
+- `verify_receipt(receipt, trust_context)` — admit/deny with conformance levels
+  `structural`, `cryptographic`, and `receipt-signed`.
+- `verify_by_cid(receipt_cid, store, trust_context)` — load bytes by CID,
+  recompute the content CID under `mcpp-jcs-v1`, fail closed on mismatch, then
+  verify the signature and authority rules above.
+
+An **independent verifier process** (separate OS process / language runtime)
+that is given only the store, the CID, and public key material **MUST** reach
+the same admit/deny decision as an in-process verifier. Transport session state
+**MUST NOT** be required for `receipt-signed` verification.
+
+Evidence for this requirement lives in
+`tests-py/integration/test_signed_receipts.py` (MCPP-045).
+
+### 6.3 Observability and Correlation (Non-Normative)
 
 The archived design thread emphasizes “mandatory observability hooks (trace IDs, provenance metadata) baked into every call/reply/exception”. MCP++ supports this without changing baseline MCP semantics by treating immutable artifacts as the correlation substrate:
 
@@ -458,6 +544,15 @@ checks, and disclosure-policy enforcement.
 
 - Canonicalization MUST be specified tightly enough to avoid ambiguity attacks.
 - Evaluator signatures (on `decision_cid` and/or `receipt_cid`) SHOULD be supported for cross-peer trust.
+- **Cross-trust-domain receipts MUST be signed** and independently verifiable by
+  CID under `ReceiptVerifier@1` at conformance level `receipt-signed` (§6.2;
+  plan gate 15; MCPP-045). Unsigned cross-domain receipts are deny.
+- **Transport identity ≠ execution authority** (KD-14): valid TLS or PeerID with
+  invalid or missing UCAN is deny (`peerid_not_authority`). Payment never
+  authorizes execution.
+- Signature **presence** on a receipt is structural only; `receipt-signed`
+  requires real Ed25519 verification over `mcpp-jcs-v1` bytes (ADR-0002/0003).
 - Confidential artifacts use `EncryptedArtifactRef@1` (§8): ciphertext CIDs are
   verifiable; receipts attest use without disclosure; revocation is access
   control over unwrap, not erasure of content-addressed history (KD-15).
+  Transport identity never grants unwrap (§8.5 rule 3).
