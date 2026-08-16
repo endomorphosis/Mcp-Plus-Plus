@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcp-plus-plus.dev/schemas/a2a/terminal-evidence-1.schema.json",
+  "title": "MCP++ A2A TerminalEvidence@1",
+  "description": "Terminal A2A Task evidence under the activated MCP++ execution extension. Public TaskState remains completed/failed/canceled/rejected; this object carries MCP++ evidence CIDs (receipt_cid, event_cid, proofs) without inventing a parallel lifecycle. Interface: A2AExtensionSchema@1. Normative prose: a2a-extension.md §6.11, §8.",
+  "$comment": "Schema marker: mcp++/a2a/terminal-evidence@1. Cross-trust portable success REQUIRES receipt_cid; missing receipt on claimed portable success is non-conformant even when TaskState is completed.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "task_state",
+    "extension_uri"
+  ],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "mcp++/a2a/terminal-evidence@1",
+      "description": "Closed schema marker for TerminalEvidence@1."
+    },
+    "extension_uri": {
+      "type": "string",
+      "const": "https://mcplusplus.io/extensions/execution/v1",
+      "description": "Activated extension URI that produced this terminal evidence."
+    },
+    "task_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "A2A Task.id for the terminal task."
+    },
+    "task_state": {
+      "$ref": "#/$defs/terminalTaskState",
+      "description": "Terminal A2A TaskState. MUST be one of completed, failed, canceled, rejected."
+    },
+    "portable": {
+      "type": "boolean",
+      "description": "When true, claims cross-trust portable MCP++ success/failure evidence. Portable completed REQUIRES receipt_cid."
+    },
+    "envelope_cid": {
+      "$ref": "#/$defs/cid",
+      "description": "Request envelope CID. MUST be present when an envelope was used."
+    },
+    "result_cid": {
+      "$ref": "#/$defs/cid",
+      "description": "ExecutionResult@1 CID."
+    },
+    "receipt_cid": {
+      "$ref": "#/$defs/cid",
+      "description": "ExecutionReceipt@1 CID. Required when portable=true and task_state=completed."
+    },
+    "event_cid": {
+      "$ref": "#/$defs/cid",
+      "description": "Event DAG node CID linking envelope/result/receipt."
+    },
+    "output_cid": {
+      "$ref": "#/$defs/cid",
+      "description": "Primary output CID on success."
+    },
+    "proof_cids": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/cid" },
+      "uniqueItems": true,
+      "maxItems": 64,
+      "description": "Authority / verification proof CIDs checked or emitted."
+    },
+    "proof_cid": {
+      "$ref": "#/$defs/cid",
+      "description": "Single primary proof CID (compatibility)."
+    },
+    "decision_cid": {
+      "$ref": "#/$defs/cid",
+      "description": "Policy decision CID."
+    },
+    "delegation_cid": {
+      "$ref": "#/$defs/cid",
+      "description": "Effective delegation CID."
+    },
+    "error": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 1024
+        },
+        "portable_error_cid": {
+          "$ref": "#/$defs/cid"
+        }
+      },
+      "description": "Optional structured error when task_state is failed/canceled/rejected."
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "portable": { "const": true },
+          "task_state": { "const": "completed" }
+        },
+        "required": ["portable", "task_state"]
+      },
+      "then": {
+        "required": ["receipt_cid", "envelope_cid"]
+      }
+    }
+  ],
+  "$defs": {
+    "cid": {
+      "type": "string",
+      "pattern": "^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58,})$",
+      "minLength": 46,
+      "maxLength": 128
+    },
+    "terminalTaskState": {
+      "type": "string",
+      "enum": ["completed", "failed", "canceled", "rejected"]
+    }
+  }
+}

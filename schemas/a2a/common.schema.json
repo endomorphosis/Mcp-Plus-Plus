@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcp-plus-plus.dev/schemas/a2a/common.schema.json",
+  "title": "MCP++ A2A Extension Common Primitives@1",
+  "description": "Shared primitives for the MCP++ A2A execution extension (A2AExtensionSchema@1). Wire URI is https://mcplusplus.io/extensions/execution/v1. Normative prose: ipfs_accelerate_py/mcplusplus/docs/spec/a2a-extension.md. ADR-0006; MCPP-010; MCPP-055.",
+  "$comment": "Interface label: A2AExtensionSchema@1. Reverse-DNS alias io.mcplusplus.execution@1 is non-wire only.",
+  "$defs": {
+    "extensionUri": {
+      "type": "string",
+      "const": "https://mcplusplus.io/extensions/execution/v1",
+      "description": "Mandatory wire / Agent Card / A2A-Extensions identifier for the MCP++ execution extension."
+    },
+    "metadataKeyPrefix": {
+      "type": "string",
+      "const": "https://mcplusplus.io/extensions/execution/v1/",
+      "description": "Namespace prefix for extension-defined metadata keys on A2A Task, Message, Artifact, and Skill objects."
+    },
+    "workingAlias": {
+      "type": "string",
+      "const": "io.mcplusplus.execution@1",
+      "description": "Human/internal alias only. MUST NOT appear as AgentExtension.uri or as an A2A-Extensions entry."
+    },
+    "cid": {
+      "type": "string",
+      "description": "IPFS CID. CIDv1 base32 (b…) preferred for new mints; CIDv0 (Qm…) remains readable when historical.",
+      "pattern": "^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58,})$",
+      "minLength": 46,
+      "maxLength": 128
+    },
+    "profileLetter": {
+      "type": "string",
+      "enum": ["A", "B", "C", "D", "E", "F", "G", "H"],
+      "description": "Closed MCP++ profile letter set. Unknown letters are unsupported and fail closed."
+    },
+    "profileLetters": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/profileLetter" },
+      "uniqueItems": true,
+      "minItems": 0,
+      "maxItems": 8,
+      "description": "Ordered set of MCP++ profile letters advertised or requested under the extension."
+    },
+    "mcpBindingId": {
+      "type": "string",
+      "enum": [
+        "mcp-binding/2026-07-28",
+        "mcp-binding/legacy-2024-11-05"
+      ],
+      "description": "Named dual MCP binding id (ADR-0006)."
+    },
+    "mcpBindingIds": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/mcpBindingId" },
+      "uniqueItems": true,
+      "minItems": 1,
+      "maxItems": 2,
+      "description": "MCP bindings offered by the agent under this extension."
+    },
+    "canonicalizationId": {
+      "type": "string",
+      "const": "mcpp-jcs-v1",
+      "description": "Canonicalization algorithm id for content-addressed MCP++ objects."
+    },
+    "envelopeSchemaMarker": {
+      "type": "string",
+      "const": "mcp++/execution/envelope@1",
+      "description": "Schema marker for ExecutionEnvelope@1."
+    },
+    "receiptSchemaMarker": {
+      "type": "string",
+      "const": "mcp++/execution/receipt@1",
+      "description": "Schema marker for ExecutionReceipt@1."
+    },
+    "stateRefSchemaMarker": {
+      "type": "string",
+      "const": "mcp++/state/state-ref@1",
+      "description": "Schema marker for StateRef@1."
+    },
+    "taskState": {
+      "type": "string",
+      "enum": [
+        "submitted",
+        "working",
+        "input-required",
+        "auth-required",
+        "completed",
+        "failed",
+        "canceled",
+        "rejected"
+      ],
+      "description": "Official A2A TaskState vocabulary (snake_case JSON form). Extensions MUST NOT invent additional public status names."
+    },
+    "terminalTaskState": {
+      "type": "string",
+      "enum": ["completed", "failed", "canceled", "rejected"],
+      "description": "Terminal A2A TaskState values."
+    },
+    "metadataSuffix": {
+      "type": "string",
+      "enum": [
+        "envelope_cid",
+        "result_cid",
+        "receipt_cid",
+        "event_cid",
+        "output_cid",
+        "input_cid",
+        "intent_cid",
+        "interface_cid",
+        "method",
+        "state_ref_cids",
+        "proof_cid",
+        "proof_cids",
+        "delegation_cid",
+        "delegation_cids",
+        "decision_cid",
+        "required_abilities",
+        "resource",
+        "audience",
+        "profiles",
+        "profile"
+      ],
+      "description": "Allowed short suffixes under the extension metadata namespace."
+    },
+    "namespacedMetadataKey": {
+      "type": "string",
+      "pattern": "^https://mcplusplus\\.io/extensions/execution/v1/[A-Za-z0-9_./-]+$",
+      "minLength": 48,
+      "maxLength": 256,
+      "description": "Full namespaced metadata key (prefix + suffix)."
+    }
+  }
+}
