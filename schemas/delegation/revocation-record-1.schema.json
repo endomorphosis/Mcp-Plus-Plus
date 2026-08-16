@@ -1,0 +1,194 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcp-plus-plus.dev/schemas/delegation/revocation-record-1.schema.json",
+  "title": "MCP++ RevocationRecord@1",
+  "description": "Signed, discoverable revocation of a UCAN/MCP++ delegation (Profile C). A verified RevocationRecord@1 makes the target delegation fail closed at execution time even when the original token signature remains cryptographically valid. Normative interface: RevocationRecord@1. Crypto: ADR-0002 Ed25519/EdDSA over mcpp-jcs-v1 canonical bytes. SwissKnife UCANRevocationRegistry is an observation source for field semantics (token CID, issuer, effective time, reason).",
+  "$comment": "Interface label: RevocationRecord@1. Schema acceptance alone is not cryptographic conformance (ADR-0003). Validators must verify the signature and consult a durable ledger before admitting a revoked delegation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "issuer",
+    "revoked_delegation_cid",
+    "effective_at",
+    "signature"
+  ],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "mcp++/delegation/revocation-record@1",
+      "description": "Closed schema marker for RevocationRecord@1."
+    },
+    "issuer": {
+      "$ref": "#/$defs/did",
+      "description": "DID of the principal that issued this revocation (typically the original delegation issuer or a designated revoker). Alias wire forms: iss, revoked_by, revokedBy."
+    },
+    "revoked_delegation_cid": {
+      "$ref": "#/$defs/delegationCid",
+      "description": "Content identifier of the revoked delegation token or proof bundle. Alias wire forms: token_cid, tokenCid, delegation_cid, cid (only when schema is absent and context is a bare SwissKnife entry)."
+    },
+    "effective_at": {
+      "$ref": "#/$defs/timestamp",
+      "description": "Unix epoch seconds (UTC) when the revocation becomes effective. Alias wire forms: effective_time, revoked_at, revokedAt (ISO-8601 strings are accepted by validators and normalized to epoch seconds)."
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 512,
+      "description": "Optional free-form human-readable revocation reason."
+    },
+    "replacement_cid": {
+      "$ref": "#/$defs/delegationCid",
+      "description": "Optional CID of a replacement delegation that supersedes the revoked one. Alias: replacement."
+    },
+    "signature": {
+      "$ref": "#/$defs/signature",
+      "description": "Detached Ed25519 signature (unpadded base64url, 64 raw bytes) over mcpp-jcs-v1 of the record body excluding signature metadata. Alias: sig."
+    },
+    "alg": {
+      "type": "string",
+      "enum": ["EdDSA", "Ed25519", "ed25519"],
+      "description": "Signature algorithm. Downgrade to none/empty is forbidden."
+    },
+    "kid": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "description": "Key id of the verification key. Required when issuer is not a self-describing did:key."
+    },
+    "public_key": {
+      "$ref": "#/$defs/publicKey",
+      "description": "Optional embedded Ed25519 public key (32 bytes, unpadded base64url or hex). Prefer did:key issuer resolution."
+    },
+    "nonce": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Optional unique nonce for this revocation record (replay resistance of the record itself)."
+    },
+    "cid": {
+      "$ref": "#/$defs/delegationCid",
+      "description": "Optional content id of this RevocationRecord (CID of the signed body)."
+    },
+    "discovery": {
+      "$ref": "#/$defs/discovery",
+      "description": "How verifiers locate this record. Required for discoverability claims; validators fail closed when a ledger is required but unavailable."
+    },
+    "not_before": {
+      "$ref": "#/$defs/timestamp",
+      "description": "Optional earliest acceptance time for the record itself (alias: nbf)."
+    },
+    "expires_at": {
+      "$ref": "#/$defs/timestamp",
+      "description": "Optional record expiry. After expiry the revocation remains sticky for the target delegation once accepted by a durable ledger; new remote discovery MAY ignore expired transport envelopes."
+    }
+  },
+  "$defs": {
+    "did": {
+      "type": "string",
+      "minLength": 7,
+      "maxLength": 512,
+      "pattern": "^did:[a-z0-9]+:[A-Za-z0-9._:%-]+(?:[/?#][^\\u0000]*)?$"
+    },
+    "delegationCid": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 256,
+      "description": "Delegation or record content id. Accepts CIDv0 (Qm…), CIDv1 base32 (b…), and SwissKnife-style sha256:<hex> token digests.",
+      "pattern": "^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{50,}|sha256:[0-9a-fA-F]{64}|[A-Za-z0-9._:/-]{8,256})$"
+    },
+    "timestamp": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "Unix epoch seconds (fractional allowed). Must be finite."
+    },
+    "signature": {
+      "type": "string",
+      "minLength": 86,
+      "maxLength": 128,
+      "description": "Unpadded base64url Ed25519 signature (64 bytes → 86 chars) or hex (128 chars).",
+      "pattern": "^([A-Za-z0-9_-]{86}|[0-9a-fA-F]{128}|ed25519:[A-Za-z0-9_-]{86})$"
+    },
+    "publicKey": {
+      "type": "string",
+      "minLength": 43,
+      "maxLength": 128,
+      "description": "32-byte Ed25519 public key as unpadded base64url or 64-char hex."
+    },
+    "discoveryMethod": {
+      "type": "string",
+      "enum": [
+        "ledger",
+        "cid",
+        "registry",
+        "gossip",
+        "bundle",
+        "inline"
+      ],
+      "description": "Discovery channel for the record. ledger/registry are durable fail-closed stores; cid/bundle are content-addressed; gossip is best-effort transport; inline is embedded beside an invocation."
+    },
+    "discovery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method"],
+      "properties": {
+        "method": {
+          "$ref": "#/$defs/discoveryMethod"
+        },
+        "ledger_cid": {
+          "$ref": "#/$defs/delegationCid",
+          "description": "CID of a durable revocation ledger snapshot containing this record."
+        },
+        "registry_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "description": "Logical id of a named revocation registry (SwissKnife-style singleton or kit ledger path key)."
+        },
+        "topic": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "description": "Pubsub / gossip topic used to disseminate the record."
+        },
+        "parents": {
+          "type": "array",
+          "maxItems": 32,
+          "items": {
+            "$ref": "#/$defs/delegationCid"
+          },
+          "description": "Optional parent record CIDs for append-only discovery chains."
+        },
+        "published_at": {
+          "$ref": "#/$defs/timestamp",
+          "description": "When the record was published for discovery (may differ from effective_at)."
+        },
+        "endpoint": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "description": "Optional HTTPS or multiaddr endpoint that serves the record by CID."
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "schema": "mcp++/delegation/revocation-record@1",
+      "issuer": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+      "revoked_delegation_cid": "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+      "effective_at": 1700000000,
+      "reason": "key_compromise",
+      "replacement_cid": "bafybeihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku",
+      "alg": "EdDSA",
+      "kid": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+      "signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "discovery": {
+        "method": "ledger",
+        "registry_id": "mcp++/revocation-ledger@1",
+        "published_at": 1700000001
+      }
+    }
+  ]
+}
