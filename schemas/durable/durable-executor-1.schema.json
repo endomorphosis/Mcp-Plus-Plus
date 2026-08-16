@@ -1,0 +1,1910 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcp-plus-plus.dev/schemas/durable/durable-executor-1.schema.json",
+  "title": "MCP++ DurableExecutor@1",
+  "description": "Typed request/result catalog for DurableExecutor@1, plus DurableJournalRecord@1 and CrashRecoveryReceipt@1. Every method has a closed request and result shape. Journaled transitions map to Event DAG event_type values. Finalize binds final outputs to signed ExecutionReceipt@1. Interface: DurableExecutor@1. Normative prose: ipfs_accelerate_py/mcplusplus/docs/architecture/durable-execution.md. Authority: plan KD-12, ADR-0005, MCPP-050.",
+  "$comment": "Interface labels: DurableExecutor@1, DurableJournalRecord@1, CrashRecoveryReceipt@1. Schema markers: mcp++/durable/executor-request@1, mcp++/durable/executor-result@1, mcp++/durable/journal-record@1, mcp++/durable/crash-recovery-receipt@1. Journal is recovery authority; Event DAG is provenance only.",
+  "$defs": {
+    "cid": {
+      "type": "string",
+      "description": "IPFS CID. CIDv1 base32 (b…) preferred for new mints; CIDv0 (Qm…) remains readable when historical.",
+      "pattern": "^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58,})$",
+      "minLength": 46,
+      "maxLength": 128
+    },
+    "did": {
+      "type": "string",
+      "pattern": "^did:[a-z0-9]+:[A-Za-z0-9._:%-]+(?:[/?#][^\\u0000]*)?$",
+      "minLength": 7,
+      "maxLength": 512,
+      "description": "DID-compatible identity (ADR-0002)."
+    },
+    "timestampMs": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "Unix epoch milliseconds (safe integer range). Informational only; not causal authority."
+    },
+    "nonNegativeInteger": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "positiveInteger": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "executionId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Stable durable execution identity assigned by start."
+    },
+    "requestId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Caller-supplied id correlating a single method call."
+    },
+    "idempotencyKey": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Idempotency key for externally visible commits and start dedupe."
+    },
+    "fencingToken": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "Exclusive-work fencing epoch. Stale tokens MUST be rejected."
+    },
+    "correlationId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "checkpointId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "methodName": {
+      "type": "string",
+      "enum": [
+        "start",
+        "resume",
+        "signal",
+        "cancel",
+        "checkpoint",
+        "retry",
+        "timer",
+        "compensation",
+        "inspect",
+        "recover",
+        "finalize"
+      ],
+      "description": "Closed DurableExecutor@1 method catalog."
+    },
+    "executionStatus": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "running",
+        "paused",
+        "cancelling",
+        "cancelled",
+        "compensating",
+        "compensated",
+        "succeeded",
+        "failed",
+        "rejected",
+        "timed_out"
+      ],
+      "description": "Durable execution lifecycle status."
+    },
+    "terminalStatus": {
+      "type": "string",
+      "enum": [
+        "cancelled",
+        "compensated",
+        "succeeded",
+        "failed",
+        "rejected",
+        "timed_out"
+      ],
+      "description": "Terminal statuses eligible for finalize or cancel completion."
+    },
+    "journalTransition": {
+      "type": "string",
+      "enum": [
+        "started",
+        "resumed",
+        "signalled",
+        "cancel_requested",
+        "cancelled",
+        "checkpointed",
+        "side_effect_committed",
+        "retried",
+        "timer_scheduled",
+        "timer_fired",
+        "timer_cancelled",
+        "compensation_started",
+        "compensation_completed",
+        "recovered",
+        "finalized"
+      ],
+      "description": "Closed journal transition kinds. Each maps to an Event DAG event_type (see eventDagEventType and transitionEventMap)."
+    },
+    "eventDagEventType": {
+      "type": "string",
+      "enum": [
+        "invocation",
+        "result",
+        "error",
+        "delegation",
+        "policy_decision",
+        "intent",
+        "decision",
+        "receipt",
+        "envelope"
+      ],
+      "description": "Canonical Profile F Event DAG event_type values used when publishing journaled transitions."
+    },
+    "transitionEventMap": {
+      "type": "object",
+      "description": "Normative mapping from journal transition to Event DAG event_type. Documented for validators and adapters; not a runtime payload.",
+      "additionalProperties": false,
+      "properties": {
+        "started": { "const": "envelope" },
+        "resumed": { "const": "invocation" },
+        "signalled": { "const": "intent" },
+        "cancel_requested": { "const": "error" },
+        "cancelled": { "const": "result" },
+        "checkpointed": { "const": "decision" },
+        "side_effect_committed": { "const": "result" },
+        "retried": { "const": "invocation" },
+        "timer_scheduled": { "const": "intent" },
+        "timer_fired": { "const": "invocation" },
+        "timer_cancelled": { "const": "error" },
+        "compensation_started": { "const": "intent" },
+        "compensation_completed": { "const": "result" },
+        "recovered": { "const": "envelope" },
+        "finalized": { "const": "receipt" }
+      }
+    },
+    "portableError": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Stable machine-readable error code."
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "retryable": {
+          "type": ["boolean", "null"]
+        },
+        "failure_class": {
+          "type": ["string", "null"],
+          "maxLength": 128
+        },
+        "details_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "sideEffectCommit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "idempotency_key"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "idempotency_key": { "$ref": "#/$defs/idempotencyKey" },
+        "effect_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "effect_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        },
+        "description": {
+          "type": ["string", "null"],
+          "maxLength": 512
+        },
+        "compensatable": {
+          "type": ["boolean", "null"]
+        }
+      }
+    },
+    "timerStatus": {
+      "type": "string",
+      "enum": ["scheduled", "fired", "cancelled"]
+    },
+    "timerInfo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["timer_id", "fire_at_ms", "status"],
+      "properties": {
+        "timer_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "fire_at_ms": { "$ref": "#/$defs/timestampMs" },
+        "status": { "$ref": "#/$defs/timerStatus" },
+        "payload_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "recoveredExecution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["execution_id", "status", "journal_seq", "fencing_token"],
+      "properties": {
+        "execution_id": { "$ref": "#/$defs/executionId" },
+        "status": { "$ref": "#/$defs/executionStatus" },
+        "journal_seq": { "$ref": "#/$defs/positiveInteger" },
+        "fencing_token": { "$ref": "#/$defs/fencingToken" },
+        "last_checkpoint_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "envelope_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "staleFenceRejection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["execution_id", "presented_fencing_token", "current_fencing_token"],
+      "properties": {
+        "execution_id": { "$ref": "#/$defs/executionId" },
+        "presented_fencing_token": { "$ref": "#/$defs/fencingToken" },
+        "current_fencing_token": { "$ref": "#/$defs/fencingToken" },
+        "reason": {
+          "type": ["string", "null"],
+          "maxLength": 256
+        }
+      }
+    },
+    "journalFrontierEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["execution_id", "journal_seq"],
+      "properties": {
+        "execution_id": { "$ref": "#/$defs/executionId" },
+        "journal_seq": { "$ref": "#/$defs/positiveInteger" },
+        "journal_record_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "commonRequestFields": {
+      "type": "object",
+      "required": ["schema", "method", "request_id", "issued_at_ms"],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "mcp++/durable/executor-request@1"
+        },
+        "method": { "$ref": "#/$defs/methodName" },
+        "request_id": { "$ref": "#/$defs/requestId" },
+        "issued_at_ms": { "$ref": "#/$defs/timestampMs" }
+      }
+    },
+    "commonResultFields": {
+      "type": "object",
+      "required": ["schema", "method", "request_id", "ok", "status", "error"],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "mcp++/durable/executor-result@1"
+        },
+        "method": { "$ref": "#/$defs/methodName" },
+        "request_id": { "$ref": "#/$defs/requestId" },
+        "ok": {
+          "type": "boolean",
+          "description": "True when the method call succeeded structurally and was applied (or idempotently replayed)."
+        },
+        "status": { "$ref": "#/$defs/executionStatus" },
+        "error": {
+          "anyOf": [
+            { "$ref": "#/$defs/portableError" },
+            { "type": "null" }
+          ]
+        },
+        "execution_id": {
+          "anyOf": [
+            { "$ref": "#/$defs/executionId" },
+            { "type": "null" }
+          ]
+        },
+        "journal_seq": {
+          "anyOf": [
+            { "$ref": "#/$defs/positiveInteger" },
+            { "type": "null" }
+          ]
+        },
+        "journal_record_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        },
+        "event_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ],
+          "description": "Event DAG node CID for the journaled transition when published."
+        },
+        "fencing_token": {
+          "anyOf": [
+            { "$ref": "#/$defs/fencingToken" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "startRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "method",
+        "request_id",
+        "issued_at_ms",
+        "envelope_cid",
+        "idempotency_key"
+      ],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "mcp++/durable/executor-request@1"
+        },
+        "method": { "const": "start" },
+        "request_id": { "$ref": "#/$defs/requestId" },
+        "issued_at_ms": { "$ref": "#/$defs/timestampMs" },
+        "envelope_cid": {
+          "$ref": "#/$defs/cid",
+          "description": "CID of ExecutionEnvelope@1 to execute."
+        },
+        "idempotency_key": { "$ref": "#/$defs/idempotencyKey" },
+        "correlation_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "executor_did": {
+          "anyOf": [
+            { "$ref": "#/$defs/did" },
+            { "type": "null" }
+          ]
+        },
+        "initial_checkpoint_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        },
+        "parent_execution_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "claim_fencing_token": {
+          "anyOf": [
+            { "$ref": "#/$defs/fencingToken" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "startResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "method",
+        "request_id",
+        "ok",
+        "status",
+        "error",
+        "execution_id",
+        "fencing_token",
+        "journal_seq",
+        "event_cid"
+      ],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "mcp++/durable/executor-result@1"
+        },
+        "method": { "const": "start" },
+        "request_id": { "$ref": "#/$defs/requestId" },
+        "ok": { "type": "boolean" },
+        "status": { "$ref": "#/$defs/executionStatus" },
+        "error": {
+          "anyOf": [
+            { "$ref": "#/$defs/portableError" },
+            { "type": "null" }
+          ]
+        },
+        "execution_id": {
+          "anyOf": [
+            { "$ref": "#/$defs/executionId" },
+            { "type": "null" }
+          ]
+        },
+        "fencing_token": {
+          "anyOf": [
+            { "$ref": "#/$defs/fencingToken" },
+            { "type": "null" }
+          ]
+        },
+        "journal_seq": {
+          "anyOf": [
+            { "$ref": "#/$defs/positiveInteger" },
+            { "type": "null" }
+          ]
+        },
+        "journal_record_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        },
+        "event_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        },
+        "envelope_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        },
+        "idempotent_replay": {
+          "type": ["boolean", "null"],
+          "description": "True when start returned an existing execution for the same idempotency_key."
+        }
+      }
+    },
+    "resumeRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "method",
+        "request_id",
+        "issued_at_ms",
+        "execution_id",
+        "fencing_token"
+      ],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "mcp++/durable/executor-request@1"
+        },
+        "method": { "const": "resume" },
+        "request_id": { "$ref": "#/$defs/requestId" },
+        "issued_at_ms": { "$ref": "#/$defs/timestampMs" },
+        "execution_id": { "$ref": "#/$defs/executionId" },
+        "fencing_token": { "$ref": "#/$defs/fencingToken" },
+        "from_checkpoint_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "after_recover": {
+          "type": ["boolean", "null"]
+        }
+      }
+    },
+    "resumeResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "method",
+        "request_id",
+        "ok",
+        "status",
+        "error",
+        "execution_id",
+        "journal_seq",
+        "last_checkpoint_id",
+        "event_cid"
+      ],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "mcp++/durable/executor-result@1"
+        },
+        "method": { "const": "resume" },
+        "request_id": { "$ref": "#/$defs/requestId" },
+        "ok": { "type": "boolean" },
+        "status": { "$ref": "#/$defs/executionStatus" },
+        "error": {
+          "anyOf": [
+            { "$ref": "#/$defs/portableError" },
+            { "type": "null" }
+          ]
+        },
+        "execution_id": { "$ref": "#/$defs/executionId" },
+        "journal_seq": {
+          "anyOf": [
+            { "$ref": "#/$defs/positiveInteger" },
+            { "type": "null" }
+          ]
+        },
+        "journal_record_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        },
+        "last_checkpoint_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "event_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        },
+        "fencing_token": {
+          "anyOf": [
+            { "$ref": "#/$defs/fencingToken" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "signalRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "method",
+        "request_id",
+        "issued_at_ms",
+        "execution_id",
+        "signal_name"
+      ],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "mcp++/durable/executor-request@1"
+        },
+        "method": { "const": "signal" },
+        "request_id": { "$ref": "#/$defs/requestId" },
+        "issued_at_ms": { "$ref": "#/$defs/timestampMs" },
+        "execution_id": { "$ref": "#/$defs/executionId" },
+        "signal_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "payload_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        },
+        "fencing_token": {
+          "anyOf": [
+            { "$ref": "#/$defs/fencingToken" },
+            { "type": "null" }
+          ]
+        },
+        "idempotency_key": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    },
+    "signalResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "method",
+        "request_id",
+        "ok",
+        "status",
+        "error",
+        "execution_id",
+        "accepted",
+        "journal_seq",
+        "event_cid"
+      ],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "mcp++/durable/executor-result@1"
+        },
+        "method": { "const": "signal" },
+        "request_id": { "$ref": "#/$defs/requestId" },
+        "ok": { "type": "boolean" },
+        "status": { "$ref": "#/$defs/executionStatus" },
+        "error": {
+          "anyOf": [
+            { "$ref": "#/$defs/portableError" },
+            { "type": "null" }
+          ]
+        },
+        "execution_id": { "$ref": "#/$defs/executionId" },
+        "accepted": { "type": "boolean" },
+        "journal_seq": {
+          "anyOf": [
+            { "$ref": "#/$defs/positiveInteger" },
+            { "type": "null" }
+          ]
+        },
+        "journal_record_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        },
+        "event_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "cancelRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "method",
+        "request_id",
+        "issued_at_ms",
+        "execution_id"
+      ],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "mcp++/durable/executor-request@1"
+        },
+        "method": { "const": "cancel" },
+        "request_id": { "$ref": "#/$defs/requestId" },
+        "issued_at_ms": { "$ref": "#/$defs/timestampMs" },
+        "execution_id": { "$ref": "#/$defs/executionId" },
+        "reason": {
+          "type": ["string", "null"],
+          "maxLength": 512
+        },
+        "fencing_token": {
+          "anyOf": [
+            { "$ref": "#/$defs/fencingToken" },
+            { "type": "null" }
+          ]
+        },
+        "idempotency_key": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    },
+    "cancelResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "method",
+        "request_id",
+        "ok",
+        "status",
+        "error",
+        "execution_id",
+        "journal_seq",
+        "event_cid"
+      ],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "mcp++/durable/executor-result@1"
+        },
+        "method": { "const": "cancel" },
+        "request_id": { "$ref": "#/$defs/requestId" },
+        "ok": { "type": "boolean" },
+        "status": { "$ref": "#/$defs/executionStatus" },
+        "error": {
+          "anyOf": [
+            { "$ref": "#/$defs/portableError" },
+            { "type": "null" }
+          ]
+        },
+        "execution_id": { "$ref": "#/$defs/executionId" },
+        "journal_seq": {
+          "anyOf": [
+            { "$ref": "#/$defs/positiveInteger" },
+            { "type": "null" }
+          ]
+        },
+        "journal_record_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        },
+        "event_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "checkpointRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "method",
+        "request_id",
+        "issued_at_ms",
+        "execution_id",
+        "fencing_token",
+        "idempotency_key",
+        "progress_cid"
+      ],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "mcp++/durable/executor-request@1"
+        },
+        "method": { "const": "checkpoint" },
+        "request_id": { "$ref": "#/$defs/requestId" },
+        "issued_at_ms": { "$ref": "#/$defs/timestampMs" },
+        "execution_id": { "$ref": "#/$defs/executionId" },
+        "fencing_token": { "$ref": "#/$defs/fencingToken" },
+        "idempotency_key": { "$ref": "#/$defs/idempotencyKey" },
+        "progress_cid": {
+          "$ref": "#/$defs/cid",
+          "description": "CID of the durable progress document."
+        },
+        "committed_side_effects": {
+          "type": "array",
+          "maxItems": 256,
+          "items": { "$ref": "#/$defs/sideEffectCommit" }
+        },
+        "obligation_cids": {
+          "type": "array",
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/cid" }
+        },
+        "state_transition_cids": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/cid" }
+        }
+      }
+    },
+    "checkpointResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "method",
+        "request_id",
+        "ok",
+        "status",
+        "error",
+        "execution_id",
+        "checkpoint_id",
+        "journal_seq",
+        "event_cid"
+      ],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "mcp++/durable/executor-result@1"
+        },
+        "method": { "const": "checkpoint" },
+        "request_id": { "$ref": "#/$defs/requestId" },
+        "ok": { "type": "boolean" },
+        "status": { "$ref": "#/$defs/executionStatus" },
+        "error": {
+          "anyOf": [
+            { "$ref": "#/$defs/portableError" },
+            { "type": "null" }
+          ]
+        },
+        "execution_id": { "$ref": "#/$defs/executionId" },
+        "checkpoint_id": {
+          "anyOf": [
+            { "$ref": "#/$defs/checkpointId" },
+            { "type": "null" }
+          ]
+        },
+        "journal_seq": {
+          "anyOf": [
+            { "$ref": "#/$defs/positiveInteger" },
+            { "type": "null" }
+          ]
+        },
+        "journal_record_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        },
+        "event_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        },
+        "progress_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "retryRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "method",
+        "request_id",
+        "issued_at_ms",
+        "execution_id"
+      ],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "mcp++/durable/executor-request@1"
+        },
+        "method": { "const": "retry" },
+        "request_id": { "$ref": "#/$defs/requestId" },
+        "issued_at_ms": { "$ref": "#/$defs/timestampMs" },
+        "execution_id": { "$ref": "#/$defs/executionId" },
+        "fencing_token": {
+          "anyOf": [
+            { "$ref": "#/$defs/fencingToken" },
+            { "type": "null" }
+          ]
+        },
+        "reason": {
+          "type": ["string", "null"],
+          "maxLength": 256
+        },
+        "max_attempts": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "maximum": 100000
+        },
+        "idempotency_key": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    },
+    "retryResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "method",
+        "request_id",
+        "ok",
+        "status",
+        "error",
+        "execution_id",
+        "attempt",
+        "journal_seq",
+        "event_cid"
+      ],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "mcp++/durable/executor-result@1"
+        },
+        "method": { "const": "retry" },
+        "request_id": { "$ref": "#/$defs/requestId" },
+        "ok": { "type": "boolean" },
+        "status": { "$ref": "#/$defs/executionStatus" },
+        "error": {
+          "anyOf": [
+            { "$ref": "#/$defs/portableError" },
+            { "type": "null" }
+          ]
+        },
+        "execution_id": { "$ref": "#/$defs/executionId" },
+        "attempt": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100000
+            },
+            { "type": "null" }
+          ]
+        },
+        "journal_seq": {
+          "anyOf": [
+            { "$ref": "#/$defs/positiveInteger" },
+            { "type": "null" }
+          ]
+        },
+        "journal_record_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        },
+        "event_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "timerRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "method",
+        "request_id",
+        "issued_at_ms",
+        "execution_id",
+        "timer_id",
+        "durable"
+      ],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "mcp++/durable/executor-request@1"
+        },
+        "method": { "const": "timer" },
+        "request_id": { "$ref": "#/$defs/requestId" },
+        "issued_at_ms": { "$ref": "#/$defs/timestampMs" },
+        "execution_id": { "$ref": "#/$defs/executionId" },
+        "timer_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "durable": {
+          "type": "boolean",
+          "const": true,
+          "description": "DurableExecutor@1 timers MUST be durable (survive process death when journaled)."
+        },
+        "fire_at_ms": {
+          "anyOf": [
+            { "$ref": "#/$defs/timestampMs" },
+            { "type": "null" }
+          ]
+        },
+        "delay_ms": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 86400000000
+        },
+        "payload_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        },
+        "fencing_token": {
+          "anyOf": [
+            { "$ref": "#/$defs/fencingToken" },
+            { "type": "null" }
+          ]
+        },
+        "idempotency_key": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128
+        }
+      },
+      "anyOf": [
+        {
+          "properties": {
+            "fire_at_ms": { "$ref": "#/$defs/timestampMs" }
+          },
+          "required": ["fire_at_ms"]
+        },
+        {
+          "properties": {
+            "delay_ms": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": ["delay_ms"]
+        }
+      ]
+    },
+    "timerResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "method",
+        "request_id",
+        "ok",
+        "status",
+        "error",
+        "execution_id",
+        "timer_id",
+        "timer_status",
+        "fire_at_ms",
+        "journal_seq",
+        "event_cid"
+      ],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "mcp++/durable/executor-result@1"
+        },
+        "method": { "const": "timer" },
+        "request_id": { "$ref": "#/$defs/requestId" },
+        "ok": { "type": "boolean" },
+        "status": { "$ref": "#/$defs/executionStatus" },
+        "error": {
+          "anyOf": [
+            { "$ref": "#/$defs/portableError" },
+            { "type": "null" }
+          ]
+        },
+        "execution_id": { "$ref": "#/$defs/executionId" },
+        "timer_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "timer_status": {
+          "anyOf": [
+            { "$ref": "#/$defs/timerStatus" },
+            { "type": "null" }
+          ]
+        },
+        "fire_at_ms": {
+          "anyOf": [
+            { "$ref": "#/$defs/timestampMs" },
+            { "type": "null" }
+          ]
+        },
+        "journal_seq": {
+          "anyOf": [
+            { "$ref": "#/$defs/positiveInteger" },
+            { "type": "null" }
+          ]
+        },
+        "journal_record_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        },
+        "event_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "compensationRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "method",
+        "request_id",
+        "issued_at_ms",
+        "execution_id",
+        "idempotency_key"
+      ],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "mcp++/durable/executor-request@1"
+        },
+        "method": { "const": "compensation" },
+        "request_id": { "$ref": "#/$defs/requestId" },
+        "issued_at_ms": { "$ref": "#/$defs/timestampMs" },
+        "execution_id": { "$ref": "#/$defs/executionId" },
+        "idempotency_key": { "$ref": "#/$defs/idempotencyKey" },
+        "target_effect_ids": {
+          "type": "array",
+          "maxItems": 256,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "target_effect_cids": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/cid" }
+        },
+        "compensation_plan_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        },
+        "fencing_token": {
+          "anyOf": [
+            { "$ref": "#/$defs/fencingToken" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "compensationResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "method",
+        "request_id",
+        "ok",
+        "status",
+        "error",
+        "execution_id",
+        "compensation_id",
+        "journal_seq",
+        "event_cid"
+      ],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "mcp++/durable/executor-result@1"
+        },
+        "method": { "const": "compensation" },
+        "request_id": { "$ref": "#/$defs/requestId" },
+        "ok": { "type": "boolean" },
+        "status": { "$ref": "#/$defs/executionStatus" },
+        "error": {
+          "anyOf": [
+            { "$ref": "#/$defs/portableError" },
+            { "type": "null" }
+          ]
+        },
+        "execution_id": { "$ref": "#/$defs/executionId" },
+        "compensation_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "journal_seq": {
+          "anyOf": [
+            { "$ref": "#/$defs/positiveInteger" },
+            { "type": "null" }
+          ]
+        },
+        "journal_record_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        },
+        "event_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "inspectRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "method",
+        "request_id",
+        "issued_at_ms"
+      ],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "mcp++/durable/executor-request@1"
+        },
+        "method": { "const": "inspect" },
+        "request_id": { "$ref": "#/$defs/requestId" },
+        "issued_at_ms": { "$ref": "#/$defs/timestampMs" },
+        "execution_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "correlation_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "include_journal": {
+          "type": ["boolean", "null"]
+        },
+        "include_timers": {
+          "type": ["boolean", "null"]
+        }
+      },
+      "anyOf": [
+        {
+          "properties": {
+            "execution_id": { "$ref": "#/$defs/executionId" }
+          },
+          "required": ["execution_id"]
+        },
+        {
+          "properties": {
+            "correlation_id": { "$ref": "#/$defs/correlationId" }
+          },
+          "required": ["correlation_id"]
+        }
+      ]
+    },
+    "inspectResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "method",
+        "request_id",
+        "ok",
+        "status",
+        "error",
+        "execution_id",
+        "fencing_token",
+        "last_checkpoint_id",
+        "journal_frontier_seq",
+        "cancel_state",
+        "obligation_cids",
+        "timers",
+        "receipt_cid"
+      ],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "mcp++/durable/executor-result@1"
+        },
+        "method": { "const": "inspect" },
+        "request_id": { "$ref": "#/$defs/requestId" },
+        "ok": { "type": "boolean" },
+        "status": { "$ref": "#/$defs/executionStatus" },
+        "error": {
+          "anyOf": [
+            { "$ref": "#/$defs/portableError" },
+            { "type": "null" }
+          ]
+        },
+        "execution_id": {
+          "anyOf": [
+            { "$ref": "#/$defs/executionId" },
+            { "type": "null" }
+          ]
+        },
+        "fencing_token": {
+          "anyOf": [
+            { "$ref": "#/$defs/fencingToken" },
+            { "type": "null" }
+          ]
+        },
+        "last_checkpoint_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "journal_frontier_seq": {
+          "anyOf": [
+            { "$ref": "#/$defs/nonNegativeInteger" },
+            { "type": "null" }
+          ]
+        },
+        "cancel_state": {
+          "type": ["string", "null"],
+          "enum": ["none", "requested", "cancelling", "cancelled", null]
+        },
+        "obligation_cids": {
+          "type": "array",
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/cid" }
+        },
+        "timers": {
+          "type": "array",
+          "maxItems": 256,
+          "items": { "$ref": "#/$defs/timerInfo" }
+        },
+        "journal_records": {
+          "type": "array",
+          "maxItems": 1024,
+          "items": { "$ref": "#/$defs/durableJournalRecord" },
+          "description": "Optional journal slice when include_journal was true."
+        },
+        "receipt_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ],
+          "description": "ExecutionReceipt@1 CID when finalized."
+        },
+        "envelope_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        },
+        "correlation_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    },
+    "recoverRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "method",
+        "request_id",
+        "issued_at_ms"
+      ],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "mcp++/durable/executor-request@1"
+        },
+        "method": { "const": "recover" },
+        "request_id": { "$ref": "#/$defs/requestId" },
+        "issued_at_ms": { "$ref": "#/$defs/timestampMs" },
+        "execution_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "When null/omitted, adapter recovers its recoverable set."
+        },
+        "fencing_token": {
+          "anyOf": [
+            { "$ref": "#/$defs/fencingToken" },
+            { "type": "null" }
+          ],
+          "description": "Required when reclaiming a specific execution without claim_new_fencing_token."
+        },
+        "claim_new_fencing_token": {
+          "type": ["boolean", "null"],
+          "description": "When true, advance fencing epoch for exclusive recover."
+        },
+        "after_kill": {
+          "type": ["boolean", "null"],
+          "description": "Hint that this recover follows process death (gate 17 path)."
+        }
+      }
+    },
+    "recoverResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "method",
+        "request_id",
+        "ok",
+        "status",
+        "error",
+        "recovered",
+        "rejected_stale",
+        "crash_recovery_receipt",
+        "event_cid"
+      ],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "mcp++/durable/executor-result@1"
+        },
+        "method": { "const": "recover" },
+        "request_id": { "$ref": "#/$defs/requestId" },
+        "ok": { "type": "boolean" },
+        "status": { "$ref": "#/$defs/executionStatus" },
+        "error": {
+          "anyOf": [
+            { "$ref": "#/$defs/portableError" },
+            { "type": "null" }
+          ]
+        },
+        "execution_id": {
+          "anyOf": [
+            { "$ref": "#/$defs/executionId" },
+            { "type": "null" }
+          ]
+        },
+        "recovered": {
+          "type": "array",
+          "maxItems": 1024,
+          "items": { "$ref": "#/$defs/recoveredExecution" }
+        },
+        "rejected_stale": {
+          "type": "array",
+          "maxItems": 1024,
+          "items": { "$ref": "#/$defs/staleFenceRejection" }
+        },
+        "crash_recovery_receipt": {
+          "anyOf": [
+            { "$ref": "#/$defs/crashRecoveryReceipt" },
+            { "type": "null" }
+          ]
+        },
+        "journal_seq": {
+          "anyOf": [
+            { "$ref": "#/$defs/positiveInteger" },
+            { "type": "null" }
+          ]
+        },
+        "journal_record_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        },
+        "event_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "finalizeRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "method",
+        "request_id",
+        "issued_at_ms",
+        "execution_id",
+        "fencing_token",
+        "terminal_status",
+        "result_cid",
+        "idempotency_key"
+      ],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "mcp++/durable/executor-request@1"
+        },
+        "method": { "const": "finalize" },
+        "request_id": { "$ref": "#/$defs/requestId" },
+        "issued_at_ms": { "$ref": "#/$defs/timestampMs" },
+        "execution_id": { "$ref": "#/$defs/executionId" },
+        "fencing_token": { "$ref": "#/$defs/fencingToken" },
+        "terminal_status": { "$ref": "#/$defs/terminalStatus" },
+        "result_cid": {
+          "$ref": "#/$defs/cid",
+          "description": "CID of ExecutionResult@1 being finalized."
+        },
+        "idempotency_key": { "$ref": "#/$defs/idempotencyKey" },
+        "receipt_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ],
+          "description": "Optional pre-minted ExecutionReceipt@1 CID. When null, adapter mints and binds."
+        },
+        "output_cids": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/cid" },
+          "description": "Final outputs; MUST match ExecutionResult@1.output_cids and ExecutionReceipt@1.output_cids."
+        },
+        "sign_receipt": {
+          "type": ["boolean", "null"],
+          "description": "When true (default for cross-trust), receipt MUST carry a non-null signature."
+        },
+        "envelope_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ],
+          "description": "Optional echo of start envelope; MUST match journal root when present."
+        }
+      }
+    },
+    "finalizeResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "method",
+        "request_id",
+        "ok",
+        "status",
+        "error",
+        "execution_id",
+        "terminal_status",
+        "result_cid",
+        "receipt_cid",
+        "event_cid",
+        "journal_seq",
+        "signature_present"
+      ],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "mcp++/durable/executor-result@1"
+        },
+        "method": { "const": "finalize" },
+        "request_id": { "$ref": "#/$defs/requestId" },
+        "ok": { "type": "boolean" },
+        "status": { "$ref": "#/$defs/executionStatus" },
+        "error": {
+          "anyOf": [
+            { "$ref": "#/$defs/portableError" },
+            { "type": "null" }
+          ]
+        },
+        "execution_id": { "$ref": "#/$defs/executionId" },
+        "terminal_status": {
+          "anyOf": [
+            { "$ref": "#/$defs/terminalStatus" },
+            { "type": "null" }
+          ]
+        },
+        "result_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        },
+        "receipt_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ],
+          "description": "CID of bound ExecutionReceipt@1. Final outputs bind through this receipt."
+        },
+        "output_cids": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/cid" }
+        },
+        "event_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ],
+          "description": "Event DAG receipt node CID (event_type=receipt)."
+        },
+        "journal_seq": {
+          "anyOf": [
+            { "$ref": "#/$defs/positiveInteger" },
+            { "type": "null" }
+          ]
+        },
+        "journal_record_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        },
+        "signature_present": {
+          "type": "boolean",
+          "description": "True when the bound ExecutionReceipt@1 carries a non-null signature."
+        }
+      }
+    },
+    "durableJournalRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "execution_id",
+        "journal_seq",
+        "transition",
+        "fencing_token",
+        "envelope_cid",
+        "parents",
+        "created_at_ms"
+      ],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "mcp++/durable/journal-record@1",
+          "description": "Closed schema marker for DurableJournalRecord@1."
+        },
+        "execution_id": { "$ref": "#/$defs/executionId" },
+        "journal_seq": { "$ref": "#/$defs/positiveInteger" },
+        "transition": { "$ref": "#/$defs/journalTransition" },
+        "event_type": {
+          "anyOf": [
+            { "$ref": "#/$defs/eventDagEventType" },
+            { "type": "null" }
+          ],
+          "description": "Mapped Profile F event_type for this transition. When set, MUST match the normative transition→event_type table."
+        },
+        "idempotency_key": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "fencing_token": { "$ref": "#/$defs/fencingToken" },
+        "envelope_cid": { "$ref": "#/$defs/cid" },
+        "checkpoint_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "progress_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        },
+        "side_effects": {
+          "type": "array",
+          "maxItems": 256,
+          "items": { "$ref": "#/$defs/sideEffectCommit" }
+        },
+        "result_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        },
+        "receipt_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ],
+          "description": "When transition is finalized, CID of the bound ExecutionReceipt@1."
+        },
+        "parents": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/cid" },
+          "description": "Prior journal record CIDs (empty for root started)."
+        },
+        "created_at_ms": { "$ref": "#/$defs/timestampMs" },
+        "event_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ],
+          "description": "Published Event DAG node for this journal transition."
+        },
+        "payload_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        },
+        "timer_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "signal_name": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "compensation_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "reason": {
+          "type": ["string", "null"],
+          "maxLength": 512
+        },
+        "canonicalization": {
+          "type": "string",
+          "const": "mcpp-jcs-v1",
+          "description": "Required on new journal record mints."
+        },
+        "journal_record_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ],
+          "description": "Self-address once content-addressed."
+        }
+      }
+    },
+    "crashRecoveryReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "adapter_id",
+        "recovered_at_ms",
+        "execution_ids",
+        "journal_frontier",
+        "rejected_stale_fencing_tokens",
+        "side_effects_not_replayed"
+      ],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "mcp++/durable/crash-recovery-receipt@1",
+          "description": "Closed schema marker for CrashRecoveryReceipt@1."
+        },
+        "adapter_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Adapter label (e.g. sqlite-journal@1)."
+        },
+        "recovered_at_ms": { "$ref": "#/$defs/timestampMs" },
+        "execution_ids": {
+          "type": "array",
+          "maxItems": 1024,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/executionId" }
+        },
+        "journal_frontier": {
+          "type": "array",
+          "maxItems": 1024,
+          "items": { "$ref": "#/$defs/journalFrontierEntry" }
+        },
+        "rejected_stale_fencing_tokens": {
+          "type": "array",
+          "maxItems": 1024,
+          "items": { "$ref": "#/$defs/staleFenceRejection" }
+        },
+        "side_effects_not_replayed": {
+          "type": "array",
+          "maxItems": 1024,
+          "items": { "$ref": "#/$defs/idempotencyKey" },
+          "description": "Idempotency keys of committed side effects that recover MUST NOT re-apply."
+        },
+        "receipt_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        },
+        "signature": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "signature_alg": {
+          "anyOf": [
+            { "type": "string", "const": "Ed25519" },
+            { "type": "null" }
+          ]
+        },
+        "event_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        },
+        "canonicalization": {
+          "type": "string",
+          "const": "mcpp-jcs-v1"
+        }
+      }
+    },
+    "executorRequest": {
+      "oneOf": [
+        { "$ref": "#/$defs/startRequest" },
+        { "$ref": "#/$defs/resumeRequest" },
+        { "$ref": "#/$defs/signalRequest" },
+        { "$ref": "#/$defs/cancelRequest" },
+        { "$ref": "#/$defs/checkpointRequest" },
+        { "$ref": "#/$defs/retryRequest" },
+        { "$ref": "#/$defs/timerRequest" },
+        { "$ref": "#/$defs/compensationRequest" },
+        { "$ref": "#/$defs/inspectRequest" },
+        { "$ref": "#/$defs/recoverRequest" },
+        { "$ref": "#/$defs/finalizeRequest" }
+      ],
+      "description": "Any DurableExecutor@1 method request."
+    },
+    "executorResult": {
+      "oneOf": [
+        { "$ref": "#/$defs/startResult" },
+        { "$ref": "#/$defs/resumeResult" },
+        { "$ref": "#/$defs/signalResult" },
+        { "$ref": "#/$defs/cancelResult" },
+        { "$ref": "#/$defs/checkpointResult" },
+        { "$ref": "#/$defs/retryResult" },
+        { "$ref": "#/$defs/timerResult" },
+        { "$ref": "#/$defs/compensationResult" },
+        { "$ref": "#/$defs/inspectResult" },
+        { "$ref": "#/$defs/recoverResult" },
+        { "$ref": "#/$defs/finalizeResult" }
+      ],
+      "description": "Any DurableExecutor@1 method result."
+    },
+    "durableDocument": {
+      "oneOf": [
+        { "$ref": "#/$defs/executorRequest" },
+        { "$ref": "#/$defs/executorResult" },
+        { "$ref": "#/$defs/durableJournalRecord" },
+        { "$ref": "#/$defs/crashRecoveryReceipt" }
+      ],
+      "description": "Any top-level durable-interface document defined by this schema."
+    }
+  },
+  "oneOf": [
+    { "$ref": "#/$defs/startRequest" },
+    { "$ref": "#/$defs/startResult" },
+    { "$ref": "#/$defs/resumeRequest" },
+    { "$ref": "#/$defs/resumeResult" },
+    { "$ref": "#/$defs/signalRequest" },
+    { "$ref": "#/$defs/signalResult" },
+    { "$ref": "#/$defs/cancelRequest" },
+    { "$ref": "#/$defs/cancelResult" },
+    { "$ref": "#/$defs/checkpointRequest" },
+    { "$ref": "#/$defs/checkpointResult" },
+    { "$ref": "#/$defs/retryRequest" },
+    { "$ref": "#/$defs/retryResult" },
+    { "$ref": "#/$defs/timerRequest" },
+    { "$ref": "#/$defs/timerResult" },
+    { "$ref": "#/$defs/compensationRequest" },
+    { "$ref": "#/$defs/compensationResult" },
+    { "$ref": "#/$defs/inspectRequest" },
+    { "$ref": "#/$defs/inspectResult" },
+    { "$ref": "#/$defs/recoverRequest" },
+    { "$ref": "#/$defs/recoverResult" },
+    { "$ref": "#/$defs/finalizeRequest" },
+    { "$ref": "#/$defs/finalizeResult" },
+    { "$ref": "#/$defs/durableJournalRecord" },
+    { "$ref": "#/$defs/crashRecoveryReceipt" }
+  ]
+}
