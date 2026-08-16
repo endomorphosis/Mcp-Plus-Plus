@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcp-plus-plus.dev/schemas/a2a/profile-request-1.schema.json",
+  "title": "MCP++ A2A ProfileRequest@1",
+  "description": "Client request profile claim checked against agent-advertised profiles under the MCP++ A2A execution extension. Unsupported profile letters (unknown enum or not advertised) MUST fail closed — never silently claim success. Interface: A2AExtensionSchema@1. Normative prose: a2a-extension.md §4.1, §8.",
+  "$comment": "Schema marker: mcp++/a2a/profile-request@1. Structural validation covers closed profile letters; subset-of-advertised is an additional semantic rule for adapters/vectors.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "extension_uri",
+    "advertised_profiles",
+    "requested_profiles"
+  ],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "mcp++/a2a/profile-request@1",
+      "description": "Closed schema marker for ProfileRequest@1."
+    },
+    "extension_uri": {
+      "type": "string",
+      "const": "https://mcplusplus.io/extensions/execution/v1",
+      "description": "Activated extension URI for this profile claim."
+    },
+    "advertised_profiles": {
+      "$ref": "#/$defs/profileLetters",
+      "description": "Profiles the agent advertises in AgentExtension.params.profiles."
+    },
+    "requested_profiles": {
+      "$ref": "#/$defs/profileLetters",
+      "description": "Profiles the client requests in Task/Message metadata. Each entry MUST be a known profile letter; adapters MUST also require subset of advertised_profiles."
+    },
+    "task_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Optional A2A Task.id for correlation."
+    }
+  },
+  "$defs": {
+    "profileLetter": {
+      "type": "string",
+      "enum": ["A", "B", "C", "D", "E", "F", "G", "H"]
+    },
+    "profileLetters": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/profileLetter" },
+      "uniqueItems": true,
+      "minItems": 0,
+      "maxItems": 8
+    }
+  }
+}

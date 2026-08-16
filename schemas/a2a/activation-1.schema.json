@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcp-plus-plus.dev/schemas/a2a/activation-1.schema.json",
+  "title": "MCP++ A2A Activation@1",
+  "description": "Client activation of the MCP++ A2A execution extension via the A2A-Extensions service parameter. Each entry MUST be a URI; reverse-DNS-only tokens are non-conformant. Interface: A2AExtensionSchema@1. Normative prose: a2a-extension.md §2.1–§2.2, §4.2.",
+  "$comment": "Schema marker: mcp++/a2a/activation@1. Models the parsed activation list, not the raw comma-separated header string.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "a2a_extensions"
+  ],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "mcp++/a2a/activation@1",
+      "description": "Closed schema marker for Activation@1."
+    },
+    "a2a_extensions": {
+      "type": "array",
+      "description": "Parsed A2A-Extensions entries the client intends to activate. MUST include the MCP++ execution URI to activate this extension.",
+      "items": { "$ref": "#/$defs/extensionUriEntry" },
+      "minItems": 1,
+      "maxItems": 32,
+      "uniqueItems": true
+    },
+    "mcp_plus_plus_execution_activated": {
+      "type": "boolean",
+      "description": "True when https://mcplusplus.io/extensions/execution/v1 is present in a2a_extensions."
+    },
+    "echo_on_response": {
+      "type": "boolean",
+      "description": "When true, agent response SHOULD echo activated URIs in A2A-Extensions."
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "mcp_plus_plus_execution_activated": { "const": true }
+        },
+        "required": ["mcp_plus_plus_execution_activated"]
+      },
+      "then": {
+        "properties": {
+          "a2a_extensions": {
+            "contains": {
+              "const": "https://mcplusplus.io/extensions/execution/v1"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "extensionUriEntry": {
+      "type": "string",
+      "description": "Absolute URI identifying an A2A extension. Reverse-DNS tokens without a URI scheme are invalid.",
+      "pattern": "^https://[A-Za-z0-9._~:/?#\\[\\]@!$&'()*+,;=%-]+$",
+      "minLength": 10,
+      "maxLength": 512
+    }
+  }
+}

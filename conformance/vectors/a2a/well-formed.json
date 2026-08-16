@@ -1,0 +1,206 @@
+{
+  "interface": "A2AExtensionSchema@1",
+  "schema": "mcp++/conformance/a2a-extension@1",
+  "task_id": "MCPP-055",
+  "kind": "positive",
+  "valid": true,
+  "description": "Well-formed MCP++ A2A execution extension vectors. All cases MUST validate against the named schema and are expected successes.",
+  "extension_uri": "https://mcplusplus.io/extensions/execution/v1",
+  "cases": [
+    {
+      "id": "agent-extension-full",
+      "schema_file": "agent-extension-1.schema.json",
+      "schema_marker": "mcp++/a2a/agent-extension@1",
+      "valid": true,
+      "description": "Full AgentExtension declaration matching a2a-extension.md §4.1 example shape.",
+      "payload": {
+        "schema": "mcp++/a2a/agent-extension@1",
+        "uri": "https://mcplusplus.io/extensions/execution/v1",
+        "description": "MCP++ execution mapping: envelopes, state refs, receipts, and proofs on A2A Task.",
+        "required": false,
+        "params": {
+          "schema": "mcp++/a2a/extension-params@1",
+          "profiles": ["A", "B", "C", "D", "F", "G"],
+          "envelope_schema": "mcp++/execution/envelope@1",
+          "receipt_schema": "mcp++/execution/receipt@1",
+          "state_ref_schema": "mcp++/state/state-ref@1",
+          "mcp_bindings": [
+            "mcp-binding/2026-07-28",
+            "mcp-binding/legacy-2024-11-05"
+          ],
+          "interface_cids": [
+            "bafkreigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi"
+          ],
+          "canonicalization": "mcpp-jcs-v1",
+          "alias": "io.mcplusplus.execution@1"
+        }
+      }
+    },
+    {
+      "id": "agent-extension-minimal",
+      "schema_file": "agent-extension-1.schema.json",
+      "schema_marker": "mcp++/a2a/agent-extension@1",
+      "valid": true,
+      "description": "Minimal conformant AgentExtension: uri only.",
+      "payload": {
+        "uri": "https://mcplusplus.io/extensions/execution/v1"
+      }
+    },
+    {
+      "id": "extension-params-standalone",
+      "schema_file": "extension-params-1.schema.json",
+      "schema_marker": "mcp++/a2a/extension-params@1",
+      "valid": true,
+      "description": "Standalone extension params with dual MCP bindings and profile set A–G (no H).",
+      "payload": {
+        "schema": "mcp++/a2a/extension-params@1",
+        "profiles": ["A", "B", "C", "D", "E", "F", "G"],
+        "envelope_schema": "mcp++/execution/envelope@1",
+        "receipt_schema": "mcp++/execution/receipt@1",
+        "state_ref_schema": "mcp++/state/state-ref@1",
+        "mcp_bindings": ["mcp-binding/2026-07-28"],
+        "interface_cids": [
+          "bafkreigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi"
+        ],
+        "canonicalization": "mcpp-jcs-v1"
+      }
+    },
+    {
+      "id": "activation-execution-uri",
+      "schema_file": "activation-1.schema.json",
+      "schema_marker": "mcp++/a2a/activation@1",
+      "valid": true,
+      "description": "Client activates the confirmed execution extension URI via A2A-Extensions.",
+      "payload": {
+        "schema": "mcp++/a2a/activation@1",
+        "a2a_extensions": [
+          "https://mcplusplus.io/extensions/execution/v1"
+        ],
+        "mcp_plus_plus_execution_activated": true,
+        "echo_on_response": true
+      }
+    },
+    {
+      "id": "activation-with-peer-extension",
+      "schema_file": "activation-1.schema.json",
+      "schema_marker": "mcp++/a2a/activation@1",
+      "valid": true,
+      "description": "Comma-list activation modeled as array including an unrelated peer extension URI.",
+      "payload": {
+        "schema": "mcp++/a2a/activation@1",
+        "a2a_extensions": [
+          "https://example.com/extensions/geolocation/v1",
+          "https://mcplusplus.io/extensions/execution/v1"
+        ],
+        "mcp_plus_plus_execution_activated": true
+      }
+    },
+    {
+      "id": "skill-metadata-repo-status",
+      "schema_file": "skill-metadata-1.schema.json",
+      "schema_marker": "mcp++/a2a/skill-metadata@1",
+      "valid": true,
+      "description": "Skill metadata mapping for repo.status (a2a-extension.md §6.1 example).",
+      "payload": {
+        "schema": "mcp++/a2a/skill-metadata@1",
+        "interface_cid": "bafkreigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+        "method": "repo.status",
+        "profiles": ["A", "B"]
+      }
+    },
+    {
+      "id": "task-metadata-working",
+      "schema_file": "task-metadata-1.schema.json",
+      "schema_marker": "mcp++/a2a/task-metadata@1",
+      "valid": true,
+      "description": "In-progress task metadata with envelope and event CIDs.",
+      "payload": {
+        "schema": "mcp++/a2a/task-metadata@1",
+        "envelope_cid": "bafkreidpgkdasegkb6zkedd73ikdmzvqtw7y3njdqgk4scsyn62uf7ymvu",
+        "event_cid": "bafkreify4h4axvyk4b4ey6cvurixgg3ul7o3m52j2i7wg67jbavxl2kxlm",
+        "interface_cid": "bafkreigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+        "method": "repo.status",
+        "input_cid": "bafkreihtwdlu4jntm7yl2mgsfzqgr4on37vr7inuld2dql2p4rmqafybti",
+        "profiles": ["A", "B", "C"]
+      }
+    },
+    {
+      "id": "task-metadata-terminal-success",
+      "schema_file": "task-metadata-1.schema.json",
+      "schema_marker": "mcp++/a2a/task-metadata@1",
+      "valid": true,
+      "description": "Terminal success metadata carrying receipt_cid, event_cid, output_cid, and proofs.",
+      "payload": {
+        "schema": "mcp++/a2a/task-metadata@1",
+        "envelope_cid": "bafkreidpgkdasegkb6zkedd73ikdmzvqtw7y3njdqgk4scsyn62uf7ymvu",
+        "result_cid": "bafkreihtwdlu4jntm7yl2mgsfzqgr4on37vr7inuld2dql2p4rmqafybti",
+        "receipt_cid": "bafkreicssskybdf32rmzlbtge5bxyv4v6c6eac322pbrsr3azlb4fkxiqi",
+        "event_cid": "bafkreify4h4axvyk4b4ey6cvurixgg3ul7o3m52j2i7wg67jbavxl2kxlm",
+        "output_cid": "bafkreiclrltegoplfz2o3djv7ydnyrozwrr5zkgw6lxmnzaxd7pnqdt62u",
+        "proof_cids": [
+          "bafkreigbzwrggyucrnusmzisauvzpszxfhr3auxevxshycq6gob557tty4"
+        ],
+        "state_ref_cids": [
+          "bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku"
+        ]
+      }
+    },
+    {
+      "id": "terminal-evidence-portable-completed",
+      "schema_file": "terminal-evidence-1.schema.json",
+      "schema_marker": "mcp++/a2a/terminal-evidence@1",
+      "valid": true,
+      "description": "Portable completed terminal evidence with required receipt_cid and envelope_cid.",
+      "payload": {
+        "schema": "mcp++/a2a/terminal-evidence@1",
+        "extension_uri": "https://mcplusplus.io/extensions/execution/v1",
+        "task_id": "task-a2a-001",
+        "task_state": "completed",
+        "portable": true,
+        "envelope_cid": "bafkreidpgkdasegkb6zkedd73ikdmzvqtw7y3njdqgk4scsyn62uf7ymvu",
+        "result_cid": "bafkreihtwdlu4jntm7yl2mgsfzqgr4on37vr7inuld2dql2p4rmqafybti",
+        "receipt_cid": "bafkreicssskybdf32rmzlbtge5bxyv4v6c6eac322pbrsr3azlb4fkxiqi",
+        "event_cid": "bafkreify4h4axvyk4b4ey6cvurixgg3ul7o3m52j2i7wg67jbavxl2kxlm",
+        "output_cid": "bafkreiclrltegoplfz2o3djv7ydnyrozwrr5zkgw6lxmnzaxd7pnqdt62u",
+        "proof_cids": [
+          "bafkreigbzwrggyucrnusmzisauvzpszxfhr3auxevxshycq6gob557tty4"
+        ],
+        "decision_cid": "bafkreiepz7gpm5nr6c75hholweybkbjp5av4khaahqlfuqijixerhw5sxy"
+      }
+    },
+    {
+      "id": "terminal-evidence-failed",
+      "schema_file": "terminal-evidence-1.schema.json",
+      "schema_marker": "mcp++/a2a/terminal-evidence@1",
+      "valid": true,
+      "description": "Terminal failed state with optional error object; portable not claimed.",
+      "payload": {
+        "schema": "mcp++/a2a/terminal-evidence@1",
+        "extension_uri": "https://mcplusplus.io/extensions/execution/v1",
+        "task_id": "task-a2a-002",
+        "task_state": "failed",
+        "portable": false,
+        "envelope_cid": "bafkreidpgkdasegkb6zkedd73ikdmzvqtw7y3njdqgk4scsyn62uf7ymvu",
+        "error": {
+          "code": "EXECUTION_FAILED",
+          "message": "Tool returned non-zero status."
+        }
+      }
+    },
+    {
+      "id": "profile-request-subset",
+      "schema_file": "profile-request-1.schema.json",
+      "schema_marker": "mcp++/a2a/profile-request@1",
+      "valid": true,
+      "description": "Requested profiles are known letters and a subset of advertised profiles (semantic pass).",
+      "semantic_rules": ["requested_subset_of_advertised"],
+      "payload": {
+        "schema": "mcp++/a2a/profile-request@1",
+        "extension_uri": "https://mcplusplus.io/extensions/execution/v1",
+        "advertised_profiles": ["A", "B", "C", "D", "F", "G"],
+        "requested_profiles": ["A", "B"],
+        "task_id": "task-a2a-003"
+      }
+    }
+  ]
+}

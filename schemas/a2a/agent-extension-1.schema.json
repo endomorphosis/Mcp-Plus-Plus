@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcp-plus-plus.dev/schemas/a2a/agent-extension-1.schema.json",
+  "title": "MCP++ A2A AgentExtension@1",
+  "description": "Agent Card AgentExtension entry for the MCP++ A2A execution extension. uri MUST be the verified HTTPS identifier; reverse-DNS-only tokens are non-conformant. Interface: A2AExtensionSchema@1. Normative prose: a2a-extension.md §2, §4.1; ADR-0006 §3.",
+  "$comment": "Schema marker: mcp++/a2a/agent-extension@1. Aligns with official A2A AgentExtension shape (uri, description, required, params) constrained to the MCP++ execution extension.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["uri"],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "mcp++/a2a/agent-extension@1",
+      "description": "Optional closed schema marker when the extension declaration is validated standalone."
+    },
+    "uri": {
+      "$ref": "#/$defs/extensionUri",
+      "description": "Unique URI identifying the extension. MUST be https://mcplusplus.io/extensions/execution/v1."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "description": "Human-readable description of the extension behavior."
+    },
+    "required": {
+      "type": "boolean",
+      "description": "When true, clients that do not activate the extension MUST be rejected fail-closed. Prefer false for data-only MCP++ evidence advertisement."
+    },
+    "params": {
+      "$ref": "#/$defs/extensionParams",
+      "description": "Extension parameters (profiles, schema markers, bindings, interface CIDs)."
+    }
+  },
+  "$defs": {
+    "extensionUri": {
+      "type": "string",
+      "const": "https://mcplusplus.io/extensions/execution/v1"
+    },
+    "cid": {
+      "type": "string",
+      "pattern": "^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58,})$",
+      "minLength": 46,
+      "maxLength": 128
+    },
+    "profileLetter": {
+      "type": "string",
+      "enum": ["A", "B", "C", "D", "E", "F", "G", "H"]
+    },
+    "profileLetters": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/profileLetter" },
+      "uniqueItems": true,
+      "maxItems": 8
+    },
+    "mcpBindingId": {
+      "type": "string",
+      "enum": [
+        "mcp-binding/2026-07-28",
+        "mcp-binding/legacy-2024-11-05"
+      ]
+    },
+    "mcpBindingIds": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/mcpBindingId" },
+      "uniqueItems": true,
+      "minItems": 1,
+      "maxItems": 2
+    },
+    "extensionParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "mcp++/a2a/extension-params@1"
+        },
+        "profiles": { "$ref": "#/$defs/profileLetters" },
+        "envelope_schema": {
+          "type": "string",
+          "const": "mcp++/execution/envelope@1"
+        },
+        "receipt_schema": {
+          "type": "string",
+          "const": "mcp++/execution/receipt@1"
+        },
+        "state_ref_schema": {
+          "type": "string",
+          "const": "mcp++/state/state-ref@1"
+        },
+        "mcp_bindings": { "$ref": "#/$defs/mcpBindingIds" },
+        "interface_cids": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/cid" },
+          "uniqueItems": true,
+          "maxItems": 64
+        },
+        "canonicalization": {
+          "type": "string",
+          "const": "mcpp-jcs-v1"
+        },
+        "alias": {
+          "type": "string",
+          "const": "io.mcplusplus.execution@1"
+        }
+      }
+    }
+  }
+}
