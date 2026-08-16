@@ -1,3 +1,12 @@
+################################################################################
+# HISTORICAL / NON-AUTHORITATIVE (MCPP-079)
+# This file records an earlier narrative claim (coverage trophies / complete /
+# production readiness). It is NOT current CI or baseline evidence and MUST NOT
+# be cited for 100% coverage or production readiness.
+# Authoritative status: docs/testing/README.md and baseline receipts
+# docs/reports/mcplusplus-1.0-gap-closure/baseline/mcpplusplus-{python,typescript,go,rust}.json
+################################################################################
+
 ════════════════════════════════════════════════════════════════════════
          🎉 MCP++ VALIDATOR COVERAGE - FINAL VERIFICATION 🎉
 ════════════════════════════════════════════════════════════════════════
