@@ -106,13 +106,14 @@ exactly `immutable`, `single_authority`, `causal`, `crdt`, `consensus`.
 | Mode | Mandatory backend / substrate (MCP++ 1.0) |
 | --- | --- |
 | `immutable` | Content-addressed block / artifact store (CID-native) |
-| `single_authority` | **SQLite** (WAL + compare-and-swap) |
+| `single_authority` | **DuckDB / Quack / DuckLake** (SQLite fallback) |
 | `causal` | Event DAG parents / clocks as the ordering substrate |
 | `crdt` | **Automerge** (real CRDT; not informal LWW) |
 | `consensus` | Declared consensus plugin with one of four guarantee labels |
 
-Optional second adapters (e.g. DuckDB for SQL) MUST NOT replace the mandatory
-backend for conformance claims.
+SQLite remains an explicit fallback (`MCPPLUSPLUS_SQL_ENGINE=sqlite`). It MUST
+NOT replace DuckDB/Quack/DuckLake as the default single-authority backend for
+MCP++ 1.0 conformance claims.
 
 ---
 

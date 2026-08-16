@@ -207,9 +207,10 @@ silent CID breakage** (versioned canonicalization; KD-5 / KD-7).
 ## 7. Durable execution (summary)
 
 Multi-step agent work survives process death through a **journaled**
-`DurableExecutor@1`. The mandatory production-capable adapter path is the
-**SQLite journaled executor** (ADR-0005 / KD-12). Restate and Dapr are optional
-second adapters only under repeatable local compose without unpaid cloud.
+`DurableExecutor@1`. The primary production-capable adapter path is the
+**DuckDB/Quack journaled executor** (ADR-0005 / 2026-08-16 correction of KD-12).
+SQLite is an explicit fallback. Restate and Dapr are optional second adapters
+only under repeatable local compose without unpaid cloud.
 
 Separations:
 

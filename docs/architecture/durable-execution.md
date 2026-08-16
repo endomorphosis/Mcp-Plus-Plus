@@ -21,7 +21,7 @@
 | Section family | Authority class |
 | --- | --- |
 | Interface methods, journal, fail-closed rules (§3–§9) | **normative** |
-| Adapter placement and SQLite mandate (§10) | **normative** (ADR-0005) |
+| Adapter placement and DuckDB/Quack primary (§10) | **normative** (ADR-0005) |
 | Conformance mapping (§11) | **normative** scoring vocabulary |
 | Profile-bundle relevance (§15) | **normative** packaging (KD-17) |
 | Migration (§16) | **non-normative** operator guidance |
@@ -51,9 +51,10 @@ Runtimes (accelerate and others) **consume** this interface via adapters. They
 **MUST NOT** ship a second private durable contract for MCP++ 1.0 portable
 claims (ADR-0001 / ADR-0005).
 
-This chapter is the interface specification. The mandatory production-capable
-adapter is the **SQLite journaled executor** (ADR-0005). Restate and Dapr are
-optional second adapters only under the local-compose admission rule.
+This chapter is the interface specification. The primary production-capable
+adapter is the **DuckDB/Quack journaled executor** (ADR-0005). SQLite is an
+explicit fallback. Restate and Dapr are optional second adapters only under
+the local-compose admission rule.
 
 ### 1.1 Non-goals
 
@@ -530,7 +531,7 @@ terminal work products.
 | Field | Notes |
 | --- | --- |
 | `schema` | `mcp++/durable/crash-recovery-receipt@1` |
-| `adapter_id` | e.g. `sqlite-journal@1` |
+| `adapter_id` | e.g. `duckdb-quack-journal@1` (primary) or `sqlite-journal@1` (fallback) |
 | `recovered_at_ms` | Wall-clock of recover |
 | `execution_ids` | Recovered set |
 | `journal_frontier` | Map or list of `execution_id` → `journal_seq` |
@@ -558,21 +559,24 @@ terminal work products.
 
 ## 10. Adapter requirements
 
-### 10.1 Mandatory: SQLite journaled executor
+### 10.1 Primary: DuckDB / Quack journaled executor
 
-Per ADR-0005:
+Per ADR-0005 (2026-08-16 correction):
 
 - Package target: `ipfs_accelerate_py/mcp_server/mcplusplus/durable/`
-  (`sqlite_executor.py`, `journal.py`) — implemented in `MCPP-051`.
+  (`sqlite_executor.py`, `journal.py`) plus
+  `ipfs_accelerate_py/mcp_server/mcplusplus/storage/engine.py`.
+- Engine default is DuckDB. Quack and DuckLake are loaded with local `LOAD`
+  only (never network `INSTALL`). SQLite is an explicit fallback.
 - Crash recovery demonstrable locally (process kill → restart → resume).
-- WAL or equivalent durability; transactional journal append.
+- Transactional journal append (DuckDB checkpoint on close; SQLite WAL fallback).
 - Idempotency keys, cancel/obligation persistence, stale fence rejection.
 
 ### 10.2 Optional second adapters
 
 Restate, Dapr, or other engines **MAY** implement `DurableExecutor@1` only when:
 
-1. This interface and the SQLite adapter exist,
+1. This interface and the DuckDB/Quack adapter exist,
 2. Repeatable local compose is checked in and runs without unpaid cloud,
 3. Contract tests prove the same crash-recovery properties.
 
@@ -628,7 +632,7 @@ A reader may treat the following as the interface label **`DurableExecutor@1`**:
 4. `recover` emits `CrashRecoveryReceipt@1` and rejects stale fencing tokens.
 5. Journal is recovery authority; Event DAG is provenance; StateProvider is
    state modes — not interchangeable.
-6. Mandatory adapter path remains SQLite journaled executor (ADR-0005).
+6. Primary adapter path remains DuckDB/Quack journaled executor (ADR-0005).
 7. In-memory retry is not crash recovery.
 
 ---
@@ -638,7 +642,7 @@ A reader may treat the following as the interface label **`DurableExecutor@1`**:
 | Concern | Task |
 | --- | --- |
 | This interface + schema | MCPP-050 (this document) |
-| SQLite journaled adapter | MCPP-051 |
+| DuckDB/Quack journaled adapter | MCPP-051 |
 | Crash-recovery integration test (gate 17) | MCPP-052 |
 | Accelerate runtime bind | MCPP-053 |
 | Optional Restate/Dapr adapters | Follow-on; non-blocking |
@@ -682,16 +686,16 @@ bundles, but it **supports** honest packaging:
 
 | From | To | Notes |
 | --- | --- | --- |
-| In-process retry loops | `DurableExecutor@1` + SQLite journal | In-memory success is not crash recovery |
-| Custom workflow SaaS as sole path | SQLite mandatory adapter first | Restate/Dapr only with local compose (ADR-0005 §5) |
+| In-process retry loops | `DurableExecutor@1` + DuckDB/Quack journal | In-memory success is not crash recovery |
+| Custom workflow SaaS as sole path | DuckDB/Quack primary adapter first | Restate/Dapr only with local compose (ADR-0005 §5) |
 | Event DAG append as “commit” | Journal commit + optional DAG publish | DAG is provenance; journal is recovery authority |
 | State CAS as step fence only | Explicit journal checkpoint + idempotency keys | State modes remain ADR-0004 |
 | PeerID-gated resume | Fencing token + journal ownership | KD-14 |
 | Unsigned cross-trust finalize | Signed `ExecutionReceipt@1` | Required for Verified Execution / `receipt-signed` claims |
 
-Suggested rollout: (1) validate envelopes structurally, (2) wire SQLite journal
-for start/checkpoint/recover, (3) prove kill-restart without duplicate side
-effects, (4) only then advertise crash-safe resume in evidence bundles.
+Suggested rollout: (1) validate envelopes structurally, (2) wire DuckDB/Quack
+journal for start/checkpoint/recover, (3) prove kill-restart without duplicate
+side effects, (4) only then advertise crash-safe resume in evidence bundles.
 
 ---
 

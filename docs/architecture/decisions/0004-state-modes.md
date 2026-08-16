@@ -1,10 +1,10 @@
-# ADR-0004: State consistency modes, SQLite single-authority, and Automerge CRDT
+# ADR-0004: State consistency modes, DuckDB/Quack/DuckLake single-authority, and Automerge CRDT
 
 - **Status:** Accepted
 - **Date:** 2026-08-15
-- **Last verified:** 2026-08-15
-- **Deciders:** MCP++ 1.0 gap-closure program (MCPP-G020); sealed plan Key Decisions KD-8, KD-9, KD-10, and KD-11
-- **Scope:** The mandatory set of shared-state consistency modes for MCP++ 1.0; the rule that a `StateRef@1` declares exactly one mode; the mandatory single-authority backend (SQLite); the mandatory CRDT backend (Automerge); and honest labeling of consensus-class guarantees, including that Profile G neighborhood agreement is not BFT.
+- **Last verified:** 2026-08-16
+- **Deciders:** MCP++ 1.0 gap-closure program (MCPP-G020); sealed plan Key Decisions KD-8, KD-9, KD-10, and KD-11; 2026-08-16 operator correction of KD-9 runtime default
+- **Scope:** The mandatory set of shared-state consistency modes for MCP++ 1.0; the rule that a `StateRef@1` declares exactly one mode; the primary single-authority backend (DuckDB with local Quack/DuckLake `LOAD`; SQLite fallback); the mandatory CRDT backend (Automerge); and honest labeling of consensus-class guarantees, including that Profile G neighborhood agreement is not BFT.
 - **Non-goals:** Full `StateRef@1` schema and prose (MCPP-035); concrete provider implementations and restart/convergence tests (MCPP-036…040); DurableExecutor / journaled crash recovery (KD-12 / ADR-0005 / MCPP-017, MCPP-050…053); cryptographic suite (ADR-0002); envelope carrier shape (KD-7); which runtime package hosts adapters (ADR-0001 / MCPP-013); conformance-level ladder (ADR-0003 / MCPP-015); Profile F Event DAG normative event schemas beyond the non-merge rule for state modes.
 - **Supersedes:** none
 - **Superseded-by:** none
@@ -110,15 +110,19 @@ Rules:
 
 Rationale alignment: KD-8; gate 8; MCPP-035 acceptance; MCPP-040 non-merge proof.
 
-### 2. Single-authority backend: SQLite (mandatory)
+### 2. Single-authority backend: DuckDB / Quack / DuckLake (primary)
+
+**Correction 2026-08-16:** MCP++ persistence is **DuckDB-primary**. The earlier
+KD-9 SQLite-mandatory wording is superseded for runtime defaults. SQLite
+remains an explicit fallback (`MCPPLUSPLUS_SQL_ENGINE=sqlite`).
 
 | Rule | Normative statement |
 | --- | --- |
-| Mandatory backend | The **mandatory** production-capable backend for `single_authority` mode is **SQLite**. |
-| Durability features | The backend MUST support **WAL** (or equivalent documented durability mode) and **compare-and-swap (CAS)** / version preconditions so concurrent writers and restart recovery are testable. |
+| Primary backend | The **primary** production-capable backend for `single_authority` mode is **DuckDB**, with best-effort local **Quack** and **DuckLake** `LOAD` (never network `INSTALL`). |
+| Durability features | The backend MUST support transactional commit and **compare-and-swap (CAS)** / version preconditions so concurrent writers and restart recovery are testable. |
 | Restart obligation | Gate 10 requires restart tests that recover committed state and reject stale fences / CAS mismatches (implemented under MCPP-037 / MCPP-052 family). |
-| Optional second adapter | **DuckDB** (or another SQL engine) MAY be an optional second adapter. It MUST NOT replace SQLite as the mandatory single-authority backend for MCP++ 1.0 conformance claims. |
-| Why SQLite | Already in-tree, transactional, no new service process, restart-testable without unpaid cloud (KD-9). |
+| Fallback adapter | **SQLite** MAY be used when DuckDB cannot be imported or when an operator sets `MCPPLUSPLUS_SQL_ENGINE=sqlite`. |
+| Why DuckDB | MCP++ and the surrounding lift stack already treat DuckDB/Quack/DuckLake as the control-plane and payment ledger store; single-authority state must not silently default to a second engine. |
 
 SQLite as single-authority **state** is distinct from SQLite used only as a
 derived index beside immutable block stores (kit coordination storage). Index
@@ -163,7 +167,7 @@ Rules:
 | Mode | Mandatory backend / substrate | Notes |
 | --- | --- | --- |
 | `immutable` | Content-addressed block / artifact store (CID-native) | Append-only; MCPP-036 |
-| `single_authority` | **SQLite** (WAL + CAS) | DuckDB optional second; MCPP-037 |
+| `single_authority` | **DuckDB / Quack / DuckLake** (SQLite fallback) | MCPP-037 |
 | `causal` | Event DAG parents / clocks as the ordering substrate | No silent total order; Profile F alignment |
 | `crdt` | **Automerge** | Not informal LWW; MCPP-038 |
 | `consensus` | Declared **consensus plugin** with one of the four labels | Profile G ≠ BFT; MCPP-039 |
@@ -175,7 +179,7 @@ An implementation claims this ADR only when all of the following hold for its
 
 1. Allowed modes are exactly `immutable`, `single_authority`, `causal`, `crdt`, `consensus`.
 2. Every `StateRef` declares exactly one mode; missing/unknown/multi-mode is invalid.
-3. Single-authority production backend is SQLite with WAL and CAS semantics.
+3. Single-authority production backend is DuckDB/Quack/DuckLake with transactional CAS; SQLite is an explicit fallback.
 4. CRDT production backend is Automerge, not informal LWW.
 5. Consensus paths use honest labels among coordination / majority_approval / crash_consensus / bft.
 6. Profile G neighborhood results are never labeled BFT.
@@ -199,7 +203,8 @@ An implementation claims this ADR only when all of the following hold for its
 
 - **Summary:** Require DuckDB or a networked SQL service for all single-authority state.
 - **Expected benefits:** Analytics features; multi-process sharing via a server.
-- **Why not chosen:** SQLite is already in-tree, local, and restart-testable without a new service (KD-9). DuckDB remains an **optional** second adapter, not the mandatory one.
+- **Why not chosen (2026-08-15):** SQLite was already in-tree, local, and restart-testable without a new service (KD-9).
+- **Correction 2026-08-16:** this alternative is now the **runtime default**. DuckDB/Quack/DuckLake is the primary single-authority store; SQLite remains the explicit fallback. The original rejection is retained as history.
 
 ### Alternative D: Informal last-write-wins labeled as “CRDT”
 
@@ -223,7 +228,7 @@ An implementation claims this ADR only when all of the following hold for its
 ### Positive
 
 - Closed mode enum unblocks `StateRef@1` schema (MCPP-035) and mode-specific providers (MCPP-036…039).
-- SQLite mandate makes restart/CAS/lease tests (gate 10) a concrete obligation on one in-tree engine.
+- DuckDB-primary mandate makes restart/CAS/lease tests (gate 10) a concrete obligation on the same engine family as Profile H ledgers and the lift control plane. SQLite remains a fallback.
 - Automerge mandate prevents LWW-as-CRDT fakes and gives partition-heal tests a real merge engine (gate 11).
 - Honest consensus labels stop Profile G from being oversold as BFT (gate 12; plan §11).
 - Non-merge rule across Event DAG branches preserves auditability and exclusive-task fencing.
@@ -240,7 +245,7 @@ An implementation claims this ADR only when all of the following hold for its
 
 - `StateRef@1` field set beyond mode (authority, lease, fence, clocks, merge policy CIDs) is specified in MCPP-035, not here.
 - Automerge document size and compaction strategy remain implementation concerns for MCPP-038.
-- Optional DuckDB adapter may diverge in SQL dialect; conformance claims must still prove SQLite.
+- DuckDB SQL dialect differs from SQLite (INTEGER width, upsert, RETURNING); the engine adapter must keep those translations honest. SQLite fallback remains restart-testable.
 - Stronger BFT plugins may be added later only under the `bft` label with real evidence—not by rebranding Profile G.
 - DurableExecutor crash recovery (KD-12) is related but separate: journaled effects ≠ state mode merge semantics.
 
@@ -249,7 +254,7 @@ An implementation claims this ADR only when all of the following hold for its
 | Claim in Decision | Evidence (path, test, or operational check) | Notes |
 | --- | --- | --- |
 | Exactly five modes on StateRef | Plan KD-8; gate 8; REQ-ST-01; MCPP-035 acceptance | Schema not yet landed (`missing`) |
-| SQLite is mandatory single-authority backend | Plan KD-9; gate 10; REQ-ST-02; MCPP-037 | Restart tests planned, not yet green as gate artifact |
+| DuckDB is primary single-authority backend; SQLite is fallback | Plan KD-9 as corrected 2026-08-16; gate 10; REQ-ST-02; MCPP-037 | Restart tests run against the live engine |
 | Automerge is mandatory CRDT | Plan KD-10; gate 11; REQ-ST-03; MCPP-038 | Forbids informal LWW |
 | Four consensus guarantee labels; G ≠ BFT | Plan KD-11; plan §11; gate 12; REQ-ST-04; REQ-G-03; risk-scheduling §4 | MCPP-039 must fail if neighborhood labeled BFT |
 | Causal mode aligns with Event DAG parents | `event-dag-ordering.md` §§1–3 | Causal mode ≠ automatic CRDT merge |
@@ -273,8 +278,8 @@ How a future reader confirms this ADR still holds:
    `ipfs_accelerate_py/mcplusplus/docs/spec/state-ref.md` plus
    `ipfs_accelerate_py/mcplusplus/schemas/state/state-ref-1.schema.json`
    for exactly the five modes.
-3. **SQLite single-authority (later):**  
-   `python -m pytest -q test/api/test_mcplusplus_state_sqlite_restart.py`
+3. **DuckDB-primary single-authority (later):**  
+   `python -m pytest -q test/api/test_mcplusplus_duckdb_primary.py test/api/test_mcplusplus_state_sqlite_restart.py`
 4. **Automerge CRDT (later):**  
    `python -m pytest -q test/api/test_mcplusplus_state_automerge.py`
 5. **Consensus labels / non-BFT Profile G (later):**  
@@ -282,7 +287,7 @@ How a future reader confirms this ADR still holds:
 6. **Non-merge (later):**  
    `python -m pytest -q test/api/test_mcplusplus_state_event_dag_nonmerge.py`
 7. **Staleness signals:** a sixth default mode without a superseding ADR;
-   DuckDB or remote SQL claimed as the only single-authority backend; LWW
+   SQLite claimed as the default/only single-authority backend; LWW
    labeled `crdt`; Profile G results labeled `bft`; silent merge of concurrent
    `single_authority` branches.
 
@@ -290,7 +295,7 @@ How a future reader confirms this ADR still holds:
 
 - [ ] Source anchors no longer match the Decision statement
 - [ ] A recorded negative consequence becomes unacceptable
-- [ ] A rejected alternative (open mode strings, LWW-as-CRDT, G-as-BFT, DuckDB-mandatory) becomes viable without those costs
+- [ ] A rejected alternative (open mode strings, LWW-as-CRDT, G-as-BFT) becomes viable without those costs
 - [ ] Security or trust-boundary changes touch leases, fences, or consensus evidence
 - [ ] Automerge license, maintenance, or binding availability forces a superseding CRDT choice
 - [ ] Superseding design is Accepted under a new ADR number
@@ -306,7 +311,7 @@ When superseding: create a new ADR number; set this file to **Superseded** with
 | --- | --- |
 | `StateRef@1` schema + `state-ref.md` | MCPP-035 |
 | Immutable CID state provider | MCPP-036 |
-| SQLite single-authority CAS/lease/restart | MCPP-037 |
+| DuckDB/SQLite single-authority CAS/lease/restart | MCPP-037 |
 | Automerge CRDT adapter + convergence tests | MCPP-038 |
 | Consensus plugin contract + honest labels | MCPP-039 |
 | Event DAG branch non-merge proof | MCPP-040 |
@@ -319,7 +324,7 @@ Decision §6.
 
 ### Sealed defaults preserved
 
-This ADR records plan KD-8, KD-9, KD-10, and KD-11 without reopening them.
-Refinements (mode table wording, four guarantee labels’ wire names, DuckDB as
-optional second adapter, Profile G non-BFT restatement) stay inside those
-defaults and cite current-tree evidence.
+This ADR records plan KD-8, KD-10, and KD-11 without reopening them. KD-9’s
+original SQLite-mandatory wording is retained as history; the 2026-08-16
+correction makes DuckDB/Quack/DuckLake the runtime default and SQLite the
+explicit fallback. Profile G non-BFT restatement is unchanged.

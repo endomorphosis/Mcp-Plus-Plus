@@ -1,10 +1,10 @@
-# ADR-0005: DurableExecutor, SQLite journaled adapter, and Restate/Dapr evaluation
+# ADR-0005: DurableExecutor, DuckDB/Quack journaled adapter, and Restate/Dapr evaluation
 
 - **Status:** Accepted
 - **Date:** 2026-08-15
-- **Last verified:** 2026-08-15
-- **Deciders:** MCP++ 1.0 gap-closure program (MCPP-G020); sealed plan Key Decision KD-12
-- **Scope:** The durable-execution contract for MCP++ 1.0 (`DurableExecutor`); the mandatory production-capable adapter (SQLite journaled executor, locally crash-recovery testable); the evaluation of Restate and Dapr as optional second adapters; the admission rule that a second adapter is adopted only when a repeatable local compose environment works without unpaid cloud; and the separation of journaled crash recovery from Event DAG validation and state-mode merge semantics.
+- **Last verified:** 2026-08-16
+- **Deciders:** MCP++ 1.0 gap-closure program (MCPP-G020); sealed plan Key Decision KD-12; 2026-08-16 operator correction of KD-12 runtime default
+- **Scope:** The durable-execution contract for MCP++ 1.0 (`DurableExecutor`); the primary production-capable adapter (DuckDB/Quack journaled executor, locally crash-recovery testable, SQLite fallback); the evaluation of Restate and Dapr as optional second adapters; the admission rule that a second adapter is adopted only when a repeatable local compose environment works without unpaid cloud; and the separation of journaled crash recovery from Event DAG validation and state-mode merge semantics.
 - **Non-goals:** Full `DurableExecutor@1` method schemas and prose (MCPP-050); concrete SQLite journal package and unit tests (MCPP-051); crash-recovery integration test (MCPP-052); accelerate runtime binding (MCPP-053); reimplementing a full commercial workflow engine; state consistency modes and single-authority SQLite for `StateRef` (ADR-0004 / KD-8…KD-11); crypto suite (ADR-0002); envelope carrier shape (KD-7); A2A task lifecycle ownership (KD-13 / ADR-0006); which package owns schemas vs adapters beyond restating that DurableExecutor is defined in the spec repo (ADR-0001 / MCPP-013).
 - **Supersedes:** none
 - **Superseded-by:** none
@@ -80,8 +80,8 @@ and any peer that must fail closed on missing journal or stale fencing tokens.
 ## Decision
 
 **MCP++ 1.0 defines `DurableExecutor` in the Mcp-Plus-Plus / mcplusplus spec
-tree and uses a SQLite journaled executor as the mandatory production-capable
-adapter.** Restate and Dapr are evaluated below and are **not** mandatory.
+tree and uses a DuckDB/Quack journaled executor as the primary production-capable
+adapter (SQLite fallback).** Restate and Dapr are evaluated below and are **not** mandatory.
 Either MAY become an optional second adapter only when a repeatable local
 compose environment works without unpaid cloud. Implementations MUST fail
 closed when journal durability, idempotency keys, or fencing tokens are missing
@@ -120,23 +120,28 @@ Rules:
 | Final outputs | Final outputs bind to signed receipts / portable execution results when those profiles apply (envelope work in MCPP-030 family). |
 | Fail closed | Missing required journal commits, unknown executor adapter ids on claimed paths, or recovery without a valid fencing epoch MUST fail closed. |
 
-### 2. Mandatory adapter: SQLite journaled executor
+### 2. Primary adapter: DuckDB / Quack journaled executor
+
+**Correction 2026-08-16:** the primary DurableExecutor journal is **DuckDB**
+(with best-effort Quack/DuckLake `LOAD`). SQLite is an explicit fallback, not
+the default.
 
 | Rule | Normative statement |
 | --- | --- |
-| Mandatory adapter | The **mandatory** production-capable DurableExecutor adapter for MCP++ 1.0 is a **SQLite journaled executor**. |
+| Primary adapter | The **primary** production-capable DurableExecutor adapter for MCP++ 1.0 is a **DuckDB/Quack journaled executor**. |
 | Local testability | Crash recovery MUST be demonstrable **locally** (process kill → restart → resume) without unpaid cloud services or non-repeatable remote clusters. |
-| Durability features | The journal MUST use SQLite durability suitable for restart tests (WAL or equivalent documented mode) and transactional commit of journal records. |
+| Durability features | The journal MUST use transactional commit of journal records (DuckDB checkpoint on close; SQLite WAL when falling back). |
 | Idempotency | Externally visible steps carry **idempotency keys**; retries and recover MUST NOT re-commit the same side effect after a successful journal commit. |
 | Cancellation and obligations | Cancel state, timers, and deontic obligations that the executor accepted MUST survive restart when journaled. |
 | Fencing | Recovery and exclusive resume MUST reject **stale fencing tokens** / leases (same fail-closed spirit as single-authority CAS; not the same store as `StateRef` unless explicitly bound). |
 | Placement | Implementation package target: `ipfs_accelerate_py/mcp_server/mcplusplus/durable/` (e.g. `sqlite_executor.py`, `journal.py`) per MCPP-051. |
 | Conformance claims | Gate 17 and REQ-DUR-01 close only when this adapter (or a later Accepted supersession) passes crash recovery without duplicate effects. |
 
-SQLite as a **durable execution journal** is related to but distinct from SQLite
-as the mandatory **single-authority state** backend (ADR-0004 / KD-9). A runtime
-MAY use one SQLite file or separate files; the journal’s authority is step
-commit and recovery, not CRDT merge or multi-mode `StateRef` semantics.
+DuckDB as a **durable execution journal** is related to but distinct from DuckDB
+as the primary **single-authority state** backend (ADR-0004 / KD-9 correction).
+A runtime MAY use one DuckDB file or separate files; the journal’s authority is
+step commit and recovery, not CRDT merge or multi-mode `StateRef` semantics.
+SQLite remains an explicit fallback for both stores.
 
 ### 3. Restate evaluation (optional second adapter only)
 
@@ -147,7 +152,7 @@ commit and recovery, not CRDT merge or multi-mode `StateRef` semantics.
 | Unpaid cloud | Managed Restate Cloud (or equivalent) is **not** an acceptable sole CI path for mandatory conformance. |
 | Compose | A **second adapter** MAY be admitted only if a **repeatable local compose** (Docker Compose or equivalent) boots Restate + the adapter, is scriptable in CI without secrets paid accounts, and proves the same DurableExecutor contract (including crash recovery semantics as defined for the interface). |
 | Status for MCP++ 1.0 | **Not mandatory.** Restate absence is a **documented non-blocker** for MCPP-051 and gate 17. |
-| Decision | **Reject Restate as the mandatory executor.** Defer optional Restate adapter until local compose + contract tests exist under a follow-on task; do not block SQLite journal work. |
+| Decision | **Reject Restate as the mandatory executor.** Defer optional Restate adapter until local compose + contract tests exist under a follow-on task; do not block DuckDB/Quack journal work. |
 
 ### 4. Dapr evaluation (optional second adapter only)
 
@@ -158,15 +163,15 @@ commit and recovery, not CRDT merge or multi-mode `StateRef` semantics.
 | Unpaid cloud | Hosted Dapr or cloud-only state stores are **not** an acceptable sole CI path for mandatory conformance. |
 | Compose | A **second adapter** MAY be admitted only if a **repeatable local compose** runs Dapr (or Dapr workflow components) + the adapter without unpaid cloud, and proves the DurableExecutor contract. |
 | Status for MCP++ 1.0 | **Not mandatory.** Dapr absence is a **documented non-blocker** for MCPP-051 and gate 17. |
-| Decision | **Reject Dapr as the mandatory executor.** Defer optional Dapr adapter until local compose + contract tests exist under a follow-on task; do not block SQLite journal work. |
+| Decision | **Reject Dapr as the mandatory executor.** Defer optional Dapr adapter until local compose + contract tests exist under a follow-on task; do not block DuckDB/Quack journal work. |
 
 ### 5. Second-adapter admission rule (fail closed)
 
 | Rule | Normative statement |
 | --- | --- |
-| When allowed | An optional Restate, Dapr, or other external engine adapter MAY land only after: (1) DurableExecutor@1 exists; (2) SQLite journal adapter exists and remains the mandatory path; (3) **repeatable local compose** is checked into the repository (or an official subpath) and runs without unpaid cloud credentials. |
+| When allowed | An optional Restate, Dapr, or other external engine adapter MAY land only after: (1) DurableExecutor@1 exists; (2) DuckDB/Quack journal adapter exists and remains the primary path; (3) **repeatable local compose** is checked into the repository (or an official subpath) and runs without unpaid cloud credentials. |
 | What it must prove | Same interface surface and crash-recovery properties: no duplicate committed side effects after kill-restart; cancel/obligation persistence; stale fence reject; idempotent retry. |
-| What it must not do | Replace SQLite as the mandatory adapter for MCP++ 1.0 conformance claims; require cloud-only CI; fold engine-specific lifecycle into a competing public task model that conflicts with A2A (KD-13). |
+| What it must not do | Replace DuckDB/Quack as the primary adapter for MCP++ 1.0 conformance claims; require cloud-only CI; fold engine-specific lifecycle into a competing public task model that conflicts with A2A (KD-13). |
 | Fail closed | If local compose is non-repeatable, flaky, or cloud-gated, the external adapter MUST NOT be claimed production-capable for MCP++ 1.0 gates. |
 
 ### 6. Explicit non-claims and separations
@@ -183,11 +188,11 @@ commit and recovery, not CRDT merge or multi-mode `StateRef` semantics.
 A reader may treat the following as the interface label **`DurableExecutorDecision@1`**:
 
 1. DurableExecutor is defined in the spec/mcplusplus tree (`DurableExecutor@1`).
-2. Mandatory production-capable adapter is the **SQLite journaled executor**, locally crash-recovery testable.
+2. Primary production-capable adapter is the **DuckDB/Quack journaled executor**, locally crash-recovery testable; SQLite is an explicit fallback.
 3. Restate evaluated: capable product, **not mandatory**; optional only with repeatable local compose.
 4. Dapr evaluated: capable product, **not mandatory**; optional only with repeatable local compose.
-5. Second adapter admission is fail-closed without unpaid cloud and without displacing SQLite as mandatory.
-6. Absence of Restate/Dapr is a non-blocker for SQLite journal implementation and gate 17 evidence.
+5. Second adapter admission is fail-closed without unpaid cloud and without displacing DuckDB/Quack as primary.
+6. Absence of Restate/Dapr is a non-blocker for DuckDB/Quack journal implementation and gate 17 evidence.
 7. In-memory retry is explicitly rejected as crash-recovery evidence.
 
 ## Alternatives
@@ -196,7 +201,7 @@ A reader may treat the following as the interface label **`DurableExecutorDecisi
 
 - **Summary:** Require Restate server + SDK for all MCP++ durable claims.
 - **Expected benefits:** Mature journaled invocation model; less custom journal code.
-- **Why not chosen:** Local, unpaid-cloud crash-recovery CI is not guaranteed; raises operator and CI cost; KD-12 requires a SQLite journaled first adapter and fail-closed external engines. Restate remains an optional second adapter under §5.
+- **Why not chosen:** Local, unpaid-cloud crash-recovery CI is not guaranteed; raises operator and CI cost; KD-12 as corrected 2026-08-16 requires a DuckDB/Quack journaled first adapter and fail-closed external engines. Restate remains an optional second adapter under §5.
 
 ### Alternative B: Dapr workflows as the mandatory DurableExecutor
 
@@ -231,7 +236,7 @@ A reader may treat the following as the interface label **`DurableExecutorDecisi
 
 ### Positive
 
-- Parallel lanes share one contract: DurableExecutor@1 with a SQLite journaled mandatory adapter.
+- Parallel lanes share one contract: DurableExecutor@1 with a DuckDB/Quack journaled primary adapter.
 - Gate 17 has a concrete, local evidence path (MCPP-051…052) without cloud accounts.
 - Restate and Dapr evaluation is recorded; their absence cannot block SQLite work (MCPP-051 acceptance).
 - Clear second-adapter admission rule prevents silent hard-deps on non-repeatable stacks.
@@ -239,7 +244,7 @@ A reader may treat the following as the interface label **`DurableExecutorDecisi
 
 ### Negative
 
-- Custom SQLite journal and fencing semantics must be designed and tested (implementation cost in MCPP-050…052).
+- Custom DuckDB/Quack journal and fencing semantics must be designed and tested (implementation cost in MCPP-050…052).
 - Optional Restate/Dapr adapters, if ever added, increase CI matrix and adapter surface.
 - Operators cannot assume a managed workflow SaaS is part of MCP++ 1.0 mandatory conformance.
 - Method surface is large (start through finalize); schema and test work is non-trivial.
@@ -249,7 +254,7 @@ A reader may treat the following as the interface label **`DurableExecutorDecisi
 - Exact SQLite schema for journal rows, WAL pragmas, and multi-process lock policy are specified in MCPP-050…051, not frozen here beyond durability and fail-closed intent.
 - Mapping journal transitions to Event DAG event types is MCPP-050 acceptance detail.
 - Accelerate binding (MCPP-053) may need careful integration with existing workflow_engine / task_queue modules without creating a second public lifecycle.
-- A future Accepted ADR may elevate a second adapter after compose evidence exists; until then SQLite remains mandatory.
+- A future Accepted ADR may elevate a second adapter after compose evidence exists; until then DuckDB/Quack remains primary.
 - Shared SQLite files between state provider and journal need careful table/namespace separation if colocated.
 
 ## Evidence
@@ -278,9 +283,10 @@ How a future reader confirms this ADR still holds:
    ```text
    test -s ipfs_accelerate_py/mcplusplus/docs/architecture/decisions/0005-durable-executor.md
    ```
-2. **Mandatory adapter still SQLite journal:** inspect Decision §2 and, once
-   landed, `ipfs_accelerate_py/mcplusplus/docs/architecture/durable-execution.md`
-   plus `ipfs_accelerate_py/mcp_server/mcplusplus/durable/sqlite_executor.py`.
+2. **Primary adapter still DuckDB/Quack journal:** inspect Decision §2 and
+   `ipfs_accelerate_py/mcplusplus/docs/architecture/durable-execution.md`
+   plus `ipfs_accelerate_py/mcp_server/mcplusplus/durable/sqlite_executor.py`
+   and `ipfs_accelerate_py/mcp_server/mcplusplus/storage/engine.py`.
 3. **Restate/Dapr remain non-mandatory unless compose exists:** no mandatory
    dependency on Restate/Dapr in MCP++ 1.0 conformance without a superseding ADR
    and checked-in local compose evidence.
@@ -291,8 +297,8 @@ How a future reader confirms this ADR still holds:
 6. **Staleness signals:** Restate or Dapr claimed as the only durable path;
    in-memory retry accepted as crash recovery; unpaid-cloud-only CI for
    mandatory durable claims; journaling folded into Event DAG validators as the
-   sole durability mechanism; absence of SQLite journal adapter while claiming
-   gate 17 closed.
+   sole durability mechanism; absence of DuckDB/Quack journal adapter while claiming
+   gate 17 closed; SQLite claimed as the default durable journal.
 
 ## Review triggers
 
@@ -313,7 +319,7 @@ When superseding: create a new ADR number; set this file to **Superseded** with
 | Concern | Follow-on |
 | --- | --- |
 | DurableExecutor interface + journal/Event DAG mapping | MCPP-050 |
-| SQLite journaled adapter (idempotency, cancel, fences) | MCPP-051 |
+| DuckDB/Quack journaled adapter (idempotency, cancel, fences) | MCPP-051 |
 | Crash-recovery integration test (gate 17) | MCPP-052 |
 | Accelerate runtime bind start/resume/cancel + Event DAG | MCPP-053 |
 | Optional Restate adapter (only with local compose) | Follow-on after MCPP-051; non-blocking |
@@ -326,9 +332,8 @@ Decision §7.
 
 ### Sealed defaults preserved
 
-This ADR records plan KD-12 without reopening it. Restate and Dapr are
-evaluated and rejected as mandatory adapters; the SQLite journaled executor
-remains the mandatory production-capable path; second adapters are admitted only
-under the local-compose / no-unpaid-cloud rule. Refinements (method family
-table, admission checklist, journal vs state/Event DAG separations) stay inside
-that default and cite current-tree evidence.
+This ADR records plan KD-12’s DurableExecutor contract and Restate/Dapr
+evaluation without reopening those product choices. The 2026-08-16 correction
+makes DuckDB/Quack the primary journal engine and SQLite the explicit fallback.
+Second adapters are still admitted only under the local-compose / no-unpaid-cloud
+rule.

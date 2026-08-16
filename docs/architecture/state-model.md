@@ -72,7 +72,7 @@ explicitly defines merge (`crdt`) or plugin acceptance (`consensus`).
            │                      │
            │         ┌────────────┼────────────────┐
            │         v            v                v
-           │   immutable store  SQLite CAS    Automerge
+           │   immutable store  DuckDB CAS    Automerge
            │   (CID blocks)     (single_auth) (crdt)
            │         │            │                │
            │         └────────────┼────────────────┘
@@ -114,14 +114,15 @@ Wire shape and field rules: [../spec/state-ref.md](../spec/state-ref.md).
 | Mode | Mandatory backend / substrate | Notes |
 | --- | --- | --- |
 | `immutable` | CID-native block / artifact store | Append-only |
-| `single_authority` | **SQLite** with WAL (or equivalent documented durability) and **CAS** | DuckDB MAY be an optional second adapter; it MUST NOT replace SQLite for mandatory conformance claims |
+| `single_authority` | **DuckDB / Quack / DuckLake** with transactional **CAS** | SQLite is an explicit fallback (`MCPPLUSPLUS_SQL_ENGINE=sqlite`) |
 | `causal` | Event DAG parents / clocks | Partial order only |
 | `crdt` | **Automerge** | Real CRDT; informal LWW is forbidden |
 | `consensus` | Declared **consensus plugin** | One of four guarantee labels (§5) |
 
-SQLite as **state** authority is related to but distinct from SQLite as the
+DuckDB as **state** authority is related to but distinct from DuckDB as the
 **durable execution journal** (ADR-0005). A runtime MAY colocate files; table
-namespaces and authority must remain separate.
+namespaces and authority must remain separate. SQLite remains an explicit
+fallback for both stores.
 
 ---
 
@@ -169,7 +170,7 @@ Rules:
 
 | Risk | Control |
 | --- | --- |
-| Lost update after restart | SQLite WAL + CAS restart tests (gate 10) |
+| Lost update after restart | DuckDB/Quack CAS restart tests (gate 10); SQLite WAL fallback |
 | Fake CRDT | Automerge mandatory; reject LWW-as-crdt |
 | False BFT marketing | Label tests; G ≠ bft (gate 12) |
 | Branch observation → silent merge | Non-merge proof (MCPP-040 family) |
@@ -198,7 +199,7 @@ T-TAMP-04, T-FED-01.
 
 | Legacy pattern | Target mode | Migration action |
 | --- | --- | --- |
-| Process-local dict / cache | often `single_authority` | Introduce StateRef + SQLite CAS; define lease owner |
+| Process-local dict / cache | often `single_authority` | Introduce StateRef + DuckDB CAS; define lease owner |
 | Append-only log of CIDs | `immutable` or `causal` | Prefer immutable for pure content; causal when parents matter |
 | Timestamp LWW map called “CRDT” | `crdt` only if Automerge | Replace LWW; keep history if needed for audit |
 | “Cluster agreed” boolean | `consensus` + label | Pick guarantee label; attach plugin evidence |
@@ -234,7 +235,7 @@ matrix rows REQ-ST-01…04—not asserted complete by this document alone.
 ## 11. Checklist
 
 1. Five modes only: `immutable`, `single_authority`, `causal`, `crdt`, `consensus`.  
-2. SQLite mandatory for single-authority; Automerge mandatory for CRDT.  
+2. DuckDB/Quack/DuckLake primary for single-authority (SQLite fallback); Automerge mandatory for CRDT.  
 3. Four consensus labels; Profile G not BFT.  
 4. Journal ≠ Event DAG ≠ StateRef authority.  
 5. Profile bundles referenced without over-claim.  
