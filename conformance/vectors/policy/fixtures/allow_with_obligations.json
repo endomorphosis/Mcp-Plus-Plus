@@ -1,0 +1,57 @@
+{
+  "description": "Matching permission plus obligation clause \u2192 allow_with_obligations.",
+  "expected": {
+    "decision": "allow_with_obligations",
+    "granted": true,
+    "obligation_actions": [
+      "audit/log"
+    ],
+    "obligation_count_min": 1
+  },
+  "expected_decision": "allow_with_obligations",
+  "expected_reason_code": null,
+  "id": "allow_with_obligations",
+  "inputs": {
+    "intent": {
+      "action": "tool/execute",
+      "actor": "agent:worker",
+      "intent_cid": "bafyintentpolicy001",
+      "resource": "weather-api"
+    },
+    "logical_time": "2024-06-15T12:00:00Z",
+    "policy": {
+      "clauses": [
+        {
+          "action": "tool/execute",
+          "actor": "agent:worker",
+          "clause_id": "perm-tool-execute",
+          "resource": "weather-api",
+          "type": "permission"
+        },
+        {
+          "action": "audit/log",
+          "actor": "agent:worker",
+          "clause_id": "obl-audit-log",
+          "obligation_deadline": "2024-06-15T13:00:00Z",
+          "resource": "weather-api",
+          "trigger": "after_execution",
+          "type": "obligation"
+        }
+      ],
+      "name": "permission-with-audit",
+      "policy_cid": "bafypolicyobl001",
+      "schema": "mcp++/profile-d-policy@1",
+      "version": "1.0.0"
+    }
+  },
+  "interface": "PolicyVector@1",
+  "languages": [
+    "python",
+    "typescript",
+    "go",
+    "rust"
+  ],
+  "layer": "deontic",
+  "polarity": "positive",
+  "task_id": "MCPP-048"
+}

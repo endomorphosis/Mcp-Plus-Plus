@@ -1,0 +1,322 @@
+{
+  "schema": "mcp++/conformance/policy-recipes@1",
+  "interface": "PolicyVector@1",
+  "task_id": "MCPP-048",
+  "note": "Compact PolicyEvaluator@1 cases. evaluate.py materializes inputs and asserts expected decisions against the real evaluator (no mocks).",
+  "conflict_resolution_rule": "When multiple policies are supplied, any matching prohibition across the entire set wins (most restrictive). Permissions and obligations are unioned with stable ordering by (clause_id, clause_type, action, source_index). Spec: temporal-deontic-policy.md §6.4.",
+  "shared": {
+    "logical_time": "2024-06-15T12:00:00Z",
+    "intent": {
+      "actor": "agent:worker",
+      "action": "tool/execute",
+      "resource": "weather-api",
+      "intent_cid": "bafyintentpolicy001"
+    },
+    "permission_policy": {
+      "schema": "mcp++/profile-d-policy@1",
+      "version": "1.0.0",
+      "policy_cid": "bafypolicyperm001",
+      "name": "worker-tool-permission",
+      "clauses": [
+        {
+          "clause_id": "perm-tool-execute",
+          "type": "permission",
+          "actor": "agent:worker",
+          "action": "tool/execute",
+          "resource": "weather-api"
+        }
+      ]
+    }
+  },
+  "recipes": [
+    {
+      "case": "policy_version_mismatch",
+      "polarity": "negative",
+      "layer": "gate",
+      "description": "Declared policy version differs from expected policy_version input → deny.",
+      "inputs": {
+        "use_shared_intent": true,
+        "use_shared_permission_policy": true,
+        "policy_version": "2.0.0",
+        "logical_time": "2024-06-15T12:00:00Z"
+      },
+      "expected": {
+        "decision": "deny",
+        "granted": false,
+        "reason_code": "policy_version_mismatch"
+      }
+    },
+    {
+      "case": "missing_context",
+      "polarity": "negative",
+      "layer": "gate",
+      "description": "Required context root key absent from context_roots → deny (fail-closed).",
+      "inputs": {
+        "use_shared_intent": true,
+        "use_shared_permission_policy": true,
+        "required_context_keys": ["state_root"],
+        "context_roots": {},
+        "logical_time": "2024-06-15T12:00:00Z"
+      },
+      "expected": {
+        "decision": "deny",
+        "granted": false,
+        "reason_code": "missing_context"
+      }
+    },
+    {
+      "case": "stale_root",
+      "polarity": "negative",
+      "layer": "gate",
+      "description": "Observed context root CID diverges from expected head → deny.",
+      "inputs": {
+        "use_shared_intent": true,
+        "use_shared_permission_policy": true,
+        "context_roots": {
+          "state_root": "bafystateobservedold001"
+        },
+        "expected_context_roots": {
+          "state_root": "bafystateexpectednew001"
+        },
+        "logical_time": "2024-06-15T12:00:00Z"
+      },
+      "expected": {
+        "decision": "deny",
+        "granted": false,
+        "reason_code": "stale_root"
+      }
+    },
+    {
+      "case": "deadline",
+      "polarity": "negative",
+      "layer": "temporal",
+      "description": "Permission valid_until elapsed at logical_time → no matching permission (deny).",
+      "inputs": {
+        "use_shared_intent": true,
+        "policy": {
+          "schema": "mcp++/profile-d-policy@1",
+          "version": "1.0.0",
+          "policy_cid": "bafypolicytimed001",
+          "name": "time-boxed-permission",
+          "clauses": [
+            {
+              "clause_id": "perm-window",
+              "type": "permission",
+              "actor": "agent:worker",
+              "action": "tool/execute",
+              "resource": "weather-api",
+              "valid_from": "2024-01-01T00:00:00Z",
+              "valid_until": "2024-01-31T23:59:59Z"
+            }
+          ]
+        },
+        "logical_time": "2024-06-15T12:00:00Z"
+      },
+      "expected": {
+        "decision": "deny",
+        "granted": false,
+        "reason_code": "no_matching_permission"
+      }
+    },
+    {
+      "case": "revoked_before_execution",
+      "polarity": "negative",
+      "layer": "revocation",
+      "description": "Prior event records revocation targeting the intent after planning, before execution → deny.",
+      "inputs": {
+        "use_shared_intent": true,
+        "use_shared_permission_policy": true,
+        "prior_events": [
+          {
+            "type": "revocation",
+            "event_type": "revocation",
+            "target_cid": "bafyintentpolicy001",
+            "phase": "after_planning_before_execution",
+            "recorded_at": "2024-06-15T11:59:00Z",
+            "reason": "operator_revoked_intent"
+          }
+        ],
+        "logical_time": "2024-06-15T12:00:00Z"
+      },
+      "expected": {
+        "decision": "deny",
+        "granted": false,
+        "reason_code": "revoked_before_execution"
+      }
+    },
+    {
+      "case": "allow_with_obligations",
+      "polarity": "positive",
+      "layer": "deontic",
+      "description": "Matching permission plus obligation clause → allow_with_obligations.",
+      "inputs": {
+        "use_shared_intent": true,
+        "policy": {
+          "schema": "mcp++/profile-d-policy@1",
+          "version": "1.0.0",
+          "policy_cid": "bafypolicyobl001",
+          "name": "permission-with-audit",
+          "clauses": [
+            {
+              "clause_id": "perm-tool-execute",
+              "type": "permission",
+              "actor": "agent:worker",
+              "action": "tool/execute",
+              "resource": "weather-api"
+            },
+            {
+              "clause_id": "obl-audit-log",
+              "type": "obligation",
+              "actor": "agent:worker",
+              "action": "audit/log",
+              "resource": "weather-api",
+              "trigger": "after_execution",
+              "obligation_deadline": "2024-06-15T13:00:00Z"
+            }
+          ]
+        },
+        "logical_time": "2024-06-15T12:00:00Z"
+      },
+      "expected": {
+        "decision": "allow_with_obligations",
+        "granted": true,
+        "obligation_count_min": 1,
+        "obligation_actions": ["audit/log"]
+      }
+    },
+    {
+      "case": "unsatisfied_obligation",
+      "polarity": "negative",
+      "layer": "obligation",
+      "description": "Obligation deadline already passed at evaluation time → still allow_with_obligations but obligation status is overdue (unsatisfied).",
+      "inputs": {
+        "use_shared_intent": true,
+        "policy": {
+          "schema": "mcp++/profile-d-policy@1",
+          "version": "1.0.0",
+          "policy_cid": "bafypolicyobl002",
+          "name": "permission-with-overdue-audit",
+          "clauses": [
+            {
+              "clause_id": "perm-tool-execute",
+              "type": "permission",
+              "actor": "agent:worker",
+              "action": "tool/execute",
+              "resource": "weather-api"
+            },
+            {
+              "clause_id": "obl-audit-log",
+              "type": "obligation",
+              "actor": "agent:worker",
+              "action": "audit/log",
+              "resource": "weather-api",
+              "trigger": "after_execution",
+              "obligation_deadline": "2024-06-15T11:00:00Z"
+            }
+          ]
+        },
+        "logical_time": "2024-06-15T12:00:00Z"
+      },
+      "expected": {
+        "decision": "allow_with_obligations",
+        "granted": true,
+        "obligation_status": "overdue",
+        "deadline_status": "overdue"
+      }
+    },
+    {
+      "case": "compensating_action",
+      "polarity": "positive",
+      "layer": "obligation",
+      "description": "Obligation with compensation metadata surfaces compensation[] on the decision (recorded, not executed).",
+      "inputs": {
+        "use_shared_intent": true,
+        "policy": {
+          "schema": "mcp++/profile-d-policy@1",
+          "version": "1.0.0",
+          "policy_cid": "bafypolicycomp001",
+          "name": "permission-with-compensation",
+          "clauses": [
+            {
+              "clause_id": "perm-tool-execute",
+              "type": "permission",
+              "actor": "agent:worker",
+              "action": "tool/execute",
+              "resource": "weather-api"
+            },
+            {
+              "clause_id": "obl-no-exfil",
+              "type": "obligation",
+              "actor": "agent:worker",
+              "action": "audit/log",
+              "resource": "weather-api",
+              "trigger": "after_execution",
+              "obligation_deadline": "2024-06-15T13:00:00Z",
+              "metadata": {
+                "compensation": {
+                  "action": "rotate_secrets",
+                  "notify": "security-oncall"
+                }
+              }
+            }
+          ]
+        },
+        "logical_time": "2024-06-15T12:00:00Z"
+      },
+      "expected": {
+        "decision": "allow_with_obligations",
+        "granted": true,
+        "compensation_count_min": 1,
+        "compensation_actions": ["rotate_secrets"]
+      }
+    },
+    {
+      "case": "conflicting_policies",
+      "polarity": "negative",
+      "layer": "conflict",
+      "description": "Permission in policy A and matching prohibition in policy B → prohibition wins (deterministic most-restrictive rule).",
+      "inputs": {
+        "use_shared_intent": true,
+        "policies": [
+          {
+            "schema": "mcp++/profile-d-policy@1",
+            "version": "1.0.0",
+            "policy_cid": "bafypolicyperm001",
+            "name": "worker-tool-permission",
+            "clauses": [
+              {
+                "clause_id": "perm-tool-execute",
+                "type": "permission",
+                "actor": "agent:worker",
+                "action": "tool/execute",
+                "resource": "weather-api"
+              }
+            ]
+          },
+          {
+            "schema": "mcp++/profile-d-policy@1",
+            "version": "1.0.0",
+            "policy_cid": "bafypolicyproh001",
+            "name": "worker-tool-prohibition",
+            "clauses": [
+              {
+                "clause_id": "proh-tool-execute",
+                "type": "prohibition",
+                "actor": "agent:worker",
+                "action": "tool/execute",
+                "resource": "weather-api"
+              }
+            ]
+          }
+        ],
+        "logical_time": "2024-06-15T12:00:00Z"
+      },
+      "expected": {
+        "decision": "deny",
+        "granted": false,
+        "reason_code": "prohibition_matched",
+        "conflict_resolution": "prohibition_wins_across_policy_set"
+      }
+    }
+  ]
+}

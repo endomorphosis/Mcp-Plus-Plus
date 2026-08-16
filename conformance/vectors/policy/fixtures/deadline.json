@@ -1,0 +1,47 @@
+{
+  "description": "Permission valid_until elapsed at logical_time \u2192 no matching permission (deny).",
+  "expected": {
+    "decision": "deny",
+    "granted": false,
+    "reason_code": "no_matching_permission"
+  },
+  "expected_decision": "deny",
+  "expected_reason_code": "no_matching_permission",
+  "id": "deadline",
+  "inputs": {
+    "intent": {
+      "action": "tool/execute",
+      "actor": "agent:worker",
+      "intent_cid": "bafyintentpolicy001",
+      "resource": "weather-api"
+    },
+    "logical_time": "2024-06-15T12:00:00Z",
+    "policy": {
+      "clauses": [
+        {
+          "action": "tool/execute",
+          "actor": "agent:worker",
+          "clause_id": "perm-window",
+          "resource": "weather-api",
+          "type": "permission",
+          "valid_from": "2024-01-01T00:00:00Z",
+          "valid_until": "2024-01-31T23:59:59Z"
+        }
+      ],
+      "name": "time-boxed-permission",
+      "policy_cid": "bafypolicytimed001",
+      "schema": "mcp++/profile-d-policy@1",
+      "version": "1.0.0"
+    }
+  },
+  "interface": "PolicyVector@1",
+  "languages": [
+    "python",
+    "typescript",
+    "go",
+    "rust"
+  ],
+  "layer": "temporal",
+  "polarity": "negative",
+  "task_id": "MCPP-048"
+}

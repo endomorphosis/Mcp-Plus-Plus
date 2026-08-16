@@ -1,0 +1,64 @@
+{
+  "conflict_resolution_rule": "When multiple policies are supplied, any matching prohibition across the entire set wins (most restrictive).",
+  "description": "Permission in policy A and matching prohibition in policy B \u2192 prohibition wins (deterministic most-restrictive rule).",
+  "expected": {
+    "conflict_resolution": "prohibition_wins_across_policy_set",
+    "decision": "deny",
+    "granted": false,
+    "reason_code": "prohibition_matched"
+  },
+  "expected_decision": "deny",
+  "expected_reason_code": "prohibition_matched",
+  "id": "conflicting_policies",
+  "inputs": {
+    "intent": {
+      "action": "tool/execute",
+      "actor": "agent:worker",
+      "intent_cid": "bafyintentpolicy001",
+      "resource": "weather-api"
+    },
+    "logical_time": "2024-06-15T12:00:00Z",
+    "policies": [
+      {
+        "clauses": [
+          {
+            "action": "tool/execute",
+            "actor": "agent:worker",
+            "clause_id": "perm-tool-execute",
+            "resource": "weather-api",
+            "type": "permission"
+          }
+        ],
+        "name": "worker-tool-permission",
+        "policy_cid": "bafypolicyperm001",
+        "schema": "mcp++/profile-d-policy@1",
+        "version": "1.0.0"
+      },
+      {
+        "clauses": [
+          {
+            "action": "tool/execute",
+            "actor": "agent:worker",
+            "clause_id": "proh-tool-execute",
+            "resource": "weather-api",
+            "type": "prohibition"
+          }
+        ],
+        "name": "worker-tool-prohibition",
+        "policy_cid": "bafypolicyproh001",
+        "schema": "mcp++/profile-d-policy@1",
+        "version": "1.0.0"
+      }
+    ]
+  },
+  "interface": "PolicyVector@1",
+  "languages": [
+    "python",
+    "typescript",
+    "go",
+    "rust"
+  ],
+  "layer": "conflict",
+  "polarity": "negative",
+  "task_id": "MCPP-048"
+}
