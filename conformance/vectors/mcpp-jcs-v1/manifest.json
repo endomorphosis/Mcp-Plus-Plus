@@ -1,0 +1,226 @@
+{
+  "schema": "mcp++/conformance/golden-vector-manifest@1",
+  "interface": "GoldenVector@1",
+  "algorithm": "mcpp-jcs-v1",
+  "description": "Index of golden mcpp-jcs-v1 canonicalization vectors (MCPP-025).",
+  "spec_path": "ipfs_accelerate_py/mcplusplus/docs/spec/canonicalization-mcpp-jcs-v1.md",
+  "vectors_dir": "ipfs_accelerate_py/mcplusplus/conformance/vectors/mcpp-jcs-v1",
+  "coverage": {
+    "numbers": {
+      "positive": 2,
+      "negative": 2
+    },
+    "unicode": {
+      "positive": 2,
+      "negative": 1
+    },
+    "null": {
+      "positive": 2,
+      "negative": 1
+    },
+    "empty_object": {
+      "positive": 2,
+      "negative": 1
+    },
+    "nested_keys": {
+      "positive": 1,
+      "negative": 2
+    },
+    "duplicate_keys": {
+      "positive": 1,
+      "negative": 2
+    }
+  },
+  "cases": [
+    {
+      "id": "numbers-positive-es6-forms",
+      "category": "numbers",
+      "polarity": "positive",
+      "valid": true,
+      "file": "numbers.json",
+      "reason_code": null,
+      "cid": "bafkreifz2r4scza473dra6mc3r772ldgbkan3g6bynk6cvfu6otxq5fcua",
+      "sha256": "b9d47921641cfec7107982dc7ffd2c660a80dd9bc1c355e154b4f3a77874a2a0"
+    },
+    {
+      "id": "numbers-positive-rfc8785-appendix-sample",
+      "category": "numbers",
+      "polarity": "positive",
+      "valid": true,
+      "file": "numbers.json",
+      "reason_code": null,
+      "cid": "bafkreibnlya2gggq6cdzvnliys7crheld5so7cjbuu6ge56v4buzpc5kzm",
+      "sha256": "2d5e01a318d0f0879ab568c4be289c8b1f64ef8921a53c6277d5e069978baacb"
+    },
+    {
+      "id": "numbers-negative-nan",
+      "category": "numbers",
+      "polarity": "negative",
+      "valid": false,
+      "file": "numbers.json",
+      "reason_code": "reject_nan_infinity",
+      "cid": null,
+      "sha256": null
+    },
+    {
+      "id": "numbers-negative-infinity",
+      "category": "numbers",
+      "polarity": "negative",
+      "valid": false,
+      "file": "numbers.json",
+      "reason_code": "reject_nan_infinity",
+      "cid": null,
+      "sha256": null
+    },
+    {
+      "id": "unicode-positive-escapes-and-utf8",
+      "category": "unicode",
+      "polarity": "positive",
+      "valid": true,
+      "file": "unicode.json",
+      "reason_code": null,
+      "cid": "bafkreifpqorsaojunxekrkjgffzlrofs7wr2rzpn7lik3s25x7mtm5nziu",
+      "sha256": "af83a32039346dc8a8a9262972b8b8b2fda3a8e5edfad0adcb5dbfd93675b945"
+    },
+    {
+      "id": "unicode-positive-key-sort-utf16",
+      "category": "unicode",
+      "polarity": "positive",
+      "valid": true,
+      "file": "unicode.json",
+      "reason_code": null,
+      "cid": "bafkreic6gikvnuradcuwk2mrvhuu657mc5p2de7ffisctuys7baz5sfqrq",
+      "sha256": "5e321556d22018a9656991a9e94f77ec175fa193e52a2429d312f8419ec8b08c"
+    },
+    {
+      "id": "unicode-negative-lone-surrogate",
+      "category": "unicode",
+      "polarity": "negative",
+      "valid": false,
+      "file": "unicode.json",
+      "reason_code": "reject_lone_surrogate",
+      "cid": null,
+      "sha256": null
+    },
+    {
+      "id": "null-positive-present-property",
+      "category": "null",
+      "polarity": "positive",
+      "valid": true,
+      "file": "null.json",
+      "reason_code": null,
+      "cid": "bafkreigax6bk2a3mwcs2aplhlha3pofr64fdtmzn3fxnhf34p4udd3r3ky",
+      "sha256": "c0bf82ad036cb0a5a03d6759c1b7b8b1f70a39b32dd96ed3977c7f2831ee3b56"
+    },
+    {
+      "id": "null-positive-array-element",
+      "category": "null",
+      "polarity": "positive",
+      "valid": true,
+      "file": "null.json",
+      "reason_code": null,
+      "cid": "bafkreid2zgp2elerhabe3b4c7jc6jar2kuzk7mzo4m3doymeyqf5nm7hyy",
+      "sha256": "7ac99fa22c9138024d8782fa45e4823a5532afb32ee336376184c40bd6b3e7c6"
+    },
+    {
+      "id": "null-negative-absent-vs-null-confusion",
+      "category": "null",
+      "polarity": "negative",
+      "valid": false,
+      "file": "null.json",
+      "reason_code": "reject_absent_key_as_null",
+      "cid": null,
+      "sha256": null
+    },
+    {
+      "id": "empty-object-positive",
+      "category": "empty_object",
+      "polarity": "positive",
+      "valid": true,
+      "file": "empty-object.json",
+      "reason_code": null,
+      "cid": "bafkreicecnx2gvntm6fbcrvnc336qze6st5u7qq7457igegamd3bzkx7ri",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    },
+    {
+      "id": "empty-object-positive-nested",
+      "category": "empty_object",
+      "polarity": "positive",
+      "valid": true,
+      "file": "empty-object.json",
+      "reason_code": null,
+      "cid": "bafkreiajoei6sqjoemhzcpyyra2jbwgyoo66fft7qzdu73mpcm3rjktrem",
+      "sha256": "097111e9412e230f913f18883490d8d873bde2967f86474fed8f133714aa7123"
+    },
+    {
+      "id": "empty-object-negative-whitespace",
+      "category": "empty_object",
+      "polarity": "negative",
+      "valid": false,
+      "file": "empty-object.json",
+      "reason_code": "reject_non_canonical_bytes",
+      "cid": null,
+      "sha256": null
+    },
+    {
+      "id": "nested-keys-positive-recursive-sort",
+      "category": "nested_keys",
+      "polarity": "positive",
+      "valid": true,
+      "file": "nested-keys.json",
+      "reason_code": null,
+      "cid": "bafkreibdzn4yjiezugokydw7vyqwcjshrancuflfwcx5os2ivggp7fw77i",
+      "sha256": "23cb7984a099a19cac0edfae21612647881a2a1565b0afd74b48a98cff96dffa"
+    },
+    {
+      "id": "nested-keys-negative-unsorted-claim",
+      "category": "nested_keys",
+      "polarity": "negative",
+      "valid": false,
+      "file": "nested-keys.json",
+      "reason_code": "reject_non_canonical_bytes",
+      "cid": null,
+      "sha256": null
+    },
+    {
+      "id": "nested-keys-negative-cycle",
+      "category": "nested_keys",
+      "polarity": "negative",
+      "valid": false,
+      "file": "nested-keys.json",
+      "reason_code": "reject_cycles",
+      "cid": null,
+      "sha256": null
+    },
+    {
+      "id": "duplicate-keys-positive-unique-keys",
+      "category": "duplicate_keys",
+      "polarity": "positive",
+      "valid": true,
+      "file": "duplicate-keys.json",
+      "reason_code": null,
+      "cid": "bafkreihgum4f7n34fb5hclt7ibvekfzh6brfaqmch3hshpvh5443fy4yau",
+      "sha256": "e6a3385fb77c287a712e7f406a451727f0625041823ecf23bea7ef39b2e39805"
+    },
+    {
+      "id": "duplicate-keys-negative-reject-duplicates",
+      "category": "duplicate_keys",
+      "polarity": "negative",
+      "valid": false,
+      "file": "duplicate-keys.json",
+      "reason_code": "reject_duplicate_keys",
+      "cid": null,
+      "sha256": null
+    },
+    {
+      "id": "duplicate-keys-negative-nested-duplicates",
+      "category": "duplicate_keys",
+      "polarity": "negative",
+      "valid": false,
+      "file": "duplicate-keys.json",
+      "reason_code": "reject_duplicate_keys",
+      "cid": null,
+      "sha256": null
+    }
+  ]
+}

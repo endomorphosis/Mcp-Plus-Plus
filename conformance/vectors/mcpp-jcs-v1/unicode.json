@@ -1,0 +1,132 @@
+{
+  "schema": "mcp++/conformance/golden-vector@1",
+  "interface": "GoldenVector@1",
+  "algorithm": "mcpp-jcs-v1",
+  "standard": {
+    "standard": "RFC 8785",
+    "name": "JSON Canonicalization Scheme",
+    "url": "https://www.rfc-editor.org/rfc/rfc8785"
+  },
+  "cid_defaults": {
+    "cid_version": 1,
+    "multicodec": "raw",
+    "multicodec_code": 85,
+    "multihash": "sha2-256",
+    "multihash_code": 18,
+    "multibase": "base32"
+  },
+  "category": "unicode",
+  "description": "Golden mcpp-jcs-v1 vectors for category 'unicode' (positive + negative).",
+  "cases": [
+    {
+      "id": "unicode-positive-escapes-and-utf8",
+      "category": "unicode",
+      "polarity": "positive",
+      "valid": true,
+      "description": "Non-ASCII UTF-8 literals, required JSON escapes, and C0 controls per RFC 8785 §3.2.2.2.",
+      "source": {
+        "euro": "€",
+        "o_diaeresis": "ö",
+        "control_u0080": "",
+        "grinning": "😀",
+        "quote_and_slash": "say \"hi\" \\ ok",
+        "controls": "\b\t\n\f\r",
+        "c0_other": "\u0001\u000f"
+      },
+      "canonical_utf8": "{\"c0_other\":\"\\u0001\\u000f\",\"control_u0080\":\"\",\"controls\":\"\\b\\t\\n\\f\\r\",\"euro\":\"€\",\"grinning\":\"😀\",\"o_diaeresis\":\"ö\",\"quote_and_slash\":\"say \\\"hi\\\" \\\\ ok\"}",
+      "canonical_bytes_hex": "7b2263305f6f74686572223a225c75303030315c7530303066222c22636f6e74726f6c5f7530303830223a22c280222c22636f6e74726f6c73223a225c625c745c6e5c665c72222c226575726f223a22e282ac222c226772696e6e696e67223a22f09f9880222c226f5f646961657265736973223a22c3b6222c2271756f74655f616e645f736c617368223a22736179205c2268695c22205c5c206f6b227d",
+      "canonical_bytes_base64": "eyJjMF9vdGhlciI6Ilx1MDAwMVx1MDAwZiIsImNvbnRyb2xfdTAwODAiOiLCgCIsImNvbnRyb2xzIjoiXGJcdFxuXGZcciIsImV1cm8iOiLigqwiLCJncmlubmluZyI6IvCfmIAiLCJvX2RpYWVyZXNpcyI6IsO2IiwicXVvdGVfYW5kX3NsYXNoIjoic2F5IFwiaGlcIiBcXCBvayJ9",
+      "sha256": "af83a32039346dc8a8a9262972b8b8b2fda3a8e5edfad0adcb5dbfd93675b945",
+      "cid": "bafkreifpqorsaojunxekrkjgffzlrofs7wr2rzpn7lik3s25x7mtm5nziu",
+      "signature_input": {
+        "kind": "canonical_bytes",
+        "encoding": "hex",
+        "value": "7b2263305f6f74686572223a225c75303030315c7530303066222c22636f6e74726f6c5f7530303830223a22c280222c22636f6e74726f6c73223a225c625c745c6e5c665c72222c226575726f223a22e282ac222c226772696e6e696e67223a22f09f9880222c226f5f646961657265736973223a22c3b6222c2271756f74655f616e645f736c617368223a22736179205c2268695c22205c5c206f6b227d",
+        "note": "Ed25519 signature message is the UTF-8 JCS bytes (mcpp-jcs-v1)"
+      },
+      "signature": null,
+      "signature_placeholder": {
+        "alg": "Ed25519",
+        "encoding": "base64url",
+        "value": null,
+        "note": "Placeholder: suite signs over signature_input; real signatures land with MCPP-041+"
+      },
+      "expected_validator_result": {
+        "accept": true,
+        "reason_code": null
+      }
+    },
+    {
+      "id": "unicode-positive-key-sort-utf16",
+      "category": "unicode",
+      "polarity": "positive",
+      "valid": true,
+      "description": "Object key order uses UTF-16 code units (RFC 8785 §3.2.3 sorting sample).",
+      "source": {
+        "1": "One",
+        "€": "Euro Sign",
+        "\r": "Carriage Return",
+        "דּ": "Hebrew Letter Dalet With Dagesh",
+        "😀": "Emoji: Grinning Face",
+        "": "Control",
+        "ö": "Latin Small Letter O With Diaeresis"
+      },
+      "canonical_utf8": "{\"\\r\":\"Carriage Return\",\"1\":\"One\",\"\":\"Control\",\"ö\":\"Latin Small Letter O With Diaeresis\",\"€\":\"Euro Sign\",\"😀\":\"Emoji: Grinning Face\",\"דּ\":\"Hebrew Letter Dalet With Dagesh\"}",
+      "canonical_bytes_hex": "7b225c72223a2243617272696167652052657475726e222c2231223a224f6e65222c22c280223a22436f6e74726f6c222c22c3b6223a224c6174696e20536d616c6c204c6574746572204f205769746820446961657265736973222c22e282ac223a224575726f205369676e222c22f09f9880223a22456d6f6a693a204772696e6e696e672046616365222c22efacb3223a22486562726577204c65747465722044616c6574205769746820446167657368227d",
+      "canonical_bytes_base64": "eyJcciI6IkNhcnJpYWdlIFJldHVybiIsIjEiOiJPbmUiLCLCgCI6IkNvbnRyb2wiLCLDtiI6IkxhdGluIFNtYWxsIExldHRlciBPIFdpdGggRGlhZXJlc2lzIiwi4oKsIjoiRXVybyBTaWduIiwi8J+YgCI6IkVtb2ppOiBHcmlubmluZyBGYWNlIiwi76yzIjoiSGVicmV3IExldHRlciBEYWxldCBXaXRoIERhZ2VzaCJ9",
+      "sha256": "5e321556d22018a9656991a9e94f77ec175fa193e52a2429d312f8419ec8b08c",
+      "cid": "bafkreic6gikvnuradcuwk2mrvhuu657mc5p2de7ffisctuys7baz5sfqrq",
+      "signature_input": {
+        "kind": "canonical_bytes",
+        "encoding": "hex",
+        "value": "7b225c72223a2243617272696167652052657475726e222c2231223a224f6e65222c22c280223a22436f6e74726f6c222c22c3b6223a224c6174696e20536d616c6c204c6574746572204f205769746820446961657265736973222c22e282ac223a224575726f205369676e222c22f09f9880223a22456d6f6a693a204772696e6e696e672046616365222c22efacb3223a22486562726577204c65747465722044616c6574205769746820446167657368227d",
+        "note": "Ed25519 signature message is the UTF-8 JCS bytes (mcpp-jcs-v1)"
+      },
+      "signature": null,
+      "signature_placeholder": {
+        "alg": "Ed25519",
+        "encoding": "base64url",
+        "value": null,
+        "note": "Placeholder: suite signs over signature_input; real signatures land with MCPP-041+"
+      },
+      "expected_validator_result": {
+        "accept": true,
+        "reason_code": null
+      }
+    },
+    {
+      "id": "unicode-negative-lone-surrogate",
+      "category": "unicode",
+      "polarity": "negative",
+      "valid": false,
+      "description": "Lone UTF-16 surrogates MUST be rejected (fail closed).",
+      "source": null,
+      "source_json": "{\"bad\":\"\\uDEAD\"}",
+      "canonical_utf8": null,
+      "canonical_bytes_hex": null,
+      "canonical_bytes_base64": null,
+      "sha256": null,
+      "cid": null,
+      "signature_input": null,
+      "signature": null,
+      "signature_placeholder": {
+        "alg": "Ed25519",
+        "encoding": "base64url",
+        "value": null,
+        "note": "No signature over rejected input"
+      },
+      "expected_validator_result": {
+        "accept": false,
+        "reason_code": "reject_lone_surrogate",
+        "detail": {
+          "code_unit": "U+DEAD",
+          "note": "Invalid Unicode scalar; not representable in JCS strings"
+        }
+      },
+      "rejection": {
+        "condition": "lone_surrogate",
+        "source_json": "{\"bad\":\"\\uDEAD\"}"
+      }
+    }
+  ]
+}

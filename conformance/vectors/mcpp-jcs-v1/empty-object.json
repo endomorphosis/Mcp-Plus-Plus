@@ -1,0 +1,120 @@
+{
+  "schema": "mcp++/conformance/golden-vector@1",
+  "interface": "GoldenVector@1",
+  "algorithm": "mcpp-jcs-v1",
+  "standard": {
+    "standard": "RFC 8785",
+    "name": "JSON Canonicalization Scheme",
+    "url": "https://www.rfc-editor.org/rfc/rfc8785"
+  },
+  "cid_defaults": {
+    "cid_version": 1,
+    "multicodec": "raw",
+    "multicodec_code": 85,
+    "multihash": "sha2-256",
+    "multihash_code": 18,
+    "multibase": "base32"
+  },
+  "category": "empty_object",
+  "description": "Golden mcpp-jcs-v1 vectors for category 'empty_object' (positive + negative).",
+  "cases": [
+    {
+      "id": "empty-object-positive",
+      "category": "empty_object",
+      "polarity": "positive",
+      "valid": true,
+      "description": "Empty object serializes as {} with no whitespace.",
+      "source": {},
+      "canonical_utf8": "{}",
+      "canonical_bytes_hex": "7b7d",
+      "canonical_bytes_base64": "e30=",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "cid": "bafkreicecnx2gvntm6fbcrvnc336qze6st5u7qq7457igegamd3bzkx7ri",
+      "signature_input": {
+        "kind": "canonical_bytes",
+        "encoding": "hex",
+        "value": "7b7d",
+        "note": "Ed25519 signature message is the UTF-8 JCS bytes (mcpp-jcs-v1)"
+      },
+      "signature": null,
+      "signature_placeholder": {
+        "alg": "Ed25519",
+        "encoding": "base64url",
+        "value": null,
+        "note": "Placeholder: suite signs over signature_input; real signatures land with MCPP-041+"
+      },
+      "expected_validator_result": {
+        "accept": true,
+        "reason_code": null
+      }
+    },
+    {
+      "id": "empty-object-positive-nested",
+      "category": "empty_object",
+      "polarity": "positive",
+      "valid": true,
+      "description": "Empty object as a nested value.",
+      "source": {
+        "outer": {}
+      },
+      "canonical_utf8": "{\"outer\":{}}",
+      "canonical_bytes_hex": "7b226f75746572223a7b7d7d",
+      "canonical_bytes_base64": "eyJvdXRlciI6e319",
+      "sha256": "097111e9412e230f913f18883490d8d873bde2967f86474fed8f133714aa7123",
+      "cid": "bafkreiajoei6sqjoemhzcpyyra2jbwgyoo66fft7qzdu73mpcm3rjktrem",
+      "signature_input": {
+        "kind": "canonical_bytes",
+        "encoding": "hex",
+        "value": "7b226f75746572223a7b7d7d",
+        "note": "Ed25519 signature message is the UTF-8 JCS bytes (mcpp-jcs-v1)"
+      },
+      "signature": null,
+      "signature_placeholder": {
+        "alg": "Ed25519",
+        "encoding": "base64url",
+        "value": null,
+        "note": "Placeholder: suite signs over signature_input; real signatures land with MCPP-041+"
+      },
+      "expected_validator_result": {
+        "accept": true,
+        "reason_code": null
+      }
+    },
+    {
+      "id": "empty-object-negative-whitespace",
+      "category": "empty_object",
+      "polarity": "negative",
+      "valid": false,
+      "description": "Pretty-printed or spaced empty object text is not the canonical form and MUST NOT be accepted as already-canonical mcpp-jcs-v1 bytes.",
+      "source": {},
+      "source_json": "{ }",
+      "canonical_utf8": null,
+      "canonical_bytes_hex": null,
+      "canonical_bytes_base64": null,
+      "sha256": null,
+      "cid": null,
+      "signature_input": null,
+      "signature": null,
+      "signature_placeholder": {
+        "alg": "Ed25519",
+        "encoding": "base64url",
+        "value": null,
+        "note": "No signature over rejected input"
+      },
+      "expected_validator_result": {
+        "accept": false,
+        "reason_code": "reject_non_canonical_bytes",
+        "detail": {
+          "offered_as_canonical": "{ }",
+          "required_canonical_utf8": "{}",
+          "note": "No insignificant whitespace in JCS output"
+        }
+      },
+      "rejection": {
+        "condition": "insignificant_whitespace",
+        "source_json": "{ }",
+        "required_canonical_utf8": "{}"
+      }
+    }
+  ]
+}
