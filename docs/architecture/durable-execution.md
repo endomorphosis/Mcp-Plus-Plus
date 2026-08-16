@@ -3,6 +3,7 @@
 **Status:** Normative (MCP++ 1.0 interface contract)  
 **Interfaces:** `DurableExecutor@1`, `DurableJournalRecord@1`, `CrashRecoveryReceipt@1`  
 **Schema:** `schemas/durable/durable-executor-1.schema.json`  
+**Task (docs packaging):** MCPP-078 · Goal `MCPP-G170` · Bundle `mcplusplus/1.0/docs-architecture`  
 **Schema markers:**
 
 | Interface | Schema marker |
@@ -14,11 +15,21 @@
 
 **Authority:** Plan KD-12; gate 17; goal `MCPP-G090`; tasks `MCPP-050`…`MCPP-053`; ADR-0005.  
 **Depends on:** ADR-0005 (`MCPP-017`), ExecutionEnvelope family + validators (`MCPP-033`), StateProvider@1 (`MCPP-036`).  
-**Related:** [execution-envelope.md](../spec/execution-envelope.md), [event-dag-ordering.md](../spec/event-dag-ordering.md), [state-ref.md](../spec/state-ref.md), ADR-0001 (spec/runtime ownership), ADR-0003 (conformance levels), ADR-0004 (state modes).
+**Related architecture:** [overview.md](overview.md), [state-model.md](state-model.md), [trust-boundaries.md](trust-boundaries.md), [threat-model.md](threat-model.md).  
+**Related specs:** [execution-envelope.md](../spec/execution-envelope.md), [event-dag-ordering.md](../spec/event-dag-ordering.md), [state-ref.md](../spec/state-ref.md), ADR-0001 (spec/runtime ownership), ADR-0003 (conformance levels), ADR-0004 (state modes).
+
+| Section family | Authority class |
+| --- | --- |
+| Interface methods, journal, fail-closed rules (§3–§9) | **normative** |
+| Adapter placement and SQLite mandate (§10) | **normative** (ADR-0005) |
+| Conformance mapping (§11) | **normative** scoring vocabulary |
+| Profile-bundle relevance (§15) | **normative** packaging (KD-17) |
+| Migration (§16) | **non-normative** operator guidance |
+| This document alone as gate-17 closure | **not production-admitted** |
 
 Normative keywords **MUST**, **MUST NOT**, **SHOULD**, and **MAY** are used as described in RFC 2119.
 
-Schema acceptance is **structural** only (ADR-0003). Crash recovery, idempotent side-effect commit, fencing, and receipt signature verification are higher conformance levels proven by adapters and tests (`MCPP-051`…`MCPP-053`).
+Schema acceptance is **structural** only (ADR-0003). Crash recovery, idempotent side-effect commit, fencing, and receipt signature verification are higher conformance levels proven by adapters and tests (`MCPP-051`…`MCPP-053`). Documentation prose does not admit production deployment by itself.
 
 ---
 
@@ -643,3 +654,56 @@ A reader may treat the following as the interface label **`DurableExecutor@1`**:
 - Schema: `schemas/durable/durable-executor-1.schema.json`
 - Sealed plan KD-12 / gate 17: `docs/architecture/MCPPLUSPLUS_1_0_GAP_CLOSURE_PLAN.md`
 - Traceability REQ-DUR-01: `docs/roadmap/mcplusplus-1.0-gap-closure.md`
+- Architecture overview (bundles): [overview.md](overview.md)
+- State model: [state-model.md](state-model.md)
+- Trust boundaries: [trust-boundaries.md](trust-boundaries.md)
+- Threat model: [threat-model.md](threat-model.md)
+
+---
+
+## 15. Profile-bundle relevance (KD-17)
+
+Durable execution is **cross-cutting**. It is not itself one of the five profile
+bundles, but it **supports** honest packaging:
+
+| Bundle | Relationship to DurableExecutor@1 |
+| --- | --- |
+| **Evidence Core** (A, B, F) | Journaled transitions **MAY** emit Event DAG events; finalize binds Envelope/Result/Receipt lineage |
+| **Secure Delegation** (C, D) | `start` / portable envelopes **MUST** fail closed without required authority proofs; cancel and obligations survive restart when journaled |
+| **Federated Mesh** (E, G) | Transport identity **MUST NOT** grant resume rights; fencing aligns with exclusive-task rejection of stale completions |
+| **Commerce** (H) | Payment settlement **MUST NOT** substitute for durable resume authority or UCAN/policy allow |
+| **Verified Execution** | Cross-trust `finalize` **MUST** bind signed `ExecutionReceipt@1` when claiming `receipt-signed`; crash-recovery receipts are not substitutes for execution receipts |
+
+---
+
+## 16. Migration (operator guidance)
+
+**Authority class: non-normative.**
+
+| From | To | Notes |
+| --- | --- | --- |
+| In-process retry loops | `DurableExecutor@1` + SQLite journal | In-memory success is not crash recovery |
+| Custom workflow SaaS as sole path | SQLite mandatory adapter first | Restate/Dapr only with local compose (ADR-0005 §5) |
+| Event DAG append as “commit” | Journal commit + optional DAG publish | DAG is provenance; journal is recovery authority |
+| State CAS as step fence only | Explicit journal checkpoint + idempotency keys | State modes remain ADR-0004 |
+| PeerID-gated resume | Fencing token + journal ownership | KD-14 |
+| Unsigned cross-trust finalize | Signed `ExecutionReceipt@1` | Required for Verified Execution / `receipt-signed` claims |
+
+Suggested rollout: (1) validate envelopes structurally, (2) wire SQLite journal
+for start/checkpoint/recover, (3) prove kill-restart without duplicate side
+effects, (4) only then advertise crash-safe resume in evidence bundles.
+
+---
+
+## 17. Explicit non-claims
+
+This chapter **does not** claim:
+
+- That gate 17 is closed without adapter crash-recovery evidence.
+- That Restate or Dapr are mandatory.
+- That schema acceptance equals implemented durability.
+- That deployments have empty residual risk or meet every ADR-0003 level.
+
+G170 documentation policy forbids over-claim language that asserts unproven
+deployment fitness, empty residual risk, universal conformance, or unverified
+proof strength. Prefer named conformance levels and test commands.
