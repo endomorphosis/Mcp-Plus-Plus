@@ -1,0 +1,63 @@
+{
+  "interface": "A2AExtensionSchema@1",
+  "schema": "mcp++/conformance/a2a-extension@1",
+  "task_id": "MCPP-055",
+  "description": "Positive and negative conformance vectors for the MCP++ A2A execution extension schemas. Well-formed declarations and terminal evidence must validate. Malformed extension URIs/fields and unsupported profiles are expected failures (fail closed).",
+  "extension_uri": "https://mcplusplus.io/extensions/execution/v1",
+  "working_alias": "io.mcplusplus.execution@1",
+  "canonicalization": "mcpp-jcs-v1",
+  "related": {
+    "spec": "ipfs_accelerate_py/mcplusplus/docs/spec/a2a-extension.md",
+    "adr": "ipfs_accelerate_py/mcplusplus/docs/architecture/decisions/0006-bindings-a2a.md",
+    "schemas": [
+      "ipfs_accelerate_py/mcplusplus/schemas/a2a/common.schema.json",
+      "ipfs_accelerate_py/mcplusplus/schemas/a2a/agent-extension-1.schema.json",
+      "ipfs_accelerate_py/mcplusplus/schemas/a2a/extension-params-1.schema.json",
+      "ipfs_accelerate_py/mcplusplus/schemas/a2a/activation-1.schema.json",
+      "ipfs_accelerate_py/mcplusplus/schemas/a2a/task-metadata-1.schema.json",
+      "ipfs_accelerate_py/mcplusplus/schemas/a2a/terminal-evidence-1.schema.json",
+      "ipfs_accelerate_py/mcplusplus/schemas/a2a/skill-metadata-1.schema.json",
+      "ipfs_accelerate_py/mcplusplus/schemas/a2a/profile-request-1.schema.json"
+    ]
+  },
+  "suites": {
+    "well_formed": {
+      "path": "well-formed.json",
+      "kind": "positive",
+      "valid": true,
+      "description": "Well-formed extension declaration, activation, metadata, and terminal evidence."
+    },
+    "malformed": {
+      "path": "malformed.json",
+      "kind": "negative",
+      "valid": false,
+      "description": "Malformed extension URI, missing required fields, forged markers, and non-portable terminal claims. Expected failures."
+    },
+    "unsupported_profile": {
+      "path": "unsupported-profile.json",
+      "kind": "negative",
+      "valid": false,
+      "description": "Unknown profile letters and profile claims outside the agent advertisement. Expected failures."
+    }
+  },
+  "error_codes": {
+    "A2A_MALFORMED_EXTENSION_URI": "uri is reverse-DNS-only, non-HTTPS, wrong host, or otherwise not the confirmed wire URI when claiming MCP++ execution",
+    "A2A_MALFORMED_EXTENSION": "AgentExtension / params / activation / metadata fails structural schema validation",
+    "A2A_MISSING_RECEIPT_CID": "portable completed terminal evidence lacks receipt_cid",
+    "A2A_UNSUPPORTED_PROFILE": "requested profile letter is unknown or not advertised by the agent",
+    "A2A_PROFILE_NOT_SUBSET": "requested_profiles is not a subset of advertised_profiles"
+  },
+  "cid_catalog": {
+    "interface": "bafkreigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+    "input": "bafkreihtwdlu4jntm7yl2mgsfzqgr4on37vr7inuld2dql2p4rmqafybti",
+    "intent": "bafkreicssskybdf32rmzlbtge5bxyv4v6c6eac322pbrsr3azlb4fkxiqi",
+    "envelope": "bafkreidpgkdasegkb6zkedd73ikdmzvqtw7y3njdqgk4scsyn62uf7ymvu",
+    "result": "bafkreihtwdlu4jntm7yl2mgsfzqgr4on37vr7inuld2dql2p4rmqafybti",
+    "receipt": "bafkreicssskybdf32rmzlbtge5bxyv4v6c6eac322pbrsr3azlb4fkxiqi",
+    "event": "bafkreify4h4axvyk4b4ey6cvurixgg3ul7o3m52j2i7wg67jbavxl2kxlm",
+    "output": "bafkreiclrltegoplfz2o3djv7ydnyrozwrr5zkgw6lxmnzaxd7pnqdt62u",
+    "proof": "bafkreigbzwrggyucrnusmzisauvzpszxfhr3auxevxshycq6gob557tty4",
+    "decision": "bafkreiepz7gpm5nr6c75hholweybkbjp5av4khaahqlfuqijixerhw5sxy",
+    "state_ref": "bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku"
+  }
+}

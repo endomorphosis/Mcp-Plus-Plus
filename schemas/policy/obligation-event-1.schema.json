@@ -1,0 +1,363 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcp-plus-plus.dev/schemas/policy/obligation-event-1.schema.json",
+  "title": "MCP++ ObligationEvent@1",
+  "description": "Content-addressed obligation lifecycle event for Profile D temporal deontic policy. An allow decision that creates an obligation is incomplete until the obligation is satisfied or compensated. Normative event types: obligation_created, obligation_satisfied, obligation_violated, compensation_required, compensation_completed, compensation_failed. Interface: ObligationEvent@1. Spec: docs/spec/temporal-deontic-policy.md §7–§8.",
+  "$comment": "Interface label: ObligationEvent@1. Schema marker: mcp++/policy/obligation-event@1. event_cid is minted under mcpp-jcs-v1 over the event body excluding event_cid itself. Deadline passage while status=pending MUST emit obligation_violated; declared compensation then emits compensation_required.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "interface",
+    "event_type",
+    "obligation_id",
+    "decision_cid",
+    "logical_time",
+    "status",
+    "parents",
+    "canonicalization"
+  ],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "mcp++/policy/obligation-event@1",
+      "description": "Closed schema marker for ObligationEvent@1."
+    },
+    "interface": {
+      "type": "string",
+      "const": "ObligationEvent@1",
+      "description": "Interface label for this event family."
+    },
+    "event_type": {
+      "$ref": "#/$defs/eventType",
+      "description": "Lifecycle transition that this event records."
+    },
+    "event_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "Content id of this event once minted under mcpp-jcs-v1. Optional on the wire before addressing; when set MUST equal the CID of the canonical body excluding event_cid."
+    },
+    "obligation_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "description": "Stable identifier for the obligation instance across its lifecycle (often derived from decision_cid + clause_id)."
+    },
+    "decision_cid": {
+      "$ref": "#/$defs/cid",
+      "description": "CID of the PolicyDecision@1 that spawned this obligation."
+    },
+    "intent_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "Optional intent CID bound to the originating decision."
+    },
+    "policy_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "Optional policy CID bound to the originating decision."
+    },
+    "clause_id": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Policy clause that produced the obligation, when known."
+    },
+    "action": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "maxLength": 256,
+      "description": "Obligated act (for example audit/log or human_approval)."
+    },
+    "deadline": {
+      "anyOf": [
+        { "$ref": "#/$defs/iso8601" },
+        { "type": "null" },
+        { "type": "string", "const": "" }
+      ],
+      "description": "Absolute deadline for satisfaction. Empty/null means no temporal deadline."
+    },
+    "logical_time": {
+      "$ref": "#/$defs/iso8601",
+      "description": "Logical evaluation / observation time for this event. MUST NOT be wall-clock injected by the emitter; callers supply deterministic logical time."
+    },
+    "status": {
+      "$ref": "#/$defs/obligationStatus",
+      "description": "Obligation status after applying this event."
+    },
+    "parents": {
+      "type": "array",
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/cid" },
+      "description": "Causal parent event CIDs for this obligation's prior lifecycle events. Empty for the first (obligation_created) event."
+    },
+    "compensation": {
+      "anyOf": [
+        { "$ref": "#/$defs/compensationBlock" },
+        { "type": "null" }
+      ],
+      "description": "Compensation plan or outcome associated with this transition, when declared or executed."
+    },
+    "reason": {
+      "type": ["string", "null"],
+      "minLength": 0,
+      "maxLength": 512,
+      "description": "Stable machine- or human-readable reason (e.g. deadline_passed, compensated_action_failed)."
+    },
+    "reason_code": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Optional closed reason token for automation (deadline_passed, satisfied, compensation_failed, …)."
+    },
+    "receipt_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "Optional receipt or evidence CID that discharges satisfaction or compensation."
+    },
+    "trigger": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Optional obligation trigger from the policy clause (after_execution, before_execution, …)."
+    },
+    "canonicalization": {
+      "type": "string",
+      "const": "mcpp-jcs-v1",
+      "description": "Canonicalization algorithm used to mint event_cid."
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Optional non-authoritative metadata copied from the policy clause (human_approval flags, labels).",
+      "additionalProperties": true
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "Optional monotonic sequence number within one obligation_id stream."
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "event_type": { "const": "obligation_created" } },
+        "required": ["event_type"]
+      },
+      "then": {
+        "properties": {
+          "status": { "const": "pending" }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "event_type": { "const": "obligation_satisfied" } },
+        "required": ["event_type"]
+      },
+      "then": {
+        "properties": {
+          "status": { "const": "satisfied" }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "event_type": { "const": "obligation_violated" } },
+        "required": ["event_type"]
+      },
+      "then": {
+        "properties": {
+          "status": { "const": "violated" }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "event_type": { "const": "compensation_required" } },
+        "required": ["event_type"]
+      },
+      "then": {
+        "properties": {
+          "status": { "const": "compensating" }
+        },
+        "required": ["compensation"]
+      }
+    },
+    {
+      "if": {
+        "properties": { "event_type": { "const": "compensation_completed" } },
+        "required": ["event_type"]
+      },
+      "then": {
+        "properties": {
+          "status": { "const": "compensated" }
+        },
+        "required": ["compensation"]
+      }
+    },
+    {
+      "if": {
+        "properties": { "event_type": { "const": "compensation_failed" } },
+        "required": ["event_type"]
+      },
+      "then": {
+        "properties": {
+          "status": { "const": "compensation_failed" }
+        },
+        "required": ["compensation"]
+      }
+    }
+  ],
+  "$defs": {
+    "eventType": {
+      "type": "string",
+      "enum": [
+        "obligation_created",
+        "obligation_satisfied",
+        "obligation_violated",
+        "compensation_required",
+        "compensation_completed",
+        "compensation_failed"
+      ],
+      "description": "Closed set of obligation lifecycle event types (MCPP-047)."
+    },
+    "obligationStatus": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "satisfied",
+        "violated",
+        "compensating",
+        "compensated",
+        "compensation_failed"
+      ],
+      "description": "Closed set of obligation instance statuses after an event."
+    },
+    "cid": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 256,
+      "description": "IPFS CID. CIDv1 base32 (b…) preferred for new mints; CIDv0 (Qm…) remains readable when historical.",
+      "pattern": "^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58,}|b[a-f0-9]{58,}|sha256:[0-9a-fA-F]{64})$"
+    },
+    "iso8601": {
+      "type": "string",
+      "minLength": 4,
+      "maxLength": 64,
+      "description": "ISO-8601 calendar date/time (optional fractional seconds, Z or ±offset).",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,9})?(?:Z|[+-]\\d{2}:\\d{2})?)?$"
+    },
+    "compensationBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action"],
+      "properties": {
+        "action": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "description": "Compensating act that must run when the primary obligation is violated."
+        },
+        "on": {
+          "type": "string",
+          "enum": ["obligation_violated"],
+          "description": "Trigger condition. Default and only normative value is obligation_violated."
+        },
+        "deadline": {
+          "anyOf": [
+            { "$ref": "#/$defs/iso8601" },
+            { "type": "null" },
+            { "type": "string", "const": "" }
+          ],
+          "description": "Optional deadline for completing compensation."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["declared", "required", "completed", "failed"],
+          "description": "Compensation sub-status within this event."
+        },
+        "clause_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "evidence_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ],
+          "description": "Optional evidence CID for completed compensation."
+        },
+        "detail": {
+          "type": ["string", "null"],
+          "maxLength": 512
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "schema": "mcp++/policy/obligation-event@1",
+      "interface": "ObligationEvent@1",
+      "event_type": "obligation_created",
+      "obligation_id": "obl:bafydecision123:audit-1",
+      "decision_cid": "bafkreigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+      "clause_id": "audit-1",
+      "action": "audit/log",
+      "deadline": "2026-01-01T13:00:00Z",
+      "logical_time": "2026-01-01T12:00:00Z",
+      "status": "pending",
+      "parents": [],
+      "canonicalization": "mcpp-jcs-v1",
+      "sequence": 0
+    },
+    {
+      "schema": "mcp++/policy/obligation-event@1",
+      "interface": "ObligationEvent@1",
+      "event_type": "obligation_violated",
+      "obligation_id": "obl:bafydecision123:audit-1",
+      "decision_cid": "bafkreigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+      "clause_id": "audit-1",
+      "action": "audit/log",
+      "deadline": "2026-01-01T13:00:00Z",
+      "logical_time": "2026-01-01T13:00:01Z",
+      "status": "violated",
+      "parents": ["bafkreihtwdlu4jntm7yl2mgsfzqgr4on37vr7inuld2dql2p4rmqafybti"],
+      "reason": "deadline_passed",
+      "reason_code": "deadline_passed",
+      "canonicalization": "mcpp-jcs-v1",
+      "sequence": 1
+    },
+    {
+      "schema": "mcp++/policy/obligation-event@1",
+      "interface": "ObligationEvent@1",
+      "event_type": "compensation_required",
+      "obligation_id": "obl:bafydecision123:audit-1",
+      "decision_cid": "bafkreigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+      "clause_id": "audit-1",
+      "action": "audit/log",
+      "deadline": "2026-01-01T13:00:00Z",
+      "logical_time": "2026-01-01T13:00:01Z",
+      "status": "compensating",
+      "parents": ["bafkreicssskybdf32rmzlbtge5bxyv4v6c6eac322pbrsr3azlb4fkxiqi"],
+      "compensation": {
+        "action": "secrets/rotate",
+        "on": "obligation_violated",
+        "status": "required",
+        "deadline": "2026-01-01T14:00:00Z"
+      },
+      "canonicalization": "mcpp-jcs-v1",
+      "sequence": 2
+    }
+  ]
+}

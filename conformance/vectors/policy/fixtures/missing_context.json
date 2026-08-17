@@ -1,0 +1,49 @@
+{
+  "description": "Required context root key absent from context_roots \u2192 deny (fail-closed).",
+  "expected": {
+    "decision": "deny",
+    "granted": false,
+    "reason_code": "missing_context"
+  },
+  "expected_decision": "deny",
+  "expected_reason_code": "missing_context",
+  "id": "missing_context",
+  "inputs": {
+    "context_roots": {},
+    "intent": {
+      "action": "tool/execute",
+      "actor": "agent:worker",
+      "intent_cid": "bafyintentpolicy001",
+      "resource": "weather-api"
+    },
+    "logical_time": "2024-06-15T12:00:00Z",
+    "policy": {
+      "clauses": [
+        {
+          "action": "tool/execute",
+          "actor": "agent:worker",
+          "clause_id": "perm-tool-execute",
+          "resource": "weather-api",
+          "type": "permission"
+        }
+      ],
+      "name": "worker-tool-permission",
+      "policy_cid": "bafypolicyperm001",
+      "schema": "mcp++/profile-d-policy@1",
+      "version": "1.0.0"
+    },
+    "required_context_keys": [
+      "state_root"
+    ]
+  },
+  "interface": "PolicyVector@1",
+  "languages": [
+    "python",
+    "typescript",
+    "go",
+    "rust"
+  ],
+  "layer": "gate",
+  "polarity": "negative",
+  "task_id": "MCPP-048"
+}

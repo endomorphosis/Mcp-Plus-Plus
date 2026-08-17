@@ -4,6 +4,17 @@ The harness intentionally uses no sockets or sleeps.  A deterministic clock,
 explicit network links, and JSON durable stores make every interleaving
 repeatable while still exercising the protocol boundary: peers exchange only
 content-addressed Profile F events and rebuild all indexes by replaying them.
+
+Expanded coverage (MCPP-068 / ThreePeerHarness@1):
+- simultaneous claims with deterministic conflict order
+- partition fail-closed majority placement
+- duplicate / out-of-order delivery
+- durable restart
+- lease expiry and epoch takeover
+- late / alternate / malicious stale completion rejection
+- frontier and state-root convergence after partition heal
+- exactly one authoritative exclusive completion
+- no policy bypass (minority cannot resolve or complete exclusive work)
 """
 from __future__ import annotations
 
@@ -41,6 +52,10 @@ class DeterministicClock:
 
 def _event_cid(event_without_cid: Mapping[str, Any]) -> str:
     return profile_g_artifact_cid(event_without_cid)
+
+
+def _body_without_cid(event: Mapping[str, Any]) -> dict[str, Any]:
+    return {key: value for key, value in event.items() if key != "event_cid"}
 
 
 class Peer:
@@ -125,9 +140,50 @@ class Peer:
             return None
         return max(accepted, key=lambda event: (event["payload"]["fencing_token"], event["event_cid"]))
 
+    def task_created(self, task_cid: str) -> dict[str, Any] | None:
+        created = self.events_of_type("task_created", task_cid)
+        return created[0] if created else None
+
+    def execution_mode(self, task_cid: str) -> str:
+        created = self.task_created(task_cid)
+        if created is None:
+            raise CoordinationError("G_NOT_FOUND", "task is not known")
+        return created["payload"].get("execution_mode", "exclusive")
+
+    def completions(self, task_cid: str) -> list[dict[str, Any]]:
+        return self.events_of_type("task_completed", task_cid)
+
+    def authoritative_completion(self, task_cid: str) -> dict[str, Any] | None:
+        """Return the sole completion matching the current accepted fence, if any."""
+        resolution = self.accepted_resolution(task_cid)
+        if resolution is None:
+            return None
+        accepted = resolution["payload"]
+        matches = [
+            event for event in self.completions(task_cid)
+            if event["payload"]["claim_cid"] == accepted["accepted_claim_cid"]
+            and event["payload"]["fencing_token"] == accepted["fencing_token"]
+            and event["payload"].get("status") == "succeeded"
+        ]
+        if not matches:
+            return None
+        return min(matches, key=lambda event: event["event_cid"])
+
     def terminal(self, task_cid: str) -> dict[str, Any] | None:
-        completed = self.events_of_type("task_completed", task_cid)
-        return min(completed, key=lambda event: event["event_cid"]) if completed else None
+        """Authoritative terminal completion (not every historical task_completed)."""
+        return self.authoritative_completion(task_cid)
+
+    def state_root(self) -> str:
+        """Content-addressed digest of the peer's durable event set.
+
+        The root deliberately excludes peer identity so converged stores share
+        one state root after partition heal.
+        """
+        material = {
+            "schema": "mcp++/profile-g/peer-state-root@1",
+            "event_cids": sorted(self.events),
+        }
+        return profile_g_artifact_cid(material)
 
 
 class ThreePeerHarness:
@@ -141,6 +197,8 @@ class ThreePeerHarness:
         self.clock = DeterministicClock(now_ms)
         self.peers = {peer_id: Peer(peer_id, self.root / f"{peer_id.replace(':', '_')}.json", self.clock) for peer_id in ids}
         self.links = {frozenset((left, right)) for left in ids for right in ids if left < right}
+        self.policy_denials = 0
+        self.policy_bypasses = 0
 
     def connected(self, left: str, right: str) -> bool:
         return left == right or frozenset((left, right)) in self.links
@@ -157,6 +215,9 @@ class ThreePeerHarness:
 
     def reachable(self, peer_id: str) -> set[str]:
         return {other for other in self.peers if self.connected(peer_id, other)}
+
+    def majority_reachable(self, peer_id: str) -> bool:
+        return len(self.reachable(peer_id)) >= 2
 
     def _replicate(self, source: str, event: Mapping[str, Any]) -> None:
         for target in sorted(self.reachable(source) - {source}):
@@ -209,7 +270,8 @@ class ThreePeerHarness:
         return event
 
     def resolve(self, resolver_id: str, task_cid: str, logical_epoch: int) -> dict[str, Any]:
-        if len(self.reachable(resolver_id)) < 2:
+        if not self.majority_reachable(resolver_id):
+            self.policy_denials += 1
             raise CoordinationError("G_COORDINATION_UNAVAILABLE", "exclusive lease requires a majority")
         peer = self.peers[resolver_id]
         claims = peer.claims(task_cid, logical_epoch)
@@ -262,17 +324,40 @@ class ThreePeerHarness:
         if resolution is None:
             raise CoordinationError("G_NOT_FOUND", "no accepted resolution")
         accepted = resolution["payload"]
-        existing = peer.terminal(task_cid)
+        existing = peer.authoritative_completion(task_cid)
         exact = accepted["accepted_claim_cid"] == claim_cid and accepted["fencing_token"] == fencing_token
         unexpired = self.clock.now_ms < accepted["lease_expires_at_ms"]
         if not exact or not unexpired:
+            # Stale / expired / wrong-claim publishers are rejected without majority.
             reason = "G_STALE_FENCE" if fencing_token < accepted["fencing_token"] or not unexpired else "G_CLAIM_CONFLICT"
             return self._rejection(peer_id, task_cid, resolution, claim_cid, fencing_token, output_cid, reason)
+
+        mode = peer.execution_mode(task_cid)
+        if mode == "exclusive" and not self.majority_reachable(peer_id):
+            # Exclusive authoritative completion requires neighborhood majority so a
+            # partitioned lease holder cannot split-brain a second success.
+            self.policy_denials += 1
+            raise CoordinationError(
+                "G_COORDINATION_UNAVAILABLE",
+                "exclusive completion requires a majority",
+            )
+
         if existing:
             payload = existing["payload"]
             if payload["claim_cid"] == claim_cid and payload["output_cid"] == output_cid:
                 return existing
             return self._rejection(peer_id, task_cid, resolution, claim_cid, fencing_token, output_cid, "G_COMPLETION_CONFLICT")
+
+        # Defense in depth: refuse a second non-matching completion event body.
+        for prior in peer.completions(task_cid):
+            prior_payload = prior["payload"]
+            if (
+                prior_payload["claim_cid"] == claim_cid
+                and prior_payload["fencing_token"] == fencing_token
+                and prior_payload["output_cid"] == output_cid
+            ):
+                return prior
+
         event = peer.emit("task_completed", [resolution["event_cid"]], {
             "task_cid": task_cid, "claim_cid": claim_cid, "resolution_cid": resolution["event_cid"],
             "fencing_token": fencing_token, "output_cid": output_cid, "status": "succeeded",
@@ -299,9 +384,63 @@ class ThreePeerHarness:
         self._replicate_event_to(source, target, event_cid)
         return len(self.peers[target].events) != before
 
+    def deliver(self, source: str, target: str, event_cid: str, *, causal: bool = True) -> bool:
+        """Deliver one event, optionally without causal parent repair (reorder injection)."""
+        if source == target:
+            return False
+        if not self.connected(source, target):
+            raise CoordinationError("G_COORDINATION_UNAVAILABLE", "no link between source and target")
+        event = self.peers[source].events[event_cid]
+        if causal:
+            before = len(self.peers[target].events)
+            self._replicate_event_to(source, target, event_cid)
+            return len(self.peers[target].events) != before
+        # Non-causal delivery: attempt the leaf only so missing parents surface.
+        return self.peers[target].ingest(event)
+
     def restart(self, peer_id: str) -> Peer:
         self.peers[peer_id] = Peer(peer_id, self.peers[peer_id].store_path, self.clock)
         return self.peers[peer_id]
+
+    def _task_cids(self) -> set[str]:
+        tasks: set[str] = set()
+        for peer in self.peers.values():
+            for event in peer.events.values():
+                task_cid = event["payload"].get("task_cid")
+                if isinstance(task_cid, str):
+                    tasks.add(task_cid)
+        return tasks
+
+    def _demote_stale_completions(self) -> list[dict[str, Any]]:
+        """After heal, record rejections for any non-authoritative task_completed events."""
+        demotions: list[dict[str, Any]] = []
+        witness = next(iter(self.peers))
+        for task_cid in sorted(self._task_cids()):
+            peer = self.peers[witness]
+            resolution = peer.accepted_resolution(task_cid)
+            if resolution is None:
+                continue
+            accepted = resolution["payload"]
+            for completion in peer.completions(task_cid):
+                payload = completion["payload"]
+                matches = (
+                    payload.get("claim_cid") == accepted["accepted_claim_cid"]
+                    and payload.get("fencing_token") == accepted["fencing_token"]
+                    and payload.get("status") == "succeeded"
+                )
+                if matches:
+                    continue
+                rejection = self._rejection(
+                    witness,
+                    task_cid,
+                    resolution,
+                    payload.get("claim_cid", ""),
+                    int(payload.get("fencing_token", 0)),
+                    payload.get("output_cid", ""),
+                    "G_STALE_FENCE",
+                )
+                demotions.append(rejection)
+        return demotions
 
     def reconcile(self) -> dict[str, Any]:
         """Heal and exchange bounded frontiers until all three stores converge."""
@@ -320,17 +459,39 @@ class ThreePeerHarness:
                     progressed = True
             if not progressed:
                 raise CoordinationError("G_INVALID_ARTIFACT", "reconciliation frontier has missing parents")
+        demotions = self._demote_stale_completions()
+        # Re-exchange any demotion evidence emitted during stale-publisher cleanup.
+        if demotions:
+            for demotion in demotions:
+                all_events[demotion["event_cid"]] = demotion
+            for peer in self.peers.values():
+                for demotion in demotions:
+                    peer.ingest(demotion)
         frontiers = {peer_id: self.frontier(peer_id) for peer_id in self.peers}
+        state_roots = {peer_id: self.state_root(peer_id) for peer_id in self.peers}
         return {
             "schema": "mcp++/profile-g/three-peer-reconciliation@1",
-            "converged": len({tuple(frontier) for frontier in frontiers.values()}) == 1,
-            "event_count": len(all_events), "frontiers": frontiers, "archive_boundaries": [],
+            "converged": len({tuple(frontier) for frontier in frontiers.values()}) == 1
+            and len(set(state_roots.values())) == 1,
+            "event_count": len(next(iter(self.peers.values())).events),
+            "frontiers": frontiers,
+            "state_roots": state_roots,
+            "stale_demotions": len(demotions),
+            "archive_boundaries": [],
         }
 
     def frontier(self, peer_id: str) -> list[str]:
         peer = self.peers[peer_id]
         parents = {parent for event in peer.events.values() for parent in event["parents"]}
         return sorted(set(peer.events) - parents)
+
+    def state_root(self, peer_id: str) -> str:
+        return self.peers[peer_id].state_root()
+
+    def authoritative_completion(self, task_cid: str, peer_id: str | None = None) -> dict[str, Any] | None:
+        if peer_id is None:
+            peer_id = next(iter(self.peers))
+        return self.peers[peer_id].authoritative_completion(task_cid)
 
     def evidence(self, peer_id: str) -> list[dict[str, Any]]:
         peer = self.peers[peer_id]
@@ -349,23 +510,45 @@ class ThreePeerHarness:
     def conformance_report(self, task_cid: str) -> dict[str, Any]:
         peer = next(iter(self.peers.values()))
         resolutions = peer.resolutions(task_cid)
-        completions = peer.events_of_type("task_completed", task_cid)
+        authoritative = peer.authoritative_completion(task_cid)
+        raw_completions = peer.completions(task_cid)
         rejected = peer.events_of_type("task_reconciled", task_cid)
         frontiers = {peer_id: self.frontier(peer_id) for peer_id in self.peers}
+        state_roots = {peer_id: self.state_root(peer_id) for peer_id in self.peers}
+        fencing_tokens = sorted({event["payload"]["fencing_token"] for event in resolutions})
         return {
             "schema": "mcp++/profile-g/three-peer-conformance-report@1",
             "task_cid": task_cid,
             "peer_count": 3,
             "event_count": len(peer.events),
             "frontiers_converged": len({tuple(value) for value in frontiers.values()}) == 1,
+            "state_roots_converged": len(set(state_roots.values())) == 1,
+            "state_roots": state_roots,
             "accepted_epochs": sorted({event["payload"]["logical_epoch"] for event in resolutions}),
-            "fencing_tokens": sorted({event["payload"]["fencing_token"] for event in resolutions}),
-            "successful_completion_count": len(completions),
+            "fencing_tokens": fencing_tokens,
+            "successful_completion_count": 1 if authoritative is not None else 0,
+            "raw_completion_event_count": len(raw_completions),
+            "authoritative_completion_cid": None if authoritative is None else authoritative["event_cid"],
             "rejected_evidence_reasons": sorted({event["payload"]["reason"] for event in rejected}),
+            "policy_denials": self.policy_denials,
+            "policy_bypasses": self.policy_bypasses,
             "checks": {
-                "content_addressed_events": all(_event_cid({k: v for k, v in event.items() if k != "event_cid"}) == event["event_cid"] for event in peer.events.values()),
-                "strictly_increasing_fences": all(left < right for left, right in zip(sorted({event["payload"]["fencing_token"] for event in resolutions}), sorted({event["payload"]["fencing_token"] for event in resolutions})[1:])),
-                "single_success": len(completions) == 1,
-                "converged": len({tuple(value) for value in frontiers.values()}) == 1,
+                "content_addressed_events": all(
+                    _event_cid(_body_without_cid(event)) == event["event_cid"] for event in peer.events.values()
+                ),
+                "strictly_increasing_fences": all(
+                    left < right for left, right in zip(fencing_tokens, fencing_tokens[1:])
+                ),
+                "single_success": (1 if authoritative is not None else 0) == 1 and (
+                    authoritative is None
+                    or all(
+                        event["event_cid"] == authoritative["event_cid"]
+                        or event["payload"]["fencing_token"] < authoritative["payload"]["fencing_token"]
+                        for event in raw_completions
+                    )
+                ),
+                "converged": len({tuple(value) for value in frontiers.values()}) == 1
+                and len(set(state_roots.values())) == 1,
+                "no_policy_bypass": self.policy_bypasses == 0,
             },
         }

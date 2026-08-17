@@ -1,0 +1,20 @@
+{
+  "expected_reason_codes": [
+    "missing_proof_cid"
+  ],
+  "id": "missing_proof",
+  "invocation": {
+    "method": "tools/call",
+    "params": {
+      "name": "infer"
+    }
+  },
+  "languages": [
+    "python",
+    "typescript",
+    "go",
+    "rust"
+  ],
+  "layer": "invocation",
+  "polarity": "negative"
+}

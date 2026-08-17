@@ -1,0 +1,223 @@
+{
+  "interface": "ProfileGAdapter@1",
+  "schema": "mcp++/conformance/profile-g-adapter@1",
+  "task_id": "MCPP-032",
+  "description": "Compact Profile G → ExecutionEnvelope@1 / ExecutionReceipt@1 adapter vectors. Historical CIDs are referenced unchanged via profile_g_task_receipt_cid (receipts) and intent_cid binding to TaskSpec CID (envelopes). Recipes pull payloads from profile_g_artifacts_valid.json without mutating that suite. Adapter output must validate as Envelope@1 / Receipt@1.",
+  "canonicalization": "mcpp-jcs-v1",
+  "related": {
+    "spec": "ipfs_accelerate_py/mcplusplus/docs/spec/execution-envelope.md",
+    "profile_g": "ipfs_accelerate_py/mcplusplus/docs/spec/risk-scheduling.md",
+    "historical_suite": "ipfs_accelerate_py/mcplusplus/conformance/vectors/profile_g_artifacts_valid.json",
+    "schemas": [
+      "ipfs_accelerate_py/mcplusplus/schemas/execution/execution-envelope-1.schema.json",
+      "ipfs_accelerate_py/mcplusplus/schemas/execution/execution-receipt-1.schema.json",
+      "ipfs_accelerate_py/mcplusplus/schemas/execution/execution-result-1.schema.json",
+      "ipfs_accelerate_py/mcplusplus/schemas/execution/portable-error-1.schema.json"
+    ]
+  },
+  "cid_catalog": {
+    "task_spec": "baguqeeramg5vdaynjr7hppi4igy34qopeht6k5xy5zbehfubok674m5vlbta",
+    "task_receipt": "baguqeeraj4cdnh75jbm5nlahu7azcyrncta76qnwxtqgq3cgtoenwx5gf4va",
+    "task_claim": "baguqeerakks7bnxojgffzvzkytumof6wj45v4f4pla66djy34k2wiwh4i35a",
+    "claim_resolution": "baguqeera7nzz5ku74zuktkrcikmyi3klgbwfvyyxknal7w4uetfqxd5skjjq",
+    "plan_selection": "baguqeeratzffbffgpzndijxyw3juwfq2f7uembh47uxpr6lmeoxqpu3psimq",
+    "interface": "bafkreighs3jxy3kjd2hqy3u3qpxngtavydzxp6pq6pf3gilpxp3xnwtdeu",
+    "input": "bafkreigjnrwvx2gqrijopnonygzap6tleqyjotegqa6yrelhlz3p3gjmea",
+    "proof": "bafkreigbzwrggyucrnusmzisauvzpszxfhr3auxevxshycq6gob557tty4",
+    "policy_decision": "baguqeeraq2xdlvmknkr3k5bn7fhptvyweim7aedksenodfkmd4dajkxmqboq",
+    "profile_b_receipt": "bafkreidpgkdasegkb6zkedd73ikdmzvqtw7y3njdqgk4scsyn62uf7ymvu",
+    "output": "bafkreiha52f3kbuf4bp2b5d62bbahluvh7p5avpvxuujf2qymucckt4mhi",
+    "resource_use": "bafkreic55fjrt4lum7ww3rmojyfrnqizhij3gxla3relz4dl62335256nq"
+  },
+  "cases": [
+    {
+      "id": "task-spec-to-envelope",
+      "kind": "envelope",
+      "description": "Historical TaskSpec adapts to Envelope@1; TaskSpec CID binds intent_cid; G codec CID still verifies.",
+      "recipe": { "id": "task-valid", "kind": "TaskSpec" },
+      "defaults": {
+        "requester": { "did": "did:web:planner.example" },
+        "proof_cid": "bafkreigbzwrggyucrnusmzisauvzpszxfhr3auxevxshycq6gob557tty4"
+      },
+      "expect": {
+        "schema": "mcp++/execution/envelope@1",
+        "interface_cid": "bafkreighs3jxy3kjd2hqy3u3qpxngtavydzxp6pq6pf3gilpxp3xnwtdeu",
+        "input_cid": "bafkreigjnrwvx2gqrijopnonygzap6tleqyjotegqa6yrelhlz3p3gjmea",
+        "method": "repo.test",
+        "intent_cid": "baguqeeramg5vdaynjr7hppi4igy34qopeht6k5xy5zbehfubok674m5vlbta",
+        "correlation_id": "goal-001",
+        "adapted.constraints.idempotency_key": "task-repo-test-001",
+        "adapted.constraints.max_retries": 2,
+        "schema_valid": true,
+        "historical_valid": true
+      }
+    },
+    {
+      "id": "task-spec-with-claim-context",
+      "kind": "TaskSpec",
+      "description": "TaskSpec + TaskClaim + ClaimResolution context maps authority, fence, lease, and audience.",
+      "recipe": { "id": "task-valid" },
+      "claim": {
+        "schema": "mcp++/profile-g/task-claim@1",
+        "created_at_ms": 1783872000800,
+        "parents": ["baguqeerarcdez4ae6sb7twykqtabmqpwobyvepa3v7z25dk7pbmzem4zvjwq"],
+        "correlation_id": "goal-001",
+        "task_cid": "baguqeerab25ufh5invebyjrq7lct3mojdt762xknihiqehaxsrcowz7h5yfq",
+        "proposal_cid": "baguqeera5titpc6j3qjqachqbvmnwxjg6yg3kwjuusnzjgxx433krwrkfpvq",
+        "claimant_did": "did:web:worker-a.example",
+        "record_cid": "baguqeeraodhioh4khu73isn4hq5m4zkhz3yc37du77si3ejfgktsjp634w4q",
+        "logical_epoch": 1,
+        "requested_lease_ms": 60000,
+        "risk_bucket": 0,
+        "capability_fit_millionths": 900000,
+        "expected_finish_ms": 1783872060000,
+        "proof_cid": "bafkreigbzwrggyucrnusmzisauvzpszxfhr3auxevxshycq6gob557tty4",
+        "policy_decision_cid": "baguqeeraq2xdlvmknkr3k5bn7fhptvyweim7aedksenodfkmd4dajkxmqboq",
+        "attempt": 1
+      },
+      "resolution": {
+        "schema": "mcp++/profile-g/claim-resolution@1",
+        "created_at_ms": 1783872001000,
+        "parents": ["baguqeerarcdez4ae6sb7twykqtabmqpwobyvepa3v7z25dk7pbmzem4zvjwq"],
+        "correlation_id": "goal-001",
+        "task_cid": "baguqeerab25ufh5invebyjrq7lct3mojdt762xknihiqehaxsrcowz7h5yfq",
+        "logical_epoch": 1,
+        "considered_claim_cids": ["baguqeeraxdwm25h6grgd5elfisj62hggt2nwg7hy3uhnfuuij4rxlpivytza"],
+        "accepted_claim_cid": "baguqeeraxdwm25h6grgd5elfisj62hggt2nwg7hy3uhnfuuij4rxlpivytza",
+        "outcome": "accepted",
+        "fencing_token": 1,
+        "lease_expires_at_ms": 1783872061000,
+        "attestation_cids": ["baguqeeraqe5itiuws47dkvc47j2p4px5c4vh2gkehsl4mjowthuxg4rjwcra"],
+        "quorum_policy_cid": "baguqeeral4e25gvyz7tmtk4ammolgwolvvjyswsrrufs3fhjljo2bipyy5rq",
+        "policy_decision_cid": "baguqeeraq2xdlvmknkr3k5bn7fhptvyweim7aedksenodfkmd4dajkxmqboq",
+        "coordination_receipt_cid": null,
+        "retry_not_before_ms": 0,
+        "resolver_did": "did:web:resolver.example"
+      },
+      "defaults": {
+        "requester": { "did": "did:web:planner.example" }
+      },
+      "expect": {
+        "schema": "mcp++/execution/envelope@1",
+        "decision_cid": "baguqeeraq2xdlvmknkr3k5bn7fhptvyweim7aedksenodfkmd4dajkxmqboq",
+        "adapted.authority.proof_cid": "bafkreigbzwrggyucrnusmzisauvzpszxfhr3auxevxshycq6gob557tty4",
+        "adapted.constraints.fencing_token": 1,
+        "adapted.constraints.lease_ms": 60000,
+        "adapted.audience.did": "did:web:worker-a.example",
+        "schema_valid": true,
+        "historical_valid": true
+      }
+    },
+    {
+      "id": "task-receipt-success",
+      "kind": "receipt",
+      "description": "Historical TaskReceipt adapts to Receipt@1; profile_g_task_receipt_cid and profile_b_receipt_cid preserved.",
+      "recipe": { "id": "task-receipt-valid", "kind": "TaskReceipt" },
+      "defaults": {
+        "executor": {
+          "did": "did:web:worker-a.example",
+          "runtime": "ipfs_accelerate_py",
+          "runtime_version": "3.2.0"
+        }
+      },
+      "expect": {
+        "schema": "mcp++/execution/receipt@1",
+        "profile_g_task_receipt_cid": "baguqeeraj4cdnh75jbm5nlahu7azcyrncta76qnwxtqgq3cgtoenwx5gf4va",
+        "profile_b_receipt_cid": "bafkreidpgkdasegkb6zkedd73ikdmzvqtw7y3njdqgk4scsyn62uf7ymvu",
+        "status": "succeeded",
+        "adapted.retry.attempt": 1,
+        "resource_use_cid": "bafkreic55fjrt4lum7ww3rmojyfrnqizhij3gxla3relz4dl62335256nq",
+        "schema_valid": true,
+        "historical_valid": true
+      }
+    },
+    {
+      "id": "task-receipt-failed-policy",
+      "kind": "receipt",
+      "description": "Failed TaskReceipt overlay maps failure_class policy to PortableError@1 under Receipt@1 without mutating the historical suite file.",
+      "historical_cid": "baguqeeraj4cdnh75jbm5nlahu7azcyrncta76qnwxtqgq3cgtoenwx5gf4va",
+      "require_historical_valid": false,
+      "recipe": {
+        "id": "task-receipt-valid",
+        "overlay": {
+          "status": "failed",
+          "failure_class": "policy",
+          "output_cid": null
+        }
+      },
+      "defaults": {
+        "error_code": "E_POLICY_DENIED",
+        "executor": { "did": "did:web:worker-a.example" }
+      },
+      "expect": {
+        "schema": "mcp++/execution/receipt@1",
+        "profile_g_task_receipt_cid": "baguqeeraj4cdnh75jbm5nlahu7azcyrncta76qnwxtqgq3cgtoenwx5gf4va",
+        "status": "failed",
+        "adapted.error.failure_class": "policy",
+        "adapted.error.code": "E_POLICY_DENIED",
+        "adapted.error.retryable": false,
+        "schema_valid": true
+      }
+    },
+    {
+      "id": "task-receipt-fenced",
+      "kind": "receipt",
+      "description": "Fenced TaskReceipt maps to PortableError failure_class=fenced (retryable).",
+      "historical_cid": "baguqeeraj4cdnh75jbm5nlahu7azcyrncta76qnwxtqgq3cgtoenwx5gf4va",
+      "require_historical_valid": false,
+      "recipe": {
+        "id": "task-receipt-valid",
+        "overlay": {
+          "status": "failed",
+          "failure_class": "fenced",
+          "output_cid": null
+        }
+      },
+      "defaults": {
+        "executor": { "did": "did:web:worker-a.example" }
+      },
+      "expect": {
+        "schema": "mcp++/execution/receipt@1",
+        "status": "failed",
+        "profile_g_task_receipt_cid": "baguqeeraj4cdnh75jbm5nlahu7azcyrncta76qnwxtqgq3cgtoenwx5gf4va",
+        "adapted.error.failure_class": "fenced",
+        "adapted.error.retryable": true,
+        "adapted.error.code": "E_FENCED_STALE",
+        "schema_valid": true
+      }
+    },
+    {
+      "id": "verify-historical-goal-cid",
+      "kind": "verify",
+      "description": "Non-envelope G artifact still verifies under the historical codec (CID unchanged).",
+      "recipe": { "id": "goal-valid", "kind": "Goal" },
+      "expect": {
+        "historical_valid": true,
+        "historical_cid": "baguqeeraeogqdsfrmtt4fcvt65uew4iznpb7hk2fxnyxon63qkauwul5azha",
+        "schema_valid": true
+      }
+    },
+    {
+      "id": "verify-historical-task-claim-cid",
+      "kind": "verify",
+      "description": "TaskClaim historical CID still verifies (adapter does not rewrite claim fixtures).",
+      "recipe": { "id": "task-claim-valid" },
+      "expect": {
+        "historical_valid": true,
+        "historical_cid": "baguqeerakks7bnxojgffzvzkytumof6wj45v4f4pla66djy34k2wiwh4i35a",
+        "schema_valid": true
+      }
+    },
+    {
+      "id": "verify-historical-task-receipt-cid",
+      "kind": "verify",
+      "description": "TaskReceipt historical CID from profile_g_artifacts_valid.json still verifies after adapter work.",
+      "recipe": { "id": "task-receipt-valid" },
+      "expect": {
+        "historical_valid": true,
+        "historical_cid": "baguqeeraj4cdnh75jbm5nlahu7azcyrncta76qnwxtqgq3cgtoenwx5gf4va",
+        "schema_valid": true
+      }
+    }
+  ]
+}

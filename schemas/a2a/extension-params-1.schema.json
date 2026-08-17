@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcp-plus-plus.dev/schemas/a2a/extension-params-1.schema.json",
+  "title": "MCP++ A2A ExtensionParams@1",
+  "description": "AgentExtension.params for the MCP++ A2A execution extension. Advertises profiles, schema markers, MCP bindings, interface CIDs, and canonicalization. Interface: A2AExtensionSchema@1. Normative prose: a2a-extension.md §4.1.",
+  "$comment": "Schema marker: mcp++/a2a/extension-params@1. Unknown profile letters and forged schema markers fail closed.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "mcp++/a2a/extension-params@1",
+      "description": "Optional closed schema marker when params are content-addressed or validated standalone."
+    },
+    "profiles": {
+      "$ref": "#/$defs/profileLetters",
+      "description": "MCP++ profile letters this agent implements under the extension (SHOULD on Agent Card)."
+    },
+    "envelope_schema": {
+      "$ref": "#/$defs/envelopeSchemaMarker",
+      "description": "Schema marker for request envelopes."
+    },
+    "receipt_schema": {
+      "$ref": "#/$defs/receiptSchemaMarker",
+      "description": "Schema marker for terminal receipts."
+    },
+    "state_ref_schema": {
+      "$ref": "#/$defs/stateRefSchemaMarker",
+      "description": "Schema marker for StateRef handles."
+    },
+    "mcp_bindings": {
+      "$ref": "#/$defs/mcpBindingIds",
+      "description": "Named MCP bindings offered (ADR-0006 ids)."
+    },
+    "interface_cids": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/cid" },
+      "uniqueItems": true,
+      "minItems": 0,
+      "maxItems": 64,
+      "description": "Primary MCP-IDL interface CIDs this agent executes under the extension."
+    },
+    "canonicalization": {
+      "$ref": "#/$defs/canonicalizationId",
+      "description": "Canonicalization id for content-addressed objects."
+    },
+    "alias": {
+      "type": "string",
+      "const": "io.mcplusplus.execution@1",
+      "description": "Non-normative short name. Never a wire substitute for uri."
+    }
+  },
+  "$defs": {
+    "cid": {
+      "type": "string",
+      "description": "IPFS CID. CIDv1 base32 (b…) preferred for new mints; CIDv0 (Qm…) remains readable when historical.",
+      "pattern": "^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58,})$",
+      "minLength": 46,
+      "maxLength": 128
+    },
+    "profileLetter": {
+      "type": "string",
+      "enum": ["A", "B", "C", "D", "E", "F", "G", "H"],
+      "description": "Closed MCP++ profile letter set."
+    },
+    "profileLetters": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/profileLetter" },
+      "uniqueItems": true,
+      "minItems": 0,
+      "maxItems": 8
+    },
+    "mcpBindingId": {
+      "type": "string",
+      "enum": [
+        "mcp-binding/2026-07-28",
+        "mcp-binding/legacy-2024-11-05"
+      ]
+    },
+    "mcpBindingIds": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/mcpBindingId" },
+      "uniqueItems": true,
+      "minItems": 1,
+      "maxItems": 2
+    },
+    "canonicalizationId": {
+      "type": "string",
+      "const": "mcpp-jcs-v1"
+    },
+    "envelopeSchemaMarker": {
+      "type": "string",
+      "const": "mcp++/execution/envelope@1"
+    },
+    "receiptSchemaMarker": {
+      "type": "string",
+      "const": "mcp++/execution/receipt@1"
+    },
+    "stateRefSchemaMarker": {
+      "type": "string",
+      "const": "mcp++/state/state-ref@1"
+    }
+  }
+}

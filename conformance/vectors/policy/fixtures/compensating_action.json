@@ -1,0 +1,63 @@
+{
+  "description": "Obligation with compensation metadata surfaces compensation[] on the decision (recorded, not executed).",
+  "expected": {
+    "compensation_actions": [
+      "rotate_secrets"
+    ],
+    "compensation_count_min": 1,
+    "decision": "allow_with_obligations",
+    "granted": true
+  },
+  "expected_decision": "allow_with_obligations",
+  "expected_reason_code": null,
+  "id": "compensating_action",
+  "inputs": {
+    "intent": {
+      "action": "tool/execute",
+      "actor": "agent:worker",
+      "intent_cid": "bafyintentpolicy001",
+      "resource": "weather-api"
+    },
+    "logical_time": "2024-06-15T12:00:00Z",
+    "policy": {
+      "clauses": [
+        {
+          "action": "tool/execute",
+          "actor": "agent:worker",
+          "clause_id": "perm-tool-execute",
+          "resource": "weather-api",
+          "type": "permission"
+        },
+        {
+          "action": "audit/log",
+          "actor": "agent:worker",
+          "clause_id": "obl-no-exfil",
+          "metadata": {
+            "compensation": {
+              "action": "rotate_secrets",
+              "notify": "security-oncall"
+            }
+          },
+          "obligation_deadline": "2024-06-15T13:00:00Z",
+          "resource": "weather-api",
+          "trigger": "after_execution",
+          "type": "obligation"
+        }
+      ],
+      "name": "permission-with-compensation",
+      "policy_cid": "bafypolicycomp001",
+      "schema": "mcp++/profile-d-policy@1",
+      "version": "1.0.0"
+    }
+  },
+  "interface": "PolicyVector@1",
+  "languages": [
+    "python",
+    "typescript",
+    "go",
+    "rust"
+  ],
+  "layer": "obligation",
+  "polarity": "positive",
+  "task_id": "MCPP-048"
+}

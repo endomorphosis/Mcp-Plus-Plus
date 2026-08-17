@@ -1,0 +1,258 @@
+{
+  "interface": "A2AExtensionSchema@1",
+  "schema": "mcp++/conformance/a2a-extension@1",
+  "task_id": "MCPP-055",
+  "kind": "negative",
+  "valid": false,
+  "description": "Malformed MCP++ A2A execution extension vectors. All cases are expected failures (schema validation or fail-closed semantic rules).",
+  "extension_uri": "https://mcplusplus.io/extensions/execution/v1",
+  "cases": [
+    {
+      "id": "reverse-dns-only-uri",
+      "schema_file": "agent-extension-1.schema.json",
+      "schema_marker": "mcp++/a2a/agent-extension@1",
+      "valid": false,
+      "expected_error": "A2A_MALFORMED_EXTENSION_URI",
+      "description": "Working alias used as AgentExtension.uri — non-conformant reverse-DNS-only wire id.",
+      "payload": {
+        "uri": "io.mcplusplus.execution@1",
+        "description": "Alias misused as wire identifier.",
+        "required": false
+      }
+    },
+    {
+      "id": "missing-uri",
+      "schema_file": "agent-extension-1.schema.json",
+      "schema_marker": "mcp++/a2a/agent-extension@1",
+      "valid": false,
+      "expected_error": "A2A_MALFORMED_EXTENSION",
+      "description": "AgentExtension without uri field.",
+      "payload": {
+        "description": "Missing required uri.",
+        "required": false
+      }
+    },
+    {
+      "id": "wrong-extension-uri",
+      "schema_file": "agent-extension-1.schema.json",
+      "schema_marker": "mcp++/a2a/agent-extension@1",
+      "valid": false,
+      "expected_error": "A2A_MALFORMED_EXTENSION_URI",
+      "description": "Foreign HTTPS URI is not the confirmed MCP++ execution extension identifier.",
+      "payload": {
+        "uri": "https://example.com/extensions/execution/v1",
+        "required": false
+      }
+    },
+    {
+      "id": "reserved-a2a-org-prefix",
+      "schema_file": "agent-extension-1.schema.json",
+      "schema_marker": "mcp++/a2a/agent-extension@1",
+      "valid": false,
+      "expected_error": "A2A_MALFORMED_EXTENSION_URI",
+      "description": "MCP++ MUST NOT claim the reserved https://a2a-protocol.org/extensions/ prefix.",
+      "payload": {
+        "uri": "https://a2a-protocol.org/extensions/execution/v1",
+        "required": false
+      }
+    },
+    {
+      "id": "mcp-tasks-id-as-a2a-uri",
+      "schema_file": "agent-extension-1.schema.json",
+      "schema_marker": "mcp++/a2a/agent-extension@1",
+      "valid": false,
+      "expected_error": "A2A_MALFORMED_EXTENSION_URI",
+      "description": "MCP Tasks reverse-DNS capability key is not a valid A2A extension URI.",
+      "payload": {
+        "uri": "io.modelcontextprotocol/tasks"
+      }
+    },
+    {
+      "id": "future-v2-uri-as-v1-claim",
+      "schema_file": "agent-extension-1.schema.json",
+      "schema_marker": "mcp++/a2a/agent-extension@1",
+      "valid": false,
+      "expected_error": "A2A_MALFORMED_EXTENSION_URI",
+      "description": "Breaking /v2 URI is not valid under the v1 schema const; silent fallback is forbidden.",
+      "payload": {
+        "uri": "https://mcplusplus.io/extensions/execution/v2"
+      }
+    },
+    {
+      "id": "activation-alias-only",
+      "schema_file": "activation-1.schema.json",
+      "schema_marker": "mcp++/a2a/activation@1",
+      "valid": false,
+      "expected_error": "A2A_MALFORMED_EXTENSION_URI",
+      "description": "A2A-Extensions entry uses reverse-DNS alias instead of HTTPS URI.",
+      "payload": {
+        "schema": "mcp++/a2a/activation@1",
+        "a2a_extensions": ["io.mcplusplus.execution@1"],
+        "mcp_plus_plus_execution_activated": true
+      }
+    },
+    {
+      "id": "activation-empty-list",
+      "schema_file": "activation-1.schema.json",
+      "schema_marker": "mcp++/a2a/activation@1",
+      "valid": false,
+      "expected_error": "A2A_MALFORMED_EXTENSION",
+      "description": "Empty a2a_extensions array is invalid (minItems 1).",
+      "payload": {
+        "schema": "mcp++/a2a/activation@1",
+        "a2a_extensions": []
+      }
+    },
+    {
+      "id": "activation-claims-active-without-uri",
+      "schema_file": "activation-1.schema.json",
+      "schema_marker": "mcp++/a2a/activation@1",
+      "valid": false,
+      "expected_error": "A2A_MALFORMED_EXTENSION",
+      "description": "mcp_plus_plus_execution_activated true but list lacks the execution URI.",
+      "payload": {
+        "schema": "mcp++/a2a/activation@1",
+        "a2a_extensions": [
+          "https://example.com/extensions/geolocation/v1"
+        ],
+        "mcp_plus_plus_execution_activated": true
+      }
+    },
+    {
+      "id": "forged-envelope-schema-marker",
+      "schema_file": "extension-params-1.schema.json",
+      "schema_marker": "mcp++/a2a/extension-params@1",
+      "valid": false,
+      "expected_error": "A2A_MALFORMED_EXTENSION",
+      "description": "Forged envelope_schema marker is not the closed const.",
+      "payload": {
+        "envelope_schema": "mcp++/execution/envelope@999",
+        "receipt_schema": "mcp++/execution/receipt@1",
+        "canonicalization": "mcpp-jcs-v1"
+      }
+    },
+    {
+      "id": "invalid-interface-cid",
+      "schema_file": "extension-params-1.schema.json",
+      "schema_marker": "mcp++/a2a/extension-params@1",
+      "valid": false,
+      "expected_error": "A2A_MALFORMED_EXTENSION",
+      "description": "interface_cids entry is not a valid CID pattern.",
+      "payload": {
+        "interface_cids": ["not-a-cid"],
+        "canonicalization": "mcpp-jcs-v1"
+      }
+    },
+    {
+      "id": "unknown-mcp-binding",
+      "schema_file": "extension-params-1.schema.json",
+      "schema_marker": "mcp++/a2a/extension-params@1",
+      "valid": false,
+      "expected_error": "A2A_MALFORMED_EXTENSION",
+      "description": "Undeclared MCP binding id is rejected.",
+      "payload": {
+        "mcp_bindings": ["mcp-binding/2099-01-01"],
+        "canonicalization": "mcpp-jcs-v1"
+      }
+    },
+    {
+      "id": "task-metadata-bad-cid",
+      "schema_file": "task-metadata-1.schema.json",
+      "schema_marker": "mcp++/a2a/task-metadata@1",
+      "valid": false,
+      "expected_error": "A2A_MALFORMED_EXTENSION",
+      "description": "envelope_cid fails CID pattern (forged / truncated).",
+      "payload": {
+        "schema": "mcp++/a2a/task-metadata@1",
+        "envelope_cid": "bafkrei-short"
+      }
+    },
+    {
+      "id": "task-metadata-unknown-property",
+      "schema_file": "task-metadata-1.schema.json",
+      "schema_marker": "mcp++/a2a/task-metadata@1",
+      "valid": false,
+      "expected_error": "A2A_MALFORMED_EXTENSION",
+      "description": "additionalProperties false rejects undeclared keys (including private task lifecycle fields).",
+      "payload": {
+        "schema": "mcp++/a2a/task-metadata@1",
+        "envelope_cid": "bafkreidpgkdasegkb6zkedd73ikdmzvqtw7y3njdqgk4scsyn62uf7ymvu",
+        "mcpp_private_status": "running"
+      }
+    },
+    {
+      "id": "portable-completed-missing-receipt",
+      "schema_file": "terminal-evidence-1.schema.json",
+      "schema_marker": "mcp++/a2a/terminal-evidence@1",
+      "valid": false,
+      "expected_error": "A2A_MISSING_RECEIPT_CID",
+      "description": "Portable completed success without receipt_cid is non-conformant (a2a-extension.md §6.11, §8).",
+      "payload": {
+        "schema": "mcp++/a2a/terminal-evidence@1",
+        "extension_uri": "https://mcplusplus.io/extensions/execution/v1",
+        "task_id": "task-bad-001",
+        "task_state": "completed",
+        "portable": true,
+        "envelope_cid": "bafkreidpgkdasegkb6zkedd73ikdmzvqtw7y3njdqgk4scsyn62uf7ymvu",
+        "output_cid": "bafkreiclrltegoplfz2o3djv7ydnyrozwrr5zkgw6lxmnzaxd7pnqdt62u"
+      }
+    },
+    {
+      "id": "portable-completed-missing-envelope",
+      "schema_file": "terminal-evidence-1.schema.json",
+      "schema_marker": "mcp++/a2a/terminal-evidence@1",
+      "valid": false,
+      "expected_error": "A2A_MALFORMED_EXTENSION",
+      "description": "Portable completed without envelope_cid fails if/then required pair.",
+      "payload": {
+        "schema": "mcp++/a2a/terminal-evidence@1",
+        "extension_uri": "https://mcplusplus.io/extensions/execution/v1",
+        "task_id": "task-bad-002",
+        "task_state": "completed",
+        "portable": true,
+        "receipt_cid": "bafkreicssskybdf32rmzlbtge5bxyv4v6c6eac322pbrsr3azlb4fkxiqi"
+      }
+    },
+    {
+      "id": "non-a2a-task-state",
+      "schema_file": "terminal-evidence-1.schema.json",
+      "schema_marker": "mcp++/a2a/terminal-evidence@1",
+      "valid": false,
+      "expected_error": "A2A_MALFORMED_EXTENSION",
+      "description": "Invented public status name (competing lifecycle) is rejected.",
+      "payload": {
+        "schema": "mcp++/a2a/terminal-evidence@1",
+        "extension_uri": "https://mcplusplus.io/extensions/execution/v1",
+        "task_state": "succeeded",
+        "portable": false
+      }
+    },
+    {
+      "id": "terminal-wrong-extension-uri",
+      "schema_file": "terminal-evidence-1.schema.json",
+      "schema_marker": "mcp++/a2a/terminal-evidence@1",
+      "valid": false,
+      "expected_error": "A2A_MALFORMED_EXTENSION_URI",
+      "description": "Terminal evidence under wrong extension_uri const.",
+      "payload": {
+        "schema": "mcp++/a2a/terminal-evidence@1",
+        "extension_uri": "https://mcplusplus.io/extensions/execution/v2",
+        "task_state": "completed",
+        "portable": false
+      }
+    },
+    {
+      "id": "skill-metadata-bad-interface-cid",
+      "schema_file": "skill-metadata-1.schema.json",
+      "schema_marker": "mcp++/a2a/skill-metadata@1",
+      "valid": false,
+      "expected_error": "A2A_MALFORMED_EXTENSION",
+      "description": "Skill metadata with invalid interface_cid.",
+      "payload": {
+        "schema": "mcp++/a2a/skill-metadata@1",
+        "interface_cid": "QmInvalid",
+        "method": "repo.status"
+      }
+    }
+  ]
+}

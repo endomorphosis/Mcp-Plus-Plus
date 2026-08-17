@@ -1,0 +1,349 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcp-plus-plus.dev/schemas/execution/execution-result-1.schema.json",
+  "title": "MCP++ ExecutionResult@1",
+  "description": "Portable execution outcome for a single attempt against an ExecutionEnvelope@1. Carries status, output CIDs, state transitions, side effects, decision/delegation refs, executor identity, retry metadata, duration, portable errors, proofs, and optional signature/event_cid. Interface: ExecutionResult@1. Normative prose: ipfs_accelerate_py/mcplusplus/docs/spec/execution-envelope.md.",
+  "$comment": "Interface label: ExecutionResult@1. Schema marker: mcp++/execution/result@1. Results are attempt-scoped; ExecutionReceipt@1 is the content-addressed attestation that binds a result into the Event DAG.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "envelope_cid",
+    "status",
+    "output_cids",
+    "state_transitions",
+    "side_effects",
+    "decision_cid",
+    "delegation_cid",
+    "executor",
+    "retry",
+    "duration_ms",
+    "error",
+    "proofs",
+    "started_at_ms",
+    "finished_at_ms"
+  ],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "mcp++/execution/result@1",
+      "description": "Closed schema marker for ExecutionResult@1."
+    },
+    "envelope_cid": {
+      "$ref": "#/$defs/cid",
+      "description": "CID of the ExecutionEnvelope@1 this result answers."
+    },
+    "intent_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "Intent CID echoed from the envelope when present."
+    },
+    "status": {
+      "$ref": "#/$defs/executionStatus",
+      "description": "Terminal attempt status for this result."
+    },
+    "output_cids": {
+      "type": "array",
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/cid" },
+      "description": "Content-addressed outputs produced by the attempt. Empty when status is not succeeded and no partial outputs are published."
+    },
+    "primary_output_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "Optional primary output among output_cids. When set, MUST appear in output_cids."
+    },
+    "state_transitions": {
+      "type": "array",
+      "maxItems": 256,
+      "items": { "$ref": "#/$defs/stateTransition" },
+      "description": "Observed shared-state transitions under declared StateRef modes. Empty when no state was written."
+    },
+    "side_effects": {
+      "type": "array",
+      "maxItems": 256,
+      "items": { "$ref": "#/$defs/sideEffect" },
+      "description": "Observed side effects (I/O, tool mutations, external writes). Empty when none were observed or declared."
+    },
+    "decision_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "CID of the policy decision (Profile D / DecisionObject). Null when no deontic evaluation applied."
+    },
+    "delegation_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "CID of the effective UCAN / delegation proof used for authority. Null when authority was local-only (same trust domain)."
+    },
+    "proof_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "Optional single proof-bundle CID (alias of the primary entry in proofs)."
+    },
+    "executor": {
+      "$ref": "#/$defs/executorIdentity",
+      "description": "Identity of the executor that produced this result. Transport PeerID alone is never sufficient authority."
+    },
+    "retry": {
+      "$ref": "#/$defs/retryInfo",
+      "description": "Retry / attempt metadata for durable executors and clients."
+    },
+    "duration_ms": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "Measured execution duration in milliseconds (may be fractional)."
+    },
+    "error": {
+      "anyOf": [
+        { "$ref": "portable-error-1.schema.json" },
+        { "type": "null" }
+      ],
+      "description": "PortableError@1 when status is not succeeded; MUST be null on success."
+    },
+    "proofs": {
+      "type": "array",
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/cid" },
+      "description": "Proof CIDs checked or emitted (UCAN chains, evaluation witnesses, attestations)."
+    },
+    "signature": {
+      "anyOf": [
+        { "$ref": "#/$defs/signature" },
+        { "type": "null" }
+      ],
+      "description": "Optional executor signature over the canonical result bytes. Cross-trust-domain results SHOULD be signed; local same-trust results MAY omit."
+    },
+    "signature_alg": {
+      "anyOf": [
+        { "type": "string", "const": "Ed25519" },
+        { "type": "null" }
+      ],
+      "description": "Signature algorithm. Default suite is Ed25519 (ADR-0002). Required when signature is non-null for new mints."
+    },
+    "event_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "Optional Event DAG node CID that links this result into provenance history. Receipts SHOULD set this when published to Profile F."
+    },
+    "started_at_ms": {
+      "$ref": "#/$defs/timestampMs",
+      "description": "Attempt start wall-clock time (epoch ms). Informational; not causal authority."
+    },
+    "finished_at_ms": {
+      "$ref": "#/$defs/timestampMs",
+      "description": "Attempt finish wall-clock time (epoch ms). MUST be >= started_at_ms."
+    },
+    "correlation_id": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Optional correlation hook carried from the envelope."
+    },
+    "resource_use_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "Optional CID of a resource-use / cost record (aligns with Profile G resource_use_cid)."
+    },
+    "canonicalization": {
+      "type": "string",
+      "const": "mcpp-jcs-v1",
+      "description": "Canonicalization algorithm used when this result is content-addressed. Required on new mints that publish a result CID."
+    }
+  },
+  "$defs": {
+    "cid": {
+      "type": "string",
+      "description": "IPFS CID. CIDv1 base32 (b…) preferred for new mints; CIDv0 (Qm…) remains readable when historical.",
+      "pattern": "^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58,})$",
+      "minLength": 46,
+      "maxLength": 128
+    },
+    "did": {
+      "type": "string",
+      "pattern": "^did:[a-z0-9]+:[A-Za-z0-9._:%-]+(?:[/?#][^\\u0000]*)?$",
+      "minLength": 7,
+      "maxLength": 512,
+      "description": "DID-compatible identity (ADR-0002)."
+    },
+    "timestampMs": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "signature": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096,
+      "description": "Signature bytes encoded as lowercase hex or base64url. Cryptographic verification is a higher conformance level than structural schema acceptance."
+    },
+    "executionStatus": {
+      "type": "string",
+      "enum": [
+        "succeeded",
+        "failed",
+        "cancelled",
+        "rejected",
+        "timed_out",
+        "compensated"
+      ],
+      "description": "Terminal attempt status. Aligns with Profile G TaskReceipt statuses plus rejected/timed_out."
+    },
+    "executorIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["did"],
+      "properties": {
+        "did": {
+          "$ref": "#/$defs/did",
+          "description": "Executor DID (execution authority principal)."
+        },
+        "key_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 256,
+          "description": "Explicit key id used for signatures (ADR-0002)."
+        },
+        "runtime": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Executor runtime name (e.g. ipfs_accelerate_py, durable-sqlite)."
+        },
+        "runtime_version": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Executor runtime version string."
+        },
+        "peer_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Optional transport PeerID. NEVER grants UCAN capabilities by itself (KD-14)."
+        }
+      }
+    },
+    "retryInfo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attempt"],
+      "properties": {
+        "attempt": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100000,
+          "description": "1-based attempt number for this envelope under the durable executor / client retry policy."
+        },
+        "max_attempts": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "maximum": 100000,
+          "description": "Optional declared attempt budget."
+        },
+        "previous_result_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ],
+          "description": "CID of the previous attempt result when this is a retry."
+        },
+        "reason": {
+          "type": ["string", "null"],
+          "maxLength": 256,
+          "description": "Short reason for the retry (e.g. retryable network fault)."
+        }
+      }
+    },
+    "stateTransition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state_ref_cid"],
+      "properties": {
+        "state_ref_cid": {
+          "$ref": "#/$defs/cid",
+          "description": "CID of the StateRef@1 (or historical state handle) that was read or written."
+        },
+        "mode": {
+          "type": ["string", "null"],
+          "enum": [
+            "immutable",
+            "single_authority",
+            "causal",
+            "crdt",
+            "consensus",
+            null
+          ],
+          "description": "Consistency mode when known. MUST match the StateRef mode (KD-8)."
+        },
+        "from_version": {
+          "type": ["string", "null"],
+          "maxLength": 256,
+          "description": "Prior version / clock / CAS token as opaque string."
+        },
+        "to_version": {
+          "type": ["string", "null"],
+          "maxLength": 256,
+          "description": "Resulting version / clock / CAS token as opaque string."
+        },
+        "transition_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ],
+          "description": "Optional CID of a transition record or CRDT op."
+        },
+        "op": {
+          "type": ["string", "null"],
+          "enum": ["read", "write", "cas", "merge", "lease", "fence", null],
+          "description": "Coarse operation kind."
+        }
+      }
+    },
+    "sideEffect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Side-effect class (e.g. tool.write, network.http, fs.mutate, capability:write)."
+        },
+        "effect_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ],
+          "description": "CID of a structured effect record when published."
+        },
+        "description": {
+          "type": ["string", "null"],
+          "maxLength": 512,
+          "description": "Short human-readable effect summary. MUST NOT embed secrets."
+        },
+        "compensatable": {
+          "type": ["boolean", "null"],
+          "description": "Whether durable executors may schedule compensation for this effect."
+        }
+      }
+    }
+  }
+}

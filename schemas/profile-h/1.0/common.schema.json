@@ -2,6 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mcp-plus-plus.dev/schemas/profile-h/1.0/common.schema.json",
   "title": "MCP++ Profile H 1.0 common definitions",
+  "description": "Shared primitives for Profile H 1.0 artifacts and settlement composition. Amounts are atomic base-10 strings; networks are CAIP-2; catalogs bind price via catalogVersion on PaidCapability.",
   "$defs": {
     "cid": {"type": "string", "pattern": "^b[a-z2-7]+$", "maxLength": 128},
     "did": {"type": "string", "pattern": "^did:[a-z0-9]+:[A-Za-z0-9._:%-]+(?:[/?#][^\\u0000]*)?$", "maxLength": 512},
@@ -9,6 +10,18 @@
     "amount": {"type": "string", "pattern": "^(?:0|[1-9][0-9]{0,77})$"},
     "network": {"type": "string", "pattern": "^[a-z0-9-]{3,8}:[A-Za-z0-9_-]{1,32}$"},
     "signature": {"type": "string", "pattern": "^[A-Za-z0-9_-]{86}$"},
+    "catalogVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "description": "Signed catalog price-version label. Quote settlement MUST bind this version fail-closed."
+    },
+    "idempotencyKey": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Cryptographically random key scoped by seller for at-most-once settlement and entitlement grant."
+    },
     "requirement": {
       "type": "object",
       "additionalProperties": false,

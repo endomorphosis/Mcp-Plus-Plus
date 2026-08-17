@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcp-plus-plus.dev/schemas/a2a/skill-metadata-1.schema.json",
+  "title": "MCP++ A2A SkillMetadata@1",
+  "description": "Normalized skill metadata mapping an A2A Agent Card skill onto MCP-IDL (interface_cid + method) under the execution extension. Interface: A2AExtensionSchema@1 / AgentCardMapping@1. Normative prose: a2a-extension.md §6.1.",
+  "$comment": "Schema marker: mcp++/a2a/skill-metadata@1. Descriptors are not authority; UCAN/policy proofs authorize execution.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema"],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "mcp++/a2a/skill-metadata@1",
+      "description": "Closed schema marker for skill extension metadata."
+    },
+    "interface_cid": {
+      "$ref": "#/$defs/cid",
+      "description": "CID of the MCP-IDL Interface Descriptor backing this skill."
+    },
+    "method": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "description": "IDL method / tool name aligned with skill id or name."
+    },
+    "profiles": {
+      "$ref": "#/$defs/profileLetters",
+      "description": "Profile letters required or preferred to execute this skill."
+    },
+    "mcp_bindings": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "mcp-binding/2026-07-28",
+          "mcp-binding/legacy-2024-11-05"
+        ]
+      },
+      "uniqueItems": true,
+      "maxItems": 2,
+      "description": "Optional binding hints for dual-era peers."
+    }
+  },
+  "$defs": {
+    "cid": {
+      "type": "string",
+      "pattern": "^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58,})$",
+      "minLength": 46,
+      "maxLength": 128
+    },
+    "profileLetter": {
+      "type": "string",
+      "enum": ["A", "B", "C", "D", "E", "F", "G", "H"]
+    },
+    "profileLetters": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/profileLetter" },
+      "uniqueItems": true,
+      "maxItems": 8
+    }
+  }
+}

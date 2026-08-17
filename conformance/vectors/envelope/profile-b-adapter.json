@@ -1,0 +1,248 @@
+{
+  "interface": "ProfileBAdapter@1",
+  "schema": "mcp++/conformance/profile-b-adapter@1",
+  "task_id": "MCPP-031",
+  "description": "Compact Profile B → ExecutionEnvelope@1 / ExecutionReceipt@1 adapter vectors. Historical CIDs are referenced unchanged via profile_b_*_cid; adapter output must validate as Envelope@1 / Receipt@1. Does not mutate historical B fixtures.",
+  "canonicalization": "mcpp-jcs-v1",
+  "related": {
+    "spec": "ipfs_accelerate_py/mcplusplus/docs/spec/execution-envelope.md",
+    "profile_b": "ipfs_accelerate_py/mcplusplus/docs/spec/cid-native-artifacts.md",
+    "historical_receipt_vector": "ipfs_accelerate_py/mcplusplus/conformance/vectors/execution_receipt.json",
+    "schemas": [
+      "ipfs_accelerate_py/mcplusplus/schemas/execution/execution-envelope-1.schema.json",
+      "ipfs_accelerate_py/mcplusplus/schemas/execution/execution-receipt-1.schema.json"
+    ]
+  },
+  "cid_catalog": {
+    "interface": "bafkreigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+    "input": "bafkreihtwdlu4jntm7yl2mgsfzqgr4on37vr7inuld2dql2p4rmqafybti",
+    "intent": "bafkreicssskybdf32rmzlbtge5bxyv4v6c6eac322pbrsr3azlb4fkxiqi",
+    "policy": "bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku",
+    "proof": "bafkreigbzwrggyucrnusmzisauvzpszxfhr3auxevxshycq6gob557tty4",
+    "parent_a": "bafkreihojjgp4soxeawgk64e4vhafpz3kdtlastu5hfnbdv5upb6c2cd7e",
+    "parent_b": "bafkreifyiloqasaswqrluaxwzlyyeftgi2vwfyfe3rahohy4vcpat3vxcq",
+    "envelope": "bafkreidpgkdasegkb6zkedd73ikdmzvqtw7y3njdqgk4scsyn62uf7ymvu",
+    "output": "bafkreiclrltegoplfz2o3djv7ydnyrozwrr5zkgw6lxmnzaxd7pnqdt62u",
+    "receipt": "bafkreif5oexc3wdpabmikptk5lvk6ireyzfyhuuwa2znh7bxbxtvpytfpy",
+    "decision": "bafkreiepz7gpm5nr6c75hholweybkbjp5av4khaahqlfuqijixerhw5sxy",
+    "event": "bafkreify4h4axvyk4b4ey6cvurixgg3ul7o3m52j2i7wg67jbavxl2kxlm",
+    "vector_receipt": "bafkreicssskybdf32rmzlbtge5bxyv4v6c6eac322pbrsr3azlb4fkxiqi",
+    "vector_output": "bafkreihtwdlu4jntm7yl2mgsfzqgr4on37vr7inuld2dql2p4rmqafybti"
+  },
+  "cases": [
+    {
+      "id": "envelope-classic-minimal",
+      "kind": "envelope",
+      "description": "Classic Profile B field envelope adapts to Envelope@1; historical envelope CID preserved.",
+      "historical_cid": "bafkreidpgkdasegkb6zkedd73ikdmzvqtw7y3njdqgk4scsyn62uf7ymvu",
+      "historical": {
+        "interface_cid": "bafkreigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+        "input_cid": "bafkreihtwdlu4jntm7yl2mgsfzqgr4on37vr7inuld2dql2p4rmqafybti",
+        "intent_cid": "bafkreicssskybdf32rmzlbtge5bxyv4v6c6eac322pbrsr3azlb4fkxiqi",
+        "policy_cid": "bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku",
+        "proof_cid": "bafkreigbzwrggyucrnusmzisauvzpszxfhr3auxevxshycq6gob557tty4",
+        "parents": [
+          "bafkreihojjgp4soxeawgk64e4vhafpz3kdtlastu5hfnbdv5upb6c2cd7e",
+          "bafkreifyiloqasaswqrluaxwzlyyeftgi2vwfyfe3rahohy4vcpat3vxcq"
+        ],
+        "timestamp": 1783872000
+      },
+      "defaults": {
+        "correlation_id": "task-b-001",
+        "requester": { "did": "did:key:z6MkrequesterExample0001" },
+        "created_at_ms": 1783872000000,
+        "method": "repo.status"
+      },
+      "expect": {
+        "schema": "mcp++/execution/envelope@1",
+        "profile_b_envelope_cid": "bafkreidpgkdasegkb6zkedd73ikdmzvqtw7y3njdqgk4scsyn62uf7ymvu",
+        "interface_cid": "bafkreigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+        "input_cid": "bafkreihtwdlu4jntm7yl2mgsfzqgr4on37vr7inuld2dql2p4rmqafybti",
+        "intent_cid": "bafkreicssskybdf32rmzlbtge5bxyv4v6c6eac322pbrsr3azlb4fkxiqi",
+        "schema_valid": true,
+        "historical_valid": true
+      }
+    },
+    {
+      "id": "envelope-root-no-parents",
+      "kind": "envelope",
+      "description": "Root envelope with empty parents and no policy/proof (same-trust local).",
+      "historical_cid": "bafkreiapj52u5hi7pco5ebplvecv72olbnqglg2e7emwnmme4gguzsnpu4",
+      "historical": {
+        "interface_cid": "bafkreigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+        "input_cid": "bafkreigoqjtgmmkhwd5elifk4ggzwals3wfiankxnhnylm6lh67mtjwz3a",
+        "intent_cid": "bafkreigtbhe57yqgt5zdwkqk3xdkkpbqmnt77ol62rluu5kvdrxj76tzgi",
+        "parents": []
+      },
+      "defaults": {
+        "correlation_id": "root-local-001",
+        "created_at_ms": 1783872000000,
+        "requester": { "did": "did:key:z6MklocalRequester00000001" }
+      },
+      "expect": {
+        "schema": "mcp++/execution/envelope@1",
+        "profile_b_envelope_cid": "bafkreiapj52u5hi7pco5ebplvecv72olbnqglg2e7emwnmme4gguzsnpu4",
+        "schema_valid": true,
+        "historical_valid": true
+      }
+    },
+    {
+      "id": "envelope-composite-runtime",
+      "kind": "envelope",
+      "description": "Runtime composite envelope (intent/decision nested) flattens into Envelope@1.",
+      "historical_cid": "bafkreidpgkdasegkb6zkedd73ikdmzvqtw7y3njdqgk4scsyn62uf7ymvu",
+      "historical": {
+        "cid": "bafkreidpgkdasegkb6zkedd73ikdmzvqtw7y3njdqgk4scsyn62uf7ymvu",
+        "intent": {
+          "cid": "bafkreicssskybdf32rmzlbtge5bxyv4v6c6eac322pbrsr3azlb4fkxiqi",
+          "interface_cid": "bafkreigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+          "input_cid": "bafkreihtwdlu4jntm7yl2mgsfzqgr4on37vr7inuld2dql2p4rmqafybti",
+          "method": "repo.status",
+          "correlation_id": "corr-composite-001"
+        },
+        "decision": {
+          "cid": "bafkreiepz7gpm5nr6c75hholweybkbjp5av4khaahqlfuqijixerhw5sxy",
+          "authorized": true,
+          "policy_cid": "bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku",
+          "proofs_checked": ["bafkreigbzwrggyucrnusmzisauvzpszxfhr3auxevxshycq6gob557tty4"]
+        },
+        "parents": [],
+        "timestamp": 1783872000
+      },
+      "defaults": {
+        "requester": { "did": "did:key:z6MkrequesterExample0001" }
+      },
+      "expect": {
+        "schema": "mcp++/execution/envelope@1",
+        "profile_b_envelope_cid": "bafkreidpgkdasegkb6zkedd73ikdmzvqtw7y3njdqgk4scsyn62uf7ymvu",
+        "method": "repo.status",
+        "intent_cid": "bafkreicssskybdf32rmzlbtge5bxyv4v6c6eac322pbrsr3azlb4fkxiqi",
+        "decision_cid": "bafkreiepz7gpm5nr6c75hholweybkbjp5av4khaahqlfuqijixerhw5sxy",
+        "policy_cid": "bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku",
+        "correlation_id": "corr-composite-001",
+        "schema_valid": true,
+        "historical_valid": true
+      }
+    },
+    {
+      "id": "receipt-success-wire",
+      "kind": "receipt",
+      "description": "Wire ExecutionReceipt (success/output_cid/receipt_cid) adapts to Receipt@1; historical receipt CID preserved.",
+      "historical_cid": "bafkreif5oexc3wdpabmikptk5lvk6ireyzfyhuuwa2znh7bxbxtvpytfpy",
+      "envelope_cid": "bafkreidpgkdasegkb6zkedd73ikdmzvqtw7y3njdqgk4scsyn62uf7ymvu",
+      "historical": {
+        "success": true,
+        "receipt_cid": "bafkreif5oexc3wdpabmikptk5lvk6ireyzfyhuuwa2znh7bxbxtvpytfpy",
+        "output_cid": "bafkreiclrltegoplfz2o3djv7ydnyrozwrr5zkgw6lxmnzaxd7pnqdt62u",
+        "error": null,
+        "duration_ms": 12.5,
+        "signature": "604b46e0",
+        "decision_cid": "bafkreiepz7gpm5nr6c75hholweybkbjp5av4khaahqlfuqijixerhw5sxy",
+        "intent_cid": "bafkreicssskybdf32rmzlbtge5bxyv4v6c6eac322pbrsr3azlb4fkxiqi"
+      },
+      "defaults": {
+        "started_at_ms": 1783872001100,
+        "executor": {
+          "did": "did:key:z6MkexecutorExample00001",
+          "runtime": "ipfs_accelerate_py",
+          "runtime_version": "3.2.0"
+        }
+      },
+      "expect": {
+        "schema": "mcp++/execution/receipt@1",
+        "profile_b_receipt_cid": "bafkreif5oexc3wdpabmikptk5lvk6ireyzfyhuuwa2znh7bxbxtvpytfpy",
+        "status": "succeeded",
+        "schema_valid": true,
+        "historical_valid": true
+      }
+    },
+    {
+      "id": "receipt-from-execution-receipt-vector",
+      "kind": "receipt",
+      "description": "Existing conformance vector execution_receipt.json payload still verifies and adapts without CID rewrite.",
+      "historical_cid": "bafkreicssskybdf32rmzlbtge5bxyv4v6c6eac322pbrsr3azlb4fkxiqi",
+      "envelope_cid": "bafkreidpgkdasegkb6zkedd73ikdmzvqtw7y3njdqgk4scsyn62uf7ymvu",
+      "historical": {
+        "success": true,
+        "receipt_cid": "bafkreicssskybdf32rmzlbtge5bxyv4v6c6eac322pbrsr3azlb4fkxiqi",
+        "output_cid": "bafkreihtwdlu4jntm7yl2mgsfzqgr4on37vr7inuld2dql2p4rmqafybti",
+        "error": null,
+        "duration_ms": 0.08,
+        "signature": "604b46e0"
+      },
+      "defaults": {
+        "started_at_ms": 1783872000000,
+        "intent_cid": "bafkreicssskybdf32rmzlbtge5bxyv4v6c6eac322pbrsr3azlb4fkxiqi",
+        "executor": { "did": "did:key:z6MkexecutorFromVector0001" }
+      },
+      "expect": {
+        "schema": "mcp++/execution/receipt@1",
+        "profile_b_receipt_cid": "bafkreicssskybdf32rmzlbtge5bxyv4v6c6eac322pbrsr3azlb4fkxiqi",
+        "status": "succeeded",
+        "schema_valid": true,
+        "historical_valid": true
+      }
+    },
+    {
+      "id": "receipt-failed-portable-error",
+      "kind": "receipt",
+      "description": "Failed Profile B receipt maps error string to PortableError@1 under Receipt@1.",
+      "historical_cid": "bafkreif5oexc3wdpabmikptk5lvk6ireyzfyhuuwa2znh7bxbxtvpytfpy",
+      "envelope_cid": "bafkreidpgkdasegkb6zkedd73ikdmzvqtw7y3njdqgk4scsyn62uf7ymvu",
+      "historical": {
+        "success": false,
+        "receipt_cid": "bafkreif5oexc3wdpabmikptk5lvk6ireyzfyhuuwa2znh7bxbxtvpytfpy",
+        "output_cid": "bafkreiclrltegoplfz2o3djv7ydnyrozwrr5zkgw6lxmnzaxd7pnqdt62u",
+        "error": "policy denied",
+        "duration_ms": 3.5
+      },
+      "defaults": {
+        "started_at_ms": 1783872000000,
+        "failure_class": "policy",
+        "error_code": "E_POLICY_DENIED",
+        "executor": { "did": "did:key:z6MkexecutorExample00001" }
+      },
+      "expect": {
+        "schema": "mcp++/execution/receipt@1",
+        "profile_b_receipt_cid": "bafkreif5oexc3wdpabmikptk5lvk6ireyzfyhuuwa2znh7bxbxtvpytfpy",
+        "status": "failed",
+        "schema_valid": true,
+        "historical_valid": true
+      }
+    },
+    {
+      "id": "receipt-spec-shape",
+      "kind": "receipt",
+      "description": "cid-native-artifacts.md §6 receipt shape (intent/output/decision/side effects).",
+      "historical_cid": "bafkreif5oexc3wdpabmikptk5lvk6ireyzfyhuuwa2znh7bxbxtvpytfpy",
+      "envelope_cid": "bafkreidpgkdasegkb6zkedd73ikdmzvqtw7y3njdqgk4scsyn62uf7ymvu",
+      "historical": {
+        "intent_cid": "bafkreicssskybdf32rmzlbtge5bxyv4v6c6eac322pbrsr3azlb4fkxiqi",
+        "output_cid": "bafkreiclrltegoplfz2o3djv7ydnyrozwrr5zkgw6lxmnzaxd7pnqdt62u",
+        "observed_side_effects": [
+          "bafkreify4h4axvyk4b4ey6cvurixgg3ul7o3m52j2i7wg67jbavxl2kxlm"
+        ],
+        "proofs_checked": [
+          "bafkreigbzwrggyucrnusmzisauvzpszxfhr3auxevxshycq6gob557tty4"
+        ],
+        "decision_cid": "bafkreiepz7gpm5nr6c75hholweybkbjp5av4khaahqlfuqijixerhw5sxy",
+        "correlation_id": "uuid-or-nonce-001",
+        "time_observed": "2026-07-01T12:00:00.000Z",
+        "signatures": ["ed25519:deadbeef"],
+        "receipt_cid": "bafkreif5oexc3wdpabmikptk5lvk6ireyzfyhuuwa2znh7bxbxtvpytfpy"
+      },
+      "defaults": {
+        "duration_ms": 25,
+        "executor": { "did": "did:key:z6MkexecutorExample00001" }
+      },
+      "expect": {
+        "schema": "mcp++/execution/receipt@1",
+        "profile_b_receipt_cid": "bafkreif5oexc3wdpabmikptk5lvk6ireyzfyhuuwa2znh7bxbxtvpytfpy",
+        "status": "succeeded",
+        "correlation_id": "uuid-or-nonce-001",
+        "schema_valid": true,
+        "historical_valid": true
+      }
+    }
+  ]
+}

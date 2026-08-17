@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcp-plus-plus.dev/schemas/a2a/task-metadata-1.schema.json",
+  "title": "MCP++ A2A TaskMetadata@1",
+  "description": "Normalized MCP++ extension metadata carried on an A2A Task (or primary Artifact) under the execution extension. Keys are short suffixes; wire form MAY expand each to https://mcplusplus.io/extensions/execution/v1/<suffix>. Does not redefine A2A TaskState. Interface: A2AExtensionSchema@1. Normative prose: a2a-extension.md §4.3, §6.2–§6.11.",
+  "$comment": "Schema marker: mcp++/a2a/task-metadata@1. Structural schema only (ADR-0003); portable success still requires receipt_cid per terminal-evidence schema.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "mcp++/a2a/task-metadata@1",
+      "description": "Closed schema marker for normalized Task extension metadata."
+    },
+    "envelope_cid": {
+      "$ref": "#/$defs/cid",
+      "description": "CID of ExecutionEnvelope@1 when an envelope has been minted."
+    },
+    "result_cid": {
+      "$ref": "#/$defs/cid",
+      "description": "CID of ExecutionResult@1."
+    },
+    "receipt_cid": {
+      "$ref": "#/$defs/cid",
+      "description": "CID of ExecutionReceipt@1. Required for portable cross-trust success."
+    },
+    "event_cid": {
+      "$ref": "#/$defs/cid",
+      "description": "Event DAG node linking envelope/result/receipt or latest status-related node."
+    },
+    "output_cid": {
+      "$ref": "#/$defs/cid",
+      "description": "Primary output CID aligning with ExecutionResult@1.output_cids / primary_output_cid."
+    },
+    "input_cid": {
+      "$ref": "#/$defs/cid",
+      "description": "Canonicalized Message/Part input CID."
+    },
+    "intent_cid": {
+      "$ref": "#/$defs/cid",
+      "description": "Intent or TaskSpec CID."
+    },
+    "interface_cid": {
+      "$ref": "#/$defs/cid",
+      "description": "MCP-IDL Interface Descriptor CID."
+    },
+    "method": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "description": "Method / skill operation name within the interface."
+    },
+    "state_ref_cids": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/cid" },
+      "uniqueItems": true,
+      "maxItems": 64,
+      "description": "StateRef@1 CIDs for shared MCP++ state under the task context."
+    },
+    "proof_cid": {
+      "$ref": "#/$defs/cid",
+      "description": "Single primary proof-bundle CID."
+    },
+    "proof_cids": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/cid" },
+      "uniqueItems": true,
+      "maxItems": 64,
+      "description": "Authority / verification proof CIDs."
+    },
+    "delegation_cid": {
+      "$ref": "#/$defs/cid",
+      "description": "Effective delegation CID."
+    },
+    "delegation_cids": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/cid" },
+      "uniqueItems": true,
+      "maxItems": 64,
+      "description": "Delegation record CIDs."
+    },
+    "decision_cid": {
+      "$ref": "#/$defs/cid",
+      "description": "Policy decision CID."
+    },
+    "profiles": {
+      "$ref": "#/$defs/profileLetters",
+      "description": "Profile letters claimed for this task under the extension. Must be a subset of the agent-advertised profiles."
+    },
+    "profile": {
+      "$ref": "#/$defs/profileLetter",
+      "description": "Single profile letter claimed for this request (alternative to profiles[])."
+    },
+    "required_abilities": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "maxItems": 64,
+      "description": "UCAN abilities still needed when Task is auth-required."
+    },
+    "resource": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "description": "Resource URI/CID being authorized."
+    },
+    "audience": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "description": "Expected audience DID for authority proofs."
+    }
+  },
+  "$defs": {
+    "cid": {
+      "type": "string",
+      "pattern": "^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58,})$",
+      "minLength": 46,
+      "maxLength": 128
+    },
+    "profileLetter": {
+      "type": "string",
+      "enum": ["A", "B", "C", "D", "E", "F", "G", "H"]
+    },
+    "profileLetters": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/profileLetter" },
+      "uniqueItems": true,
+      "maxItems": 8
+    }
+  }
+}

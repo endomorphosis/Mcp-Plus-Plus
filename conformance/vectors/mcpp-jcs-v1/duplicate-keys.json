@@ -1,0 +1,129 @@
+{
+  "schema": "mcp++/conformance/golden-vector@1",
+  "interface": "GoldenVector@1",
+  "algorithm": "mcpp-jcs-v1",
+  "standard": {
+    "standard": "RFC 8785",
+    "name": "JSON Canonicalization Scheme",
+    "url": "https://www.rfc-editor.org/rfc/rfc8785"
+  },
+  "cid_defaults": {
+    "cid_version": 1,
+    "multicodec": "raw",
+    "multicodec_code": 85,
+    "multihash": "sha2-256",
+    "multihash_code": 18,
+    "multibase": "base32"
+  },
+  "category": "duplicate_keys",
+  "description": "Golden mcpp-jcs-v1 vectors for category 'duplicate_keys' (positive + negative).",
+  "cases": [
+    {
+      "id": "duplicate-keys-positive-unique-keys",
+      "category": "duplicate_keys",
+      "polarity": "positive",
+      "valid": true,
+      "description": "Object with unique keys is accepted and key-sorted.",
+      "source": {
+        "a": 1,
+        "b": 2,
+        "c": 3
+      },
+      "canonical_utf8": "{\"a\":1,\"b\":2,\"c\":3}",
+      "canonical_bytes_hex": "7b2261223a312c2262223a322c2263223a337d",
+      "canonical_bytes_base64": "eyJhIjoxLCJiIjoyLCJjIjozfQ==",
+      "sha256": "e6a3385fb77c287a712e7f406a451727f0625041823ecf23bea7ef39b2e39805",
+      "cid": "bafkreihgum4f7n34fb5hclt7ibvekfzh6brfaqmch3hshpvh5443fy4yau",
+      "signature_input": {
+        "kind": "canonical_bytes",
+        "encoding": "hex",
+        "value": "7b2261223a312c2262223a322c2263223a337d",
+        "note": "Ed25519 signature message is the UTF-8 JCS bytes (mcpp-jcs-v1)"
+      },
+      "signature": null,
+      "signature_placeholder": {
+        "alg": "Ed25519",
+        "encoding": "base64url",
+        "value": null,
+        "note": "Placeholder: suite signs over signature_input; real signatures land with MCPP-041+"
+      },
+      "expected_validator_result": {
+        "accept": true,
+        "reason_code": null
+      }
+    },
+    {
+      "id": "duplicate-keys-negative-reject-duplicates",
+      "category": "duplicate_keys",
+      "polarity": "negative",
+      "valid": false,
+      "description": "Duplicate object keys on untrusted parse MUST fail closed (no last-key-wins).",
+      "source": null,
+      "source_json": "{\"a\":1,\"a\":2}",
+      "canonical_utf8": null,
+      "canonical_bytes_hex": null,
+      "canonical_bytes_base64": null,
+      "sha256": null,
+      "cid": null,
+      "signature_input": null,
+      "signature": null,
+      "signature_placeholder": {
+        "alg": "Ed25519",
+        "encoding": "base64url",
+        "value": null,
+        "note": "No signature over rejected input"
+      },
+      "expected_validator_result": {
+        "accept": false,
+        "reason_code": "reject_duplicate_keys",
+        "detail": {
+          "source_json": "{\"a\":1,\"a\":2}",
+          "forbidden_behaviors": [
+            "last_key_wins",
+            "first_key_wins",
+            "silent_coalesce"
+          ],
+          "note": "MCP++ mcpp-jcs-v1 parsers MUST reject duplicate keys rather than coalesce."
+        }
+      },
+      "rejection": {
+        "condition": "duplicate_object_keys",
+        "source_json": "{\"a\":1,\"a\":2}"
+      }
+    },
+    {
+      "id": "duplicate-keys-negative-nested-duplicates",
+      "category": "duplicate_keys",
+      "polarity": "negative",
+      "valid": false,
+      "description": "Duplicate keys nested inside objects also fail closed.",
+      "source": null,
+      "source_json": "{\"outer\":{\"k\":1,\"k\":2}}",
+      "canonical_utf8": null,
+      "canonical_bytes_hex": null,
+      "canonical_bytes_base64": null,
+      "sha256": null,
+      "cid": null,
+      "signature_input": null,
+      "signature": null,
+      "signature_placeholder": {
+        "alg": "Ed25519",
+        "encoding": "base64url",
+        "value": null,
+        "note": "No signature over rejected input"
+      },
+      "expected_validator_result": {
+        "accept": false,
+        "reason_code": "reject_duplicate_keys",
+        "detail": {
+          "source_json": "{\"outer\":{\"k\":1,\"k\":2}}",
+          "path": "/outer"
+        }
+      },
+      "rejection": {
+        "condition": "duplicate_object_keys",
+        "source_json": "{\"outer\":{\"k\":1,\"k\":2}}"
+      }
+    }
+  ]
+}

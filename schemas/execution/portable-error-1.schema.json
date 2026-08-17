@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcp-plus-plus.dev/schemas/execution/portable-error-1.schema.json",
+  "title": "MCP++ PortableError@1",
+  "description": "Portable, content-addressable error carrier for MCP++ execution outcomes. Cross-language and cross-trust-domain; maps to transport/RPC codes without becoming transport-specific. Interface: PortableError@1. Normative prose: ipfs_accelerate_py/mcplusplus/docs/spec/execution-envelope.md.",
+  "$comment": "Interface label: PortableError@1. Schema marker: mcp++/execution/portable-error@1. Structural acceptance only; retry policy and security classification are enforced by executors and higher conformance levels.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "code",
+    "message",
+    "retryable",
+    "failure_class"
+  ],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "mcp++/execution/portable-error@1",
+      "description": "Closed schema marker for PortableError@1."
+    },
+    "code": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$",
+      "description": "Stable machine-readable error code (e.g. E_POLICY_DENIED, E_AUTHORITY_EXPIRED, E_FENCED_STALE)."
+    },
+    "message": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096,
+      "description": "Human-readable summary. MUST NOT embed secrets, plaintext confidential artifacts, or raw credentials."
+    },
+    "retryable": {
+      "type": "boolean",
+      "description": "Whether a conformant executor MAY retry the same envelope under the declared retry policy. permanent/policy/authority failures SHOULD set false."
+    },
+    "failure_class": {
+      "$ref": "#/$defs/failureClass",
+      "description": "Coarse failure taxonomy shared with Profile G receipts and durable-executor recovery."
+    },
+    "path": {
+      "type": ["string", "null"],
+      "maxLength": 512,
+      "description": "Optional JSON Pointer (RFC 6901) into the envelope, intent, or input that caused the error."
+    },
+    "details_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "CID of a structured details object (stack frames, rule ids, resource quotas). Null when no details blob is published."
+    },
+    "cause_cids": {
+      "type": "array",
+      "maxItems": 32,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/cid" },
+      "description": "CIDs of prior PortableError@1 (or related) records that caused this error."
+    },
+    "rpc_code": {
+      "type": ["integer", "null"],
+      "minimum": -32768,
+      "maximum": 32767,
+      "description": "Optional JSON-RPC / MCP application error code mapping (e.g. -32602)."
+    },
+    "http_status": {
+      "type": ["integer", "null"],
+      "minimum": 100,
+      "maximum": 599,
+      "description": "Optional HTTP status mapping when the error crosses an HTTP binding."
+    },
+    "observed_at_ms": {
+      "anyOf": [
+        { "$ref": "#/$defs/timestampMs" },
+        { "type": "null" }
+      ],
+      "description": "Wall-clock observation time in Unix epoch milliseconds. Informational only; causal order uses parents and logical clocks."
+    },
+    "correlation_id": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Optional correlation hook matching the parent envelope/result when available."
+    }
+  },
+  "$defs": {
+    "cid": {
+      "type": "string",
+      "description": "IPFS CID. CIDv1 base32 (b…) preferred for new mints; CIDv0 (Qm…) remains readable when historical.",
+      "pattern": "^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58,})$",
+      "minLength": 46,
+      "maxLength": 128
+    },
+    "timestampMs": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "Unix epoch milliseconds (safe integer range)."
+    },
+    "failureClass": {
+      "type": "string",
+      "enum": [
+        "none",
+        "retryable",
+        "permanent",
+        "policy",
+        "authority",
+        "fenced",
+        "resource",
+        "cancelled",
+        "timeout",
+        "internal"
+      ],
+      "description": "Shared failure taxonomy. Aligns with Profile G TaskReceipt.failure_class plus portable timeout/cancel/internal classes."
+    }
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "actors": {
+    "attacker": {
+      "did": "did:key:z6MknSLrJoTcukLrE435hVNQT4JUhbvWLX4kUzqkEStBU8Vi",
+      "kid": "attacker-v1",
+      "name": "attacker",
+      "public_key_b64url": "dqFZIESm5PURJlvKc6YE2QsFKdHfYCvjChmpJXZg0fU",
+      "public_key_hex": "76a1592044a6e4f511265bca73a604d90b0529d1df602be30a19a9257660d1f5",
+      "seed_hex": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    },
+    "leaf": {
+      "did": "did:key:z6MkvRXNYcE7MMduynWTgeKbDaT1iijDSC8pZqXZc8rHPrf2",
+      "kid": "leaf-v1",
+      "name": "leaf",
+      "public_key_b64url": "7UkoxijRwsbq6QM4kFmVYSlZJzpcY_k2NsFGFKyHN9E",
+      "public_key_hex": "ed4928c628d1c2c6eae90338905995612959273a5c63f93636c14614ac8737d1",
+      "seed_hex": "0303030303030303030303030303030303030303030303030303030303030303"
+    },
+    "mid": {
+      "did": "did:key:z6Mko9hTggMwjSTEaJaPUfE6tqcy2xvU6BnNq3e3o8qVBiyH",
+      "kid": "mid-v1",
+      "name": "mid",
+      "public_key_b64url": "gTl3Dqh9F19Wo1Rmw0x-zMuNipG07jeiXfYPW4_Js5Q",
+      "public_key_hex": "8139770ea87d175f56a35466c34c7ecccb8d8a91b4ee37a25df60f5b8fc9b394",
+      "seed_hex": "0202020202020202020202020202020202020202020202020202020202020202"
+    },
+    "revoker": {
+      "did": "did:key:z6MkhGok4PzLmtw1v5uW3Bpip8gHHifrCt42QJn4gEBfRVQG",
+      "kid": "revoker-v1",
+      "name": "revoker",
+      "public_key_b64url": "KeWDOpFaZCmk46eUhHXDOO9Dbrgr6JyS8FlwRAPbnVU",
+      "public_key_hex": "29e5833a915a6429a4e3a7948475c338ef436eb82be89c92f059704403db9d55",
+      "seed_hex": "a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5"
+    },
+    "root": {
+      "did": "did:key:z6Mkon3Necd6NkkyfoGoHxid2znGc59LU3K7mubaRcFbLfLX",
+      "kid": "root-v1",
+      "name": "root",
+      "public_key_b64url": "iojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1w",
+      "public_key_hex": "8a88e3dd7409f195fd52db2d3cba5d72ca6709bf1d94121bf3748801b40f6f5c",
+      "seed_hex": "0101010101010101010101010101010101010101010101010101010101010101"
+    }
+  },
+  "executor": "did:key:z6MkexecutorFixture0000000000000000000000000001",
+  "method": "tools/call",
+  "note": "TEST-ONLY fixed seeds. Never use outside conformance vectors.",
+  "now": 1800000000,
+  "peer_id": "12D3KooWAdversarialPeerIDFixture000000000000001",
+  "policy_cid": "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+  "resource": "tenant-a/bucket-a/documents/report.txt",
+  "schema": "mcp++/conformance/adversarial-keys@1",
+  "wrong_policy_cid": "bafybeihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku"
+}
