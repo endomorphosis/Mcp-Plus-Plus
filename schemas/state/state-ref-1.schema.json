@@ -1,0 +1,566 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcp-plus-plus.dev/schemas/state/state-ref-1.schema.json",
+  "title": "MCP++ StateRef@1",
+  "description": "Normative wire shape for StateRef@1: a portable handle to shared state that MUST declare exactly one consistency mode. Missing mode, unknown mode strings, multi-mode arrays, and free-text modes are invalid. Allowed modes are exactly: immutable, single_authority, causal, crdt, consensus (ADR-0004 / plan KD-8). Normative prose: ipfs_accelerate_py/mcplusplus/docs/spec/state-ref.md.",
+  "$comment": "Interface label: StateRef@1. Schema marker: mcp++/state/state-ref@1. Mode enum is closed and fail-closed; do not extend without a superseding ADR.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "mode"
+  ],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "mcp++/state/state-ref@1",
+      "description": "Top-level schema marker for StateRef@1. MUST be this exact const."
+    },
+    "id": {
+      "$ref": "#/$defs/stateId",
+      "description": "Stable logical identity of this state handle. Distinct from root_cid (which may advance)."
+    },
+    "schema_cid": {
+      "$ref": "#/$defs/cid",
+      "description": "CID of the value-schema (or type descriptor) that root payloads under this ref MUST satisfy."
+    },
+    "root_cid": {
+      "description": "CID of the current root value, snapshot, or document head. Null when the live value is not yet minted (e.g. empty single_authority keyspace). Absent is allowed; null means explicitly empty.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/cid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "mode": {
+      "$ref": "#/$defs/consistencyMode",
+      "description": "Mandatory consistency mode. Exactly one of the five closed tokens. Missing or unknown values are invalid."
+    },
+    "authority": {
+      "$ref": "#/$defs/authority",
+      "description": "Writer / ownership descriptor for this ref. Required in practice for single_authority and consensus; optional for immutable read-only refs."
+    },
+    "version": {
+      "$ref": "#/$defs/nonNegativeInteger",
+      "description": "Monotonic CAS / compare-and-swap version for the live value under this id. Used heavily by single_authority; MAY be present in other modes as an observational counter."
+    },
+    "epoch": {
+      "$ref": "#/$defs/nonNegativeInteger",
+      "description": "Claim / fencing epoch. Higher epoch supersedes lower under the mode's lease/fence rules (Profile G-compatible)."
+    },
+    "clocks": {
+      "$ref": "#/$defs/clocks",
+      "description": "Causal / hybrid clock evidence for partial-order comparison. Primary for causal mode; optional elsewhere."
+    },
+    "read_caps": {
+      "type": "array",
+      "description": "Capability references authorizing read of this state (UCAN proof CIDs, ability tokens, or capability descriptors).",
+      "items": {
+        "$ref": "#/$defs/capabilityRef"
+      },
+      "maxItems": 256,
+      "uniqueItems": true
+    },
+    "write_caps": {
+      "type": "array",
+      "description": "Capability references authorizing write/update of this state under the declared mode.",
+      "items": {
+        "$ref": "#/$defs/capabilityRef"
+      },
+      "maxItems": 256,
+      "uniqueItems": true
+    },
+    "lease": {
+      "description": "Exclusive-write lease bound to this ref (or null when no lease is held).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lease"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "fence": {
+      "description": "Fencing token that invalidates stale writers after reclaim / epoch advance (or null when no fence is active).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/fence"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "merge_policy_cid": {
+      "description": "CID of the merge / reconciliation policy document. Required for crdt when merge rules are not fully determined by the CRDT document type; forbidden as a silent single_authority merge substitute.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/cid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "retention_policy_cid": {
+      "description": "CID of the retention / compaction / archival policy for this state history.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/cid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "confidentiality_policy_cid": {
+      "description": "CID of the confidentiality / disclosure policy (who may observe plaintext, ciphertext envelopes, retention of secrets).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/cid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "consensus_policy_cid": {
+      "description": "CID of the consensus-plugin policy (membership, guarantee label, quorum, evidence format). Meaningful for mode=consensus; MUST NOT claim bft without a BFT engine.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/cid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "parents": {
+      "type": "array",
+      "description": "Causal parents: CIDs of prior StateRef snapshots and/or Event DAG nodes this ref observation depends on. Concurrent branches remain concurrent until the mode's reconciliation rule applies (never silent merge for single_authority).",
+      "items": {
+        "$ref": "#/$defs/cid"
+      },
+      "maxItems": 1024,
+      "uniqueItems": true
+    },
+    "provider": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Optional provider / backend identifier (e.g. immutable-cid, sqlite-authority, automerge-crdt, consensus-plugin). Informational; mode remains authoritative.",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._+:@/-]{0,127}$"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Non-authoritative annotations. MUST NOT carry a second mode, authority override, or merge instruction that contradicts top-level fields.",
+      "additionalProperties": true,
+      "propertyNames": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "not": {
+          "enum": [
+            "mode",
+            "schema",
+            "id",
+            "root_cid",
+            "authority",
+            "version",
+            "epoch",
+            "fence",
+            "lease"
+          ]
+        }
+      }
+    }
+  },
+  "$defs": {
+    "cid": {
+      "type": "string",
+      "description": "IPFS CID string. CIDv1 base32 (b…) preferred for new mints; CIDv0 (Qm…) remains readable when historical.",
+      "pattern": "^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58,})$",
+      "minLength": 46,
+      "maxLength": 128
+    },
+    "stateId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "description": "Non-empty logical state identity. Implementations MAY use UUIDs, DIDs, or content-addressed handles; the string form is opaque at this layer.",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._+:@/-]{0,255}$"
+    },
+    "consistencyMode": {
+      "type": "string",
+      "description": "Closed enum of MCP++ 1.0 state consistency modes (ADR-0004 §1; plan KD-8). No aliases. No additional values.",
+      "enum": [
+        "immutable",
+        "single_authority",
+        "causal",
+        "crdt",
+        "consensus"
+      ]
+    },
+    "nonNegativeInteger": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "positiveInteger": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "iso8601": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 64,
+      "description": "UTC timestamp (ISO-8601).",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?(Z|[+-][0-9]{2}:[0-9]{2})?)?$"
+    },
+    "unixMs": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "Unix epoch milliseconds."
+    },
+    "did": {
+      "type": "string",
+      "minLength": 7,
+      "maxLength": 512,
+      "pattern": "^did:[a-z0-9]+:[A-Za-z0-9._:%-]+(?:[/?#][^\\u0000]*)?$",
+      "description": "DID-compatible principal identifier."
+    },
+    "peerId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Transport peer identity (e.g. libp2p PeerID). MUST NOT be a DID string (use principal/DID fields for cryptographic identity). Transport identity is never execution authority by itself (plan KD-14).",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._+:@/-]{0,127}$",
+      "not": {
+        "type": "string",
+        "pattern": "^did:"
+      }
+    },
+    "principal": {
+      "description": "Issuer / holder principal: DID preferred; peer id or opaque authority key also accepted when profile-bound.",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/did"
+        },
+        {
+          "$ref": "#/$defs/peerId"
+        }
+      ]
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Who is allowed to advance this state under the declared mode.",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "none",
+            "principal",
+            "lease_holder",
+            "quorum",
+            "plugin"
+          ],
+          "description": "Authority model class. none is typical for pure immutable refs with no live writer."
+        },
+        "principal": {
+          "$ref": "#/$defs/principal",
+          "description": "Single authoritative principal when kind is principal or lease_holder."
+        },
+        "principals": {
+          "type": "array",
+          "description": "Member set when kind is quorum.",
+          "items": {
+            "$ref": "#/$defs/principal"
+          },
+          "minItems": 1,
+          "maxItems": 256,
+          "uniqueItems": true
+        },
+        "threshold": {
+          "$ref": "#/$defs/positiveInteger",
+          "description": "Quorum threshold when kind is quorum."
+        },
+        "plugin_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Consensus plugin identifier when kind is plugin.",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._+:@/-]{0,127}$"
+        },
+        "guarantee": {
+          "$ref": "#/$defs/consensusGuarantee",
+          "description": "Honest consensus-class guarantee label when authority is consensus/plugin-backed (ADR-0004 §4)."
+        }
+      }
+    },
+    "consensusGuarantee": {
+      "type": "string",
+      "description": "Four honest consensus-class labels (ADR-0004 §4 / KD-11). Profile G neighborhood agreement is coordination and/or majority_approval only — never bft.",
+      "enum": [
+        "coordination",
+        "majority_approval",
+        "crash_consensus",
+        "bft"
+      ]
+    },
+    "capabilityRef": {
+      "description": "A read or write capability reference: either a proof/capability CID or an inline ability descriptor.",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/cid"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "resource",
+            "ability"
+          ],
+          "properties": {
+            "resource": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512,
+              "description": "Resource identifier (state id, CID prefix, or capability resource URI)."
+            },
+            "ability": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "description": "Ability string (e.g. state/read, state/write, state/lease)."
+            },
+            "proof_cid": {
+              "$ref": "#/$defs/cid",
+              "description": "Optional UCAN / delegation proof bundle CID binding this capability."
+            }
+          }
+        }
+      ]
+    },
+    "lease": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Exclusive-write lease. Stale writers after expiry or epoch reclaim MUST be rejected (fail closed).",
+      "required": [
+        "holder",
+        "expires_at_ms"
+      ],
+      "properties": {
+        "holder": {
+          "$ref": "#/$defs/principal",
+          "description": "Principal that currently holds exclusive write under this lease."
+        },
+        "issued_at_ms": {
+          "$ref": "#/$defs/unixMs",
+          "description": "Lease issue time (unix ms)."
+        },
+        "expires_at_ms": {
+          "$ref": "#/$defs/unixMs",
+          "description": "Lease expiry (unix ms). Writers after this instant without renew MUST fail closed."
+        },
+        "epoch": {
+          "$ref": "#/$defs/nonNegativeInteger",
+          "description": "Lease epoch; MUST match or be consistent with top-level epoch when both are present."
+        },
+        "lease_cid": {
+          "$ref": "#/$defs/cid",
+          "description": "Optional content-addressed lease record CID."
+        },
+        "renewable": {
+          "type": "boolean",
+          "description": "Whether the holder may renew before expiry under the same epoch."
+        }
+      }
+    },
+    "fence": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Fencing token. Completions or writes presenting a lower token than the highest accepted token for this id MUST be rejected as stale.",
+      "required": [
+        "token"
+      ],
+      "properties": {
+        "token": {
+          "$ref": "#/$defs/nonNegativeInteger",
+          "description": "Monotonic fencing token. Higher token wins; lower is stale."
+        },
+        "epoch": {
+          "$ref": "#/$defs/nonNegativeInteger",
+          "description": "Optional epoch bound to this fence."
+        },
+        "issued_to": {
+          "$ref": "#/$defs/principal",
+          "description": "Principal the fence was issued to."
+        },
+        "fence_cid": {
+          "$ref": "#/$defs/cid",
+          "description": "Optional content-addressed fence record CID."
+        }
+      }
+    },
+    "clocks": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Clock set for causal comparison. At least one clock field SHOULD be present when mode is causal.",
+      "properties": {
+        "logical": {
+          "$ref": "#/$defs/nonNegativeInteger",
+          "description": "Logical counter (Lamport-style) local to the producer."
+        },
+        "hybrid": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Hybrid logical clock components.",
+          "required": [
+            "wall_ms",
+            "logical"
+          ],
+          "properties": {
+            "wall_ms": {
+              "$ref": "#/$defs/unixMs"
+            },
+            "logical": {
+              "$ref": "#/$defs/nonNegativeInteger"
+            }
+          }
+        },
+        "merkle_frontier": {
+          "type": "array",
+          "description": "Merkle / Event DAG frontier CIDs used as a partial-order clock.",
+          "items": {
+            "$ref": "#/$defs/cid"
+          },
+          "maxItems": 256,
+          "uniqueItems": true
+        },
+        "vector": {
+          "type": "object",
+          "description": "Sparse vector clock: principal id → counter.",
+          "additionalProperties": {
+            "$ref": "#/$defs/nonNegativeInteger"
+          },
+          "propertyNames": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "observed_at": {
+          "$ref": "#/$defs/iso8601",
+          "description": "Wall-clock observation time (informational; not a total-order authority)."
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "schema": "mcp++/state/state-ref@1",
+      "id": "state:demo/immutable-config",
+      "schema_cid": "bafkreigh2akiscaildcqabsyg3dfr6chu3fgpregiymsck7e7aqa4s52zy",
+      "root_cid": "bafkreifzjut3te2nhyekklss27nh3k72ysco7y32koao5eei66wof36n5e",
+      "mode": "immutable",
+      "authority": {
+        "kind": "none"
+      },
+      "version": 0,
+      "parents": []
+    },
+    {
+      "schema": "mcp++/state/state-ref@1",
+      "id": "state:demo/task-lease",
+      "schema_cid": "bafkreigh2akiscaildcqabsyg3dfr6chu3fgpregiymsck7e7aqa4s52zy",
+      "root_cid": "bafkreifzjut3te2nhyekklss27nh3k72ysco7y32koao5eei66wof36n5e",
+      "mode": "single_authority",
+      "authority": {
+        "kind": "lease_holder",
+        "principal": "did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH"
+      },
+      "version": 7,
+      "epoch": 2,
+      "read_caps": [
+        {
+          "resource": "state:demo/task-lease",
+          "ability": "state/read"
+        }
+      ],
+      "write_caps": [
+        {
+          "resource": "state:demo/task-lease",
+          "ability": "state/write",
+          "proof_cid": "bafkreigh2akiscaildcqabsyg3dfr6chu3fgpregiymsck7e7aqa4s52zy"
+        }
+      ],
+      "lease": {
+        "holder": "did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH",
+        "issued_at_ms": 1783872000000,
+        "expires_at_ms": 1783872061000,
+        "epoch": 2,
+        "renewable": true
+      },
+      "fence": {
+        "token": 3,
+        "epoch": 2,
+        "issued_to": "did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH"
+      },
+      "parents": [
+        "bafkreifzjut3te2nhyekklss27nh3k72ysco7y32koao5eei66wof36n5e"
+      ]
+    },
+    {
+      "schema": "mcp++/state/state-ref@1",
+      "id": "state:demo/causal-frontier",
+      "mode": "causal",
+      "root_cid": "bafkreigh2akiscaildcqabsyg3dfr6chu3fgpregiymsck7e7aqa4s52zy",
+      "clocks": {
+        "logical": 12,
+        "merkle_frontier": [
+          "bafkreifzjut3te2nhyekklss27nh3k72ysco7y32koao5eei66wof36n5e",
+          "bafkreigh2akiscaildcqabsyg3dfr6chu3fgpregiymsck7e7aqa4s52zy"
+        ]
+      },
+      "parents": [
+        "bafkreifzjut3te2nhyekklss27nh3k72ysco7y32koao5eei66wof36n5e"
+      ]
+    },
+    {
+      "schema": "mcp++/state/state-ref@1",
+      "id": "state:demo/crdt-doc",
+      "mode": "crdt",
+      "root_cid": "bafkreifzjut3te2nhyekklss27nh3k72ysco7y32koao5eei66wof36n5e",
+      "provider": "automerge-crdt",
+      "merge_policy_cid": "bafkreigh2akiscaildcqabsyg3dfr6chu3fgpregiymsck7e7aqa4s52zy",
+      "version": 42,
+      "parents": []
+    },
+    {
+      "schema": "mcp++/state/state-ref@1",
+      "id": "state:demo/consensus-value",
+      "mode": "consensus",
+      "root_cid": "bafkreifzjut3te2nhyekklss27nh3k72ysco7y32koao5eei66wof36n5e",
+      "authority": {
+        "kind": "plugin",
+        "plugin_id": "mcp++/consensus/raft-local@1",
+        "guarantee": "crash_consensus"
+      },
+      "consensus_policy_cid": "bafkreigh2akiscaildcqabsyg3dfr6chu3fgpregiymsck7e7aqa4s52zy",
+      "version": 5,
+      "epoch": 1,
+      "parents": []
+    }
+  ]
+}

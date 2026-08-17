@@ -3,14 +3,18 @@
 **Status:** Draft interoperability candidate 1.0  
 **Profile key:** `mcp++/x402-payments`  
 **Profile version:** `1.0`  
-**Upstream protocol:** x402 v2
+**Upstream protocol:** x402 v2  
+**Interface:** `PaymentAuthorizationBoundary@1`
 
 ## 1. Scope and conformance
 
 Profile H adds an optional commercial condition to an MCP operation. It uses
 upstream x402 v2 at HTTP boundaries and carries the same decoded x402 objects
 over Profile E sessions. It does not create currency, execution authority, a
-wallet custody model, or a second payment protocol.
+wallet custody model, or a second payment protocol. The interface
+`PaymentAuthorizationBoundary@1` (Section 2) is the normative split between
+payment success and execution authorization; a settled payment is commercial
+evidence only and MUST NEVER be treated as a UCAN, policy grant, or lease.
 
 The words **MUST**, **MUST NOT**, **SHOULD**, **SHOULD NOT**, and **MAY** are to
 be interpreted as described by RFC 2119 and RFC 8174 when capitalized.
@@ -36,34 +40,154 @@ EVM `batch-settlement` are extensions: they MUST be explicitly negotiated and
 MUST fail closed when not negotiated. Nothing in this chapter authorizes
 mainnet use.
 
-## 2. Terms and decision invariant
+## 2. PaymentAuthorizationBoundary@1
+
+Readers and implementers MUST treat payment success and execution authority as
+independent layers. Success or failure at the commercial layer MUST NOT be
+inferred from, or substituted for, success or failure at the execution-
+authority layer (and the reverse). This section defines the interface
+`PaymentAuthorizationBoundary@1`.
+
+```text
+┌──────────────────────────────────────────────────────────────────┐
+│ Layer A — Execution authority (Profiles C / D / domain / G)      │
+│   UCAN · policy · tenancy · safety · license · lease/fence       │
+├──────────────────────────────────────────────────────────────────┤
+│ Layer H — Commercial condition (this profile)                    │
+│   quote · payment payload · verify · settle · entitlement        │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### 2.1 Terms
 
 - **paid capability**: an immutable, signed catalog entry attaching commercial
   terms to one canonical operation.
 - **request commitment**: the CID of canonical, price-relevant request data,
   including operation identity and arguments, with secrets committed by digest.
 - **quote**: an expiring, request-bound choice of x402 payment requirements.
-- **authorization**: a buyer-signed x402 `PaymentPayload`; it is payment
-  authority, never execution authority.
-- **settlement**: the irreversible or externally durable transfer outcome.
-- **entitlement**: an optional, bounded grant derived from a settlement.
+- **payment authorization** (artifact `PaymentAuthorization` / x402
+  `PaymentPayload`): buyer-signed payment authority for a selected
+  requirement. It is **payment authority only** and MUST NEVER be treated as
+  execution authority.
+- **settlement**: the irreversible or externally durable transfer outcome
+  (`SettlementReceipt`). Settlement proves commercial transfer; it does not
+  authorize execution.
+- **entitlement**: an optional, bounded commercial grant derived from a
+  settlement (`PaidEntitlement`). An entitlement is **not** a UCAN, policy
+  decision, or Profile G lease.
+- **commercial evidence**: a settlement receipt CID, verified entitlement CID,
+  or equivalent durable commercial proof linked from an `AccessReceipt`.
 - **access receipt**: the final allow/deny record for an attempted operation.
+  Allow requires independent layer-A and layer-H satisfaction when both apply.
 - **facilitator**: a replaceable verifier/settler. No particular provider or
   hosted account is required by Profile H.
+- **paid-but-unauthorized**: commercial evidence is present (or settlement
+  succeeded) while Profile C authority, Profile D/domain policy, or a required
+  Profile G lease is missing, invalid, expired, or deny. MUST deny execution.
+- **authorized-but-unpaid**: Profile C/D (and G when required) would permit the
+  invocation, but the protected operation's Profile H commercial condition is
+  unsatisfied (no valid quote-bound settlement or usable entitlement). MUST
+  deny execution of the protected side effect.
 
-For a protected operation, the seller's allow decision MUST be the intersection:
+### 2.2 Decision invariant (normative)
+
+For a protected operation, the seller's allow decision MUST be the intersection
+of every required layer:
 
 ```text
 capability exists
-AND Profile C authority is valid
-AND Profile D and domain policy permit
-AND Profile G claim/lease is valid when scheduled
-AND Profile H commercial condition is satisfied
+AND Profile C authority is valid          (layer A)
+AND Profile D and domain policy permit    (layer A)
+AND Profile G claim/lease is valid when scheduled  (layer A)
+AND Profile H commercial condition is satisfied    (layer H)
 ```
 
 Payment is evidence for the final term only. It MUST NOT grant identity,
 tenancy, dataset entitlement, a license, safety approval, UCAN authority, or a
-Profile G lease.
+Profile G lease. A settled quote is not a capability token. A payer may differ
+from the execution subject and NEVER becomes the subject by paying.
+
+Free operations (not in the signed paid catalog, or catalog-marked free) still
+require layer A when the operation is otherwise protected by Profiles C/D/G;
+absence of a commercial condition MUST NOT skip authority checks.
+
+### 2.3 Non-substitution rules (normative)
+
+1. **Payment success is not execution authorization.** A verified or settled
+   payment, a non-exhausted entitlement, a valid `PAYMENT-RESPONSE`, or a
+   `payment_context.response` MUST NOT, by itself, allow the protected
+   operation's side effect.
+2. **Execution authorization is not payment.** A valid UCAN, policy allow,
+   dataset entitlement, human approval, or Profile G lease MUST NOT, by itself,
+   satisfy a required Profile H commercial condition.
+3. **Transport identity is neither.** PeerID, TLS client cert, and HTTP session
+   cookies are neither payment authority nor execution authority.
+4. **Facilitator opinion is not authority.** Facilitator verify/settle outcomes
+   are commercial evidence inputs. They MUST NOT mint UCANs, rewrite policy, or
+   raise budgets.
+5. **Receipt knowledge is not authority.** Possession of an `AccessReceipt`,
+   settlement, or entitlement CID is not bearer authorization to execute,
+   retrieve secrets, or replay a side effect.
+
+### 2.4 Mandatory dual-denial cases (normative)
+
+When Profile H is negotiated and the operation is in the paid catalog (or
+otherwise requires a commercial condition), both of the following MUST fail
+closed **before** the protected side-effect boundary:
+
+| Case | Layer A | Layer H | Required outcome | Stable code |
+|---|---|---|---|---|
+| **paid-but-unauthorized** | missing, invalid, expired, or deny | satisfied (settled / entitlement usable) | deny; no side effect; retain settled-but-unfulfilled / refund path when funds moved | `H_PAYMENT_POLICY_DENIED` |
+| **authorized-but-unpaid** | allow | unsatisfied (no matching settlement or usable entitlement) | deny; no side effect; issue quote / `H_PAYMENT_REQUIRED` when eligible | `H_PAYMENT_REQUIRED` |
+
+Additional normative consequences:
+
+- Paid-but-unauthorized MUST emit `paid_access_denied` (or equivalent Profile F
+  event) with independent C/D/G decision CIDs recorded when available. The
+  seller MUST NOT claim execution succeeded, MUST NOT invent layer-A allow from
+  settlement, and MUST enter the declared refund or reconciliation workflow
+  when settlement already completed.
+- Authorized-but-unpaid MUST NOT settle, consume entitlement, or execute. When
+  the caller is otherwise eligible, the seller returns an expiring request-bound
+  quote (HTTP `402` + `PAYMENT-REQUIRED`, or Profile E `H_PAYMENT_REQUIRED`)
+  without the protected operation's side effects.
+- Concurrent or replayed attempts MUST re-evaluate both layers against current
+  state. A prior allow cannot be reconstructed from payment artifacts alone, and
+  a prior payment cannot override a new layer-A deny.
+
+### 2.5 AccessReceipt and validator requirements (normative)
+
+`AccessReceipt` is the durable composition of layers A and H for one attempt.
+Validators (schema, codec, and seller runtime) MUST reject structurally
+incoherent receipts and MUST enforce the dual-denial cases above.
+
+| `decision` | Required evidence | Forbidden configurations |
+|---|---|---|
+| `allow` | Non-null `commercialEvidenceCid` and `resultCid` when the operation required Profile H; non-null `ucanDecisionCid` and `policyDecisionCid` when Profiles C and D apply to the operation; non-null `leaseDecisionCid` when Profile G scheduling applies | `allow` with missing required layer-A decision CIDs (**paid-but-unauthorized** shape); `allow` with null `commercialEvidenceCid` when Profile H was required (**authorized-but-unpaid** shape); `allow` with null `resultCid` |
+| `deny` | Truthful `reasonCode`; may record whichever of commercial or layer-A evidence was evaluated | `deny` that asserts execution success; rewriting deny into allow because settlement later completed without re-running layer A |
+
+Structural codec rules for Profile H 1.0 artifacts (see
+`schemas/profile-h/1.0` and `tests-py/validators/profile_h.py`):
+
+- An `AccessReceipt` with `decision: "allow"` MUST fail validation when
+  `commercialEvidenceCid` is null or `resultCid` is null for a Profile H
+  protected allow path.
+- Seller and adapter validators that compose Profile C/D/G decisions with
+  Profile H MUST additionally reject **paid-but-unauthorized** allow attempts
+  (commercial evidence present, execution authority absent or deny) and
+  **authorized-but-unpaid** allow attempts (execution authority present,
+  commercial evidence absent when required). Rejection MUST use the stable
+  codes in Section 2.4, never silent allow.
+- Payment artifacts (`PaymentAuthorization`, `PaymentVerification`,
+  `SettlementReceipt`, `PaidEntitlement`) MUST NOT be accepted as substitutes
+  for UCAN, policy, or lease decision CIDs on an `AccessReceipt`.
+- Codec modules MUST remain free of wallet/network side effects; they enforce
+  wire shape and the structural half of this boundary. Seller runtimes enforce
+  live C/D/G evaluation and durable commercial satisfaction.
+
+Implementations that advertise Profile H MUST keep the payment path and the
+authority path in separate modules or clearly separated stages so that payment
+code cannot mint or broaden capabilities (conflict policy for MCPP-G140).
 
 ## 3. Negotiation and advertisement
 
@@ -181,28 +305,36 @@ or request-controlled facilitator URLs MUST NOT appear in these artifacts.
 
 ## 5. Authorization and settlement ordering
 
-Every seller MUST perform this order for each attempt:
+Every seller MUST perform this order for each attempt. The order implements
+`PaymentAuthorizationBoundary@1` (Section 2): layer A and layer H are both
+required, and neither is inferred from the other.
 
 1. Normalize the operation and compute its request commitment.
 2. Authenticate and perform the non-payment Profile C, Profile D, tenancy,
    safety, license, and domain checks needed to decide whether pricing may be
-   disclosed. A denial ends the attempt.
-3. Resolve the paid capability. `free` continues; `denied` ends; unavailable
-   verifier, ledger, or pricing state fails closed.
-4. For an unpaid request, issue an expiring request-bound quote without the
-   protected operation's side effects.
+   disclosed. A denial ends the attempt (**paid-but-unauthorized** path if a
+   prior payment exists; otherwise ordinary authority deny).
+3. Resolve the paid capability. `free` continues with layer A only; `denied`
+   ends; unavailable verifier, ledger, or pricing state fails closed.
+4. For an unpaid request on a paid capability, issue an expiring request-bound
+   quote without the protected operation's side effects
+   (**authorized-but-unpaid** → `H_PAYMENT_REQUIRED` when layer A still holds).
 5. On retry, validate negotiated version, bounds, quote, catalog/descriptor,
    expiry, nonce, idempotency key, operation, request, seller, payee, scheme,
    network, asset, and amount before cryptographic verification.
 6. Re-run all non-payment authorization and policy checks against current state.
-   A known denial MUST occur before settlement.
-7. Atomically reserve the authorization commitment in the durable ledger,
-   verify, and settle it or prove a scoped entitlement. Never settle twice.
+   A known layer-A denial MUST occur before settlement and MUST remain deny
+   after settlement (**paid-but-unauthorized**).
+7. Atomically reserve the payment-authorization commitment in the durable
+   ledger, verify, and settle it or prove a scoped entitlement. Never settle
+   twice. This step produces commercial evidence only.
 8. Atomically mark commercial satisfaction and reserve one execution. Re-run
    time-sensitive policy and Profile G lease/fence checks immediately before
-   the side-effect boundary.
-9. Execute at most once, persist output/access receipts, emit Profile F events,
-   and return the prior outcome for an identical retry.
+   the side-effect boundary. If layer A now denies, stop
+   (**paid-but-unauthorized**); do not execute.
+9. Execute at most once, persist output/`AccessReceipt`, emit Profile F events,
+   and return the prior outcome for an identical retry. An `allow` receipt MUST
+   satisfy Section 2.5.
 
 After any denial, the protected operation's side effect MUST NOT occur. If
 policy changes between settlement and execution, the seller MUST deny, retain
@@ -213,16 +345,20 @@ reconciliation workflow; it MUST NOT claim execution succeeded.
 
 - **C (UCAN):** validate capability/delegation at price-disclosure time and
   again at execution. A payer may differ from the subject but never becomes it.
+  Payment artifacts MUST NOT be accepted as UCAN proofs.
 - **D (policy):** payment proposal, approval, amount, asset, network, seller,
   facilitator, budgets, and result are policy inputs. Human-confirmation
-  obligations MUST be discharged before signing.
+  obligations MUST be discharged before signing. Settlement MUST NOT override a
+  policy deny.
 - **E (transport):** HTTP and `/mcp+p2p/1.0.0` carry identical decoded x402
   objects. Transport identity is neither payment nor execution authority.
 - **F (provenance):** Section 11 events link catalog, quote, authorization,
-  verification, settlement, access, execution and output without secrets.
+  verification, settlement, access, execution and output without secrets, and
+  MUST distinguish commercial success from access-allowed/executed.
 - **G (scheduling):** a claim cannot sign, change price, raise a budget, or
   transfer entitlement. Workers receive a scoped entitlement CID or evidence,
   never a wallet key. Profile G fencing supplements Profile H idempotency.
+  Payment MUST NOT mint or extend a lease.
 
 ## 6. HTTP x402 v2 binding
 
@@ -312,9 +448,10 @@ execute endpoint is required.
 | operator recovery | `mcp++/payments/reconcile` | `POST /mcp/payments/reconcile` |
 
 `verify` MUST NOT execute, settle, consume entitlement, or imply access.
-`settle` MUST NOT execute. Lookups MUST enforce subject/disclosure policy;
-knowledge of a CID is not authorization. Optional methods MUST NOT be
-advertised unless implemented durably.
+`settle` MUST NOT execute and MUST NOT grant layer-A authority. Lookups MUST
+enforce subject/disclosure policy; knowledge of a CID is not authorization.
+Optional methods MUST NOT be advertised unless implemented durably. No method
+in this table converts commercial success into a UCAN or policy allow.
 
 ## 9. Buyer approval and wallet boundary
 
@@ -381,7 +518,7 @@ codes MAY vary; clients MUST branch on the symbolic code.
 
 | Code | Meaning and retry rule |
 |---|---|
-| `H_PAYMENT_REQUIRED` | eligible operation needs payment; retry only with approved matching payload |
+| `H_PAYMENT_REQUIRED` | eligible operation needs payment (**authorized-but-unpaid**); retry only with approved matching payload |
 | `H_PAYMENT_DECLINED` | buyer/provider declined; new approval is required |
 | `H_QUOTE_EXPIRED` | obtain a new quote; never reuse the signature |
 | `H_UNSUPPORTED_X402_VERSION` | not v2 or a legacy header; do not downgrade |
@@ -394,7 +531,7 @@ codes MAY vary; clients MUST branch on the symbolic code.
 | `H_VERIFICATION_FAILED` | evidence invalid; do not settle |
 | `H_SETTLEMENT_FAILED` | definitively failed; retry only under returned recovery policy |
 | `H_ENTITLEMENT_EXHAUSTED` | quota/expiry does not cover request |
-| `H_PAYMENT_POLICY_DENIED` | commercial or non-payment policy denies; payment cannot override |
+| `H_PAYMENT_POLICY_DENIED` | commercial or non-payment policy denies; payment cannot override; covers **paid-but-unauthorized** |
 | `H_FACILITATOR_UNAVAILABLE` | unavailable before unknown outcome; bounded retry allowed |
 | `H_RECONCILIATION_REQUIRED` | ambiguous outcome; do not pay/execute until reconciled |
 | `H_LIMIT_EXCEEDED` | encoded object, lifetime, count, amount, or rate exceeds bound |
@@ -419,7 +556,7 @@ A compromised signer, seller key, or ledger cannot be repaired by this profile.
 | facilitator compromise/failure | configured trust, TLS, response validation, evidence, circuit breaker/reconciliation |
 | wallet exfiltration | isolated non-exporting signer, least privilege, hardware/external option |
 | prompt-induced spend | policy outside model context, hard budgets/allowlists, approval, global pause |
-| payment as auth bypass | repeat C/D/domain checks before settlement and execution |
+| payment as auth bypass | `PaymentAuthorizationBoundary@1`; repeat C/D/domain checks before settlement and execution; reject paid-but-unauthorized and authorized-but-unpaid |
 | receipt privacy leak | selective disclosure, encryption, authorized lookup, transaction redaction |
 | stale quote/catalog | signed CID binding, nonce/expiry, seller/network/payee revalidation |
 | settle-then-crash/lost response | durable states, fencing, receipt lookup and reconciliation |
@@ -505,24 +642,67 @@ After approval, repeat equivalent logical parameters with the v2 payload in
 `PAYMENT-SIGNATURE`. A success carries both `PAYMENT-RESPONSE` and application
 receipt; the header alone does not say the tool succeeded.
 
-### 17.2 Authorization remains mandatory
+### 17.2 Paid-but-unauthorized (payment success ≠ execution)
 
-If dataset entitlement was revoked before execution, a valid settled payment
-still yields `H_PAYMENT_POLICY_DENIED`, `paid_access_denied`, a
-settled-but-unfulfilled recovery/refund record, and no dataset read.
+Layer H is satisfied; layer A is not. Example: dataset entitlement or UCAN was
+revoked after settlement but before the side-effect boundary.
 
-### 17.3 Replay
+```text
+settlement outcome = settled
+Profile C / D decision = deny (or missing)
+→ decision = deny
+→ code = H_PAYMENT_POLICY_DENIED
+→ events include paid_access_denied
+→ AccessReceipt.decision = deny
+→ AccessReceipt.commercialEvidenceCid = <settlement or entitlement cid>
+→ AccessReceipt.resultCid = null
+→ no dataset read / no protected side effect
+→ settled-but-unfulfilled recovery or refund workflow
+```
+
+Validators and seller runtimes MUST reject any attempt to record
+`AccessReceipt.decision = allow` for this shape (Section 2.4–2.5). Settlement
+headers or facilitator success alone MUST NOT flip the decision to allow.
+
+### 17.3 Authorized-but-unpaid (authority ≠ payment)
+
+Layer A would permit the invocation; layer H is not satisfied. Example: a valid
+UCAN and policy allow for `tools/call`, but no matching quote-bound settlement
+or usable entitlement is present for a catalog-paid operation.
+
+```text
+Profile C / D decision = allow
+commercial condition = unsatisfied
+→ decision = deny (no side effect)
+→ code = H_PAYMENT_REQUIRED
+→ HTTP 402 + PAYMENT-REQUIRED, or Profile E error with paymentRequired
+→ AccessReceipt (if emitted) has decision = deny and null commercialEvidenceCid
+→ no settlement, entitlement consumption, or protected side effect
+```
+
+Validators and seller runtimes MUST reject any attempt to record
+`AccessReceipt.decision = allow` without commercial evidence when Profile H is
+required (Section 2.4–2.5). A valid UCAN MUST NOT suppress the quote path.
+
+### 17.4 Replay
 
 Concurrent retries with one key/request/payment converge on one ledger record.
 One worker owns settlement/execution fences; others return the same receipt.
 Changed arguments with that key yield `H_REQUEST_MISMATCH` before verification.
+Replays MUST re-check both layers: a payment that was previously allowed does
+not authorize a later attempt if layer A now denies.
 
 ## 18. Conformance checklist
 
 Demonstrate negotiation subset/rejection; v1 rejection; upstream HTTP vectors;
-HTTP/Profile E decoded-object and decision parity; authorization-before-price
-and repeated C/D checks; strict request/price/payee binding; signer/budget
-isolation; at-most-once settlement/execution under concurrency/restart; unknown
-outcome recovery; redacted CID/Profile F lineage; every stable error; parser and
-rate bounds; and no paid side effect after denial. Mainnet readiness is a
-separate operational/security decision, never implied by Profile H conformance.
+HTTP/Profile E decoded-object and decision parity; `PaymentAuthorizationBoundary@1`
+non-substitution (Section 2.3); **paid-but-unauthorized** deny with
+`H_PAYMENT_POLICY_DENIED` and no side effect; **authorized-but-unpaid** deny
+with `H_PAYMENT_REQUIRED` / quote and no side effect; AccessReceipt structural
+rejection of allow without required commercial or layer-A evidence
+(Section 2.5); authorization-before-price and repeated C/D checks; strict
+request/price/payee binding; signer/budget isolation; at-most-once
+settlement/execution under concurrency/restart; unknown outcome recovery;
+redacted CID/Profile F lineage; every stable error; parser and rate bounds; and
+no paid side effect after denial. Mainnet readiness is a separate
+operational/security decision, never implied by Profile H conformance.

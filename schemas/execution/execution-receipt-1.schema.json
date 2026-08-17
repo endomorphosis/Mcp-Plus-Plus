@@ -1,0 +1,365 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcp-plus-plus.dev/schemas/execution/execution-receipt-1.schema.json",
+  "title": "MCP++ ExecutionReceipt@1",
+  "description": "Content-addressed execution receipt that attests an ExecutionResult@1 for an ExecutionEnvelope@1. Includes status, output CIDs, state transitions, side effects, decision/delegation refs, executor identity, retry, duration, portable errors, proofs, signature, and event_cid. Interface: ExecutionReceipt@1. Normative prose: ipfs_accelerate_py/mcplusplus/docs/spec/execution-envelope.md.",
+  "$comment": "Interface label: ExecutionReceipt@1. Schema marker: mcp++/execution/receipt@1. Supersedes overlapping Profile B receipt shapes and Profile G TaskReceipt carriers for new work without rewriting historical CIDs (adapters in MCPP-031/032).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "envelope_cid",
+    "result_cid",
+    "status",
+    "output_cids",
+    "state_transitions",
+    "side_effects",
+    "decision_cid",
+    "delegation_cid",
+    "executor",
+    "retry",
+    "duration_ms",
+    "error",
+    "proofs",
+    "signature",
+    "event_cid",
+    "started_at_ms",
+    "finished_at_ms"
+  ],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "mcp++/execution/receipt@1",
+      "description": "Closed schema marker for ExecutionReceipt@1."
+    },
+    "envelope_cid": {
+      "$ref": "#/$defs/cid",
+      "description": "CID of the ExecutionEnvelope@1 that was executed."
+    },
+    "result_cid": {
+      "$ref": "#/$defs/cid",
+      "description": "CID of the ExecutionResult@1 payload this receipt attests."
+    },
+    "intent_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "Intent CID from the envelope / result when present."
+    },
+    "receipt_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "Self-address of this receipt once content-addressed. Optional on the wire before addressing; when set MUST match the CID of the canonical receipt bytes under the declared canonicalization."
+    },
+    "status": {
+      "$ref": "#/$defs/executionStatus",
+      "description": "Terminal status attested by this receipt. MUST equal the referenced result status."
+    },
+    "output_cids": {
+      "type": "array",
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/cid" },
+      "description": "Output CIDs attested by this receipt."
+    },
+    "primary_output_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "Optional primary output among output_cids."
+    },
+    "state_transitions": {
+      "type": "array",
+      "maxItems": 256,
+      "items": { "$ref": "#/$defs/stateTransition" },
+      "description": "Attested shared-state transitions."
+    },
+    "side_effects": {
+      "type": "array",
+      "maxItems": 256,
+      "items": { "$ref": "#/$defs/sideEffect" },
+      "description": "Attested observed side effects."
+    },
+    "decision_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "Policy decision CID. Null when no deontic evaluation applied."
+    },
+    "delegation_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "Effective delegation / UCAN proof CID. Null only for same-trust-domain local receipts."
+    },
+    "proof_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "Optional primary proof-bundle CID."
+    },
+    "executor": {
+      "$ref": "#/$defs/executorIdentity",
+      "description": "Executor identity that signed or emitted this receipt."
+    },
+    "retry": {
+      "$ref": "#/$defs/retryInfo",
+      "description": "Retry / attempt metadata attested by this receipt."
+    },
+    "duration_ms": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "Execution duration in milliseconds."
+    },
+    "error": {
+      "anyOf": [
+        { "$ref": "portable-error-1.schema.json" },
+        { "type": "null" }
+      ],
+      "description": "PortableError@1 when status is not succeeded; MUST be null on success."
+    },
+    "proofs": {
+      "type": "array",
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/cid" },
+      "description": "Proof CIDs bound into this receipt."
+    },
+    "signature": {
+      "anyOf": [
+        { "$ref": "#/$defs/signature" },
+        { "type": "null" }
+      ],
+      "description": "Executor signature over canonical receipt bytes (signature input excludes the signature field itself). Cross-trust-domain receipts MUST be signed (plan gate 15); same-trust MAY omit. Presence is structural; verification is receipt-signed conformance."
+    },
+    "signature_alg": {
+      "anyOf": [
+        { "type": "string", "const": "Ed25519" },
+        { "type": "null" }
+      ],
+      "description": "Signature algorithm. Ed25519 for new mints (ADR-0002)."
+    },
+    "event_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "Event DAG node CID that links envelope + result + receipt into Profile F provenance. Null only before the event is minted; published receipts SHOULD set this."
+    },
+    "started_at_ms": {
+      "$ref": "#/$defs/timestampMs",
+      "description": "Attempt start wall-clock time (epoch ms)."
+    },
+    "finished_at_ms": {
+      "$ref": "#/$defs/timestampMs",
+      "description": "Attempt finish wall-clock time (epoch ms). MUST be >= started_at_ms."
+    },
+    "correlation_id": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Optional correlation hook carried from the envelope."
+    },
+    "resource_use_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "Optional resource-use record CID."
+    },
+    "policy_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "Policy CID evaluated for this execution when applicable."
+    },
+    "canonicalization": {
+      "type": "string",
+      "const": "mcpp-jcs-v1",
+      "description": "Canonicalization algorithm used for receipt CID and signature input. Required on new mints."
+    },
+    "parents": {
+      "type": "array",
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/cid" },
+      "description": "Optional causal parent CIDs (prior receipts or event nodes)."
+    },
+    "profile_b_receipt_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "Optional adapter field: historical Profile B receipt CID when this receipt wraps a legacy B artifact without rewriting its CID (MCPP-031)."
+    },
+    "profile_g_task_receipt_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "Optional adapter field: historical Profile G TaskReceipt CID when this receipt wraps a legacy G artifact without rewriting its CID (MCPP-032)."
+    }
+  },
+  "$defs": {
+    "cid": {
+      "type": "string",
+      "description": "IPFS CID. CIDv1 base32 (b…) preferred for new mints; CIDv0 (Qm…) remains readable when historical.",
+      "pattern": "^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58,})$",
+      "minLength": 46,
+      "maxLength": 128
+    },
+    "did": {
+      "type": "string",
+      "pattern": "^did:[a-z0-9]+:[A-Za-z0-9._:%-]+(?:[/?#][^\\u0000]*)?$",
+      "minLength": 7,
+      "maxLength": 512
+    },
+    "timestampMs": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "signature": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "executionStatus": {
+      "type": "string",
+      "enum": [
+        "succeeded",
+        "failed",
+        "cancelled",
+        "rejected",
+        "timed_out",
+        "compensated"
+      ]
+    },
+    "executorIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["did"],
+      "properties": {
+        "did": { "$ref": "#/$defs/did" },
+        "key_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "runtime": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "runtime_version": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "peer_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    },
+    "retryInfo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attempt"],
+      "properties": {
+        "attempt": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100000
+        },
+        "max_attempts": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "maximum": 100000
+        },
+        "previous_result_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        },
+        "reason": {
+          "type": ["string", "null"],
+          "maxLength": 256
+        }
+      }
+    },
+    "stateTransition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state_ref_cid"],
+      "properties": {
+        "state_ref_cid": { "$ref": "#/$defs/cid" },
+        "mode": {
+          "type": ["string", "null"],
+          "enum": [
+            "immutable",
+            "single_authority",
+            "causal",
+            "crdt",
+            "consensus",
+            null
+          ]
+        },
+        "from_version": {
+          "type": ["string", "null"],
+          "maxLength": 256
+        },
+        "to_version": {
+          "type": ["string", "null"],
+          "maxLength": 256
+        },
+        "transition_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        },
+        "op": {
+          "type": ["string", "null"],
+          "enum": ["read", "write", "cas", "merge", "lease", "fence", null]
+        }
+      }
+    },
+    "sideEffect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "effect_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ]
+        },
+        "description": {
+          "type": ["string", "null"],
+          "maxLength": 512
+        },
+        "compensatable": {
+          "type": ["boolean", "null"]
+        }
+      }
+    }
+  }
+}

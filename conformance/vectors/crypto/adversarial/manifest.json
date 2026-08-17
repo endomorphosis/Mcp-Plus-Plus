@@ -1,0 +1,303 @@
+{
+  "acceptance": {
+    "cases_required": [
+      "forged_signature",
+      "altered_bytes",
+      "wrong_audience",
+      "expanded_capabilities",
+      "expanded_resources",
+      "expired",
+      "future_nbf",
+      "revoked",
+      "missing_proof",
+      "replay",
+      "wrong_executor",
+      "wrong_policy_cid",
+      "valid_peerid_invalid_ucan"
+    ],
+    "criteria": "Every listed case fails closed in Python, TypeScript, Go, and Rust."
+  },
+  "cases": [
+    {
+      "expected_fail_closed": true,
+      "expected_reason_codes": [
+        "invalid_signature"
+      ],
+      "file": "fixtures/forged_signature.json",
+      "id": "forged_signature",
+      "languages": [
+        "python",
+        "typescript",
+        "go",
+        "rust"
+      ],
+      "layer": "cryptographic",
+      "polarity": "negative",
+      "valid": false
+    },
+    {
+      "expected_fail_closed": true,
+      "expected_reason_codes": [
+        "invalid_signature"
+      ],
+      "file": "fixtures/altered_bytes.json",
+      "id": "altered_bytes",
+      "languages": [
+        "python",
+        "typescript",
+        "go",
+        "rust"
+      ],
+      "layer": "cryptographic",
+      "polarity": "negative",
+      "valid": false
+    },
+    {
+      "expected_fail_closed": true,
+      "expected_reason_codes": [
+        "audience_mismatch",
+        "issuer_audience_continuity_failed"
+      ],
+      "file": "fixtures/wrong_audience.json",
+      "id": "wrong_audience",
+      "languages": [
+        "python",
+        "typescript",
+        "go",
+        "rust"
+      ],
+      "layer": "attenuation",
+      "polarity": "negative",
+      "valid": false
+    },
+    {
+      "expected_fail_closed": true,
+      "expected_reason_codes": [
+        "method_attenuation_failed",
+        "capability_attenuation_failed",
+        "capability_not_granted"
+      ],
+      "file": "fixtures/expanded_capabilities.json",
+      "id": "expanded_capabilities",
+      "languages": [
+        "python",
+        "typescript",
+        "go",
+        "rust"
+      ],
+      "layer": "attenuation",
+      "polarity": "negative",
+      "valid": false
+    },
+    {
+      "expected_fail_closed": true,
+      "expected_reason_codes": [
+        "resource_attenuation_failed",
+        "capability_attenuation_failed",
+        "capability_not_granted"
+      ],
+      "file": "fixtures/expanded_resources.json",
+      "id": "expanded_resources",
+      "languages": [
+        "python",
+        "typescript",
+        "go",
+        "rust"
+      ],
+      "layer": "attenuation",
+      "polarity": "negative",
+      "valid": false
+    },
+    {
+      "expected_fail_closed": true,
+      "expected_reason_codes": [
+        "expired"
+      ],
+      "file": "fixtures/expired.json",
+      "id": "expired",
+      "languages": [
+        "python",
+        "typescript",
+        "go",
+        "rust"
+      ],
+      "layer": "attenuation",
+      "polarity": "negative",
+      "valid": false
+    },
+    {
+      "expected_fail_closed": true,
+      "expected_reason_codes": [
+        "not_yet_valid"
+      ],
+      "file": "fixtures/future_nbf.json",
+      "id": "future_nbf",
+      "languages": [
+        "python",
+        "typescript",
+        "go",
+        "rust"
+      ],
+      "layer": "attenuation",
+      "polarity": "negative",
+      "valid": false
+    },
+    {
+      "expected_fail_closed": true,
+      "expected_reason_codes": [
+        "revoked"
+      ],
+      "file": "fixtures/revoked.json",
+      "id": "revoked",
+      "languages": [
+        "python",
+        "typescript",
+        "go",
+        "rust"
+      ],
+      "layer": "revocation",
+      "polarity": "negative",
+      "valid": false
+    },
+    {
+      "expected_fail_closed": true,
+      "expected_reason_codes": [
+        "missing_proof_cid"
+      ],
+      "file": "fixtures/missing_proof.json",
+      "id": "missing_proof",
+      "languages": [
+        "python",
+        "typescript",
+        "go",
+        "rust"
+      ],
+      "layer": "invocation",
+      "polarity": "negative",
+      "valid": false
+    },
+    {
+      "expected_fail_closed": true,
+      "expected_reason_codes": [
+        "replayed"
+      ],
+      "file": "fixtures/replay.json",
+      "id": "replay",
+      "languages": [
+        "python",
+        "typescript",
+        "go",
+        "rust"
+      ],
+      "layer": "attenuation",
+      "polarity": "negative",
+      "valid": false
+    },
+    {
+      "expected_fail_closed": true,
+      "expected_reason_codes": [
+        "executor_binding_failed"
+      ],
+      "file": "fixtures/wrong_executor.json",
+      "id": "wrong_executor",
+      "languages": [
+        "python",
+        "typescript",
+        "go",
+        "rust"
+      ],
+      "layer": "attenuation",
+      "polarity": "negative",
+      "valid": false
+    },
+    {
+      "expected_fail_closed": true,
+      "expected_reason_codes": [
+        "policy_cid_mismatch",
+        "policy_cid_required"
+      ],
+      "file": "fixtures/wrong_policy_cid.json",
+      "id": "wrong_policy_cid",
+      "languages": [
+        "python",
+        "typescript",
+        "go",
+        "rust"
+      ],
+      "layer": "attenuation",
+      "polarity": "negative",
+      "valid": false
+    },
+    {
+      "expected_fail_closed": true,
+      "expected_reason_codes": [
+        "peerid_not_authority",
+        "invalid_ucan",
+        "invalid_signature"
+      ],
+      "file": "fixtures/valid_peerid_invalid_ucan.json",
+      "id": "valid_peerid_invalid_ucan",
+      "languages": [
+        "python",
+        "typescript",
+        "go",
+        "rust"
+      ],
+      "layer": "authority_separation",
+      "polarity": "negative",
+      "valid": false
+    }
+  ],
+  "coverage": {
+    "altered_bytes": {
+      "negative": 1
+    },
+    "expanded_capabilities": {
+      "negative": 1
+    },
+    "expanded_resources": {
+      "negative": 1
+    },
+    "expired": {
+      "negative": 1
+    },
+    "forged_signature": {
+      "negative": 1
+    },
+    "future_nbf": {
+      "negative": 1
+    },
+    "missing_proof": {
+      "negative": 1
+    },
+    "replay": {
+      "negative": 1
+    },
+    "revoked": {
+      "negative": 1
+    },
+    "valid_peerid_invalid_ucan": {
+      "negative": 1
+    },
+    "wrong_audience": {
+      "negative": 1
+    },
+    "wrong_executor": {
+      "negative": 1
+    },
+    "wrong_policy_cid": {
+      "negative": 1
+    }
+  },
+  "description": "Shared adversarial cryptographic negative vectors for Profile C. Every listed case MUST fail closed in Python, TypeScript, Go, and Rust.",
+  "interface": "AdversarialVector@1",
+  "schema": "mcp++/conformance/adversarial-vector-manifest@1",
+  "spec_paths": [
+    "ipfs_accelerate_py/mcplusplus/docs/spec/ucan-delegation.md",
+    "ipfs_accelerate_py/mcplusplus/docs/architecture/decisions/0002-crypto-canonical.md",
+    "ipfs_accelerate_py/mcplusplus/docs/architecture/decisions/0003-conformance-levels.md"
+  ],
+  "suite_revision": "adversarial-ucan@1.0.0",
+  "task_id": "MCPP-044",
+  "vectors_dir": "ipfs_accelerate_py/mcplusplus/conformance/vectors/crypto/adversarial"
+}

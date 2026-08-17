@@ -1,0 +1,46 @@
+{
+  "chain": [
+    {
+      "alg": "EdDSA",
+      "att": [
+        {
+          "ability": "tools/call",
+          "resource": "tenant-a/bucket-a/documents/report.txt"
+        }
+      ],
+      "aud": "did:key:z6MkwrongAudienceFixture00000000000000000001",
+      "canonical_signing_bytes_hex": "7b22617474223a5b7b226162696c697479223a22746f6f6c732f63616c6c222c227265736f75726365223a2274656e616e742d612f6275636b65742d612f646f63756d656e74732f7265706f72742e747874227d5d2c22617564223a226469643a6b65793a7a364d6b77726f6e6741756469656e6365466978747572653030303030303030303030303030303030303031222c226578656375746f72223a226469643a6b65793a7a364d6b6578656375746f724669787475726530303030303030303030303030303030303030303030303030303031222c22657870223a313830303030303330302c22697373223a226469643a6b65793a7a364d6b6f6e334e656364364e6b6b79666f476f48786964327a6e476335394c55334b376d756261526346624c664c58222c226e6266223a313739393939393939302c226e6e63223a226e6f6e63652d77726f6e672d617564222c22706f6c6963795f636964223a2262616679626569676479727a74357366703775646d37687537367568377932366e6633656675796c71616266336f636c67747179353566627a6469222c22707266223a5b5d7d",
+      "executor": "did:key:z6MkexecutorFixture0000000000000000000000000001",
+      "exp": 1800000300,
+      "iss": "did:key:z6Mkon3Necd6NkkyfoGoHxid2znGc59LU3K7mubaRcFbLfLX",
+      "kid": "root-v1",
+      "nbf": 1799999990,
+      "nnc": "nonce-wrong-aud",
+      "policy_cid": "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+      "prf": [],
+      "signature": "5ucr6v6iSA01x4u4f8e2Jqq2jvoV7scivIEOj3v3y5yHkv4FLeQHZQ6Oangrr8sHhFxLdkl50xtsGOs0dTZ5Dg"
+    }
+  ],
+  "expected_reason_codes": [
+    "audience_mismatch",
+    "issuer_audience_continuity_failed"
+  ],
+  "id": "wrong_audience",
+  "languages": [
+    "python",
+    "typescript",
+    "go",
+    "rust"
+  ],
+  "layer": "attenuation",
+  "polarity": "negative",
+  "request": {
+    "audience": "did:key:z6MkvRXNYcE7MMduynWTgeKbDaT1iijDSC8pZqXZc8rHPrf2",
+    "budget": {},
+    "executor": "did:key:z6MkexecutorFixture0000000000000000000000000001",
+    "method": "tools/call",
+    "now": 1800000000,
+    "policy_cid": "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+    "resource": "tenant-a/bucket-a/documents/report.txt"
+  }
+}

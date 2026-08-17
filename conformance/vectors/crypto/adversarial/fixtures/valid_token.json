@@ -1,0 +1,56 @@
+{
+  "compact": {
+    "form": "compact",
+    "header": {
+      "alg": "EdDSA",
+      "kid": "root-v1",
+      "typ": "UCAN",
+      "v": 1
+    },
+    "payload": {
+      "att": [
+        {
+          "ability": "tools/call",
+          "resource": "tenant-a/bucket-a/documents/report.txt"
+        }
+      ],
+      "aud": "did:key:z6MkvRXNYcE7MMduynWTgeKbDaT1iijDSC8pZqXZc8rHPrf2",
+      "executor": "did:key:z6MkexecutorFixture0000000000000000000000000001",
+      "exp": 1800000300,
+      "iss": "did:key:z6Mkon3Necd6NkkyfoGoHxid2znGc59LU3K7mubaRcFbLfLX",
+      "nbf": 1799999990,
+      "nnc": "nonce-valid",
+      "policy_cid": "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+      "prf": []
+    },
+    "signature": "Kti2F8WOnvEoWoxtuvtZO8VQuzmUH41qlBXeRee_0oOkGwuyQq_tsb8c8wra6wqTrQdDfODFZaZXOzPxvJPMAg",
+    "signing_input": "eyJhbGciOiJFZERTQSIsImtpZCI6InJvb3QtdjEiLCJ0eXAiOiJVQ0FOIiwidiI6MX0.eyJhdHQiOlt7ImFiaWxpdHkiOiJ0b29scy9jYWxsIiwicmVzb3VyY2UiOiJ0ZW5hbnQtYS9idWNrZXQtYS9kb2N1bWVudHMvcmVwb3J0LnR4dCJ9XSwiYXVkIjoiZGlkOmtleTp6Nk1rdlJYTlljRTdNTWR1eW5XVGdlS2JEYVQxaWlqRFNDOHBacVhaYzhySFByZjIiLCJleGVjdXRvciI6ImRpZDprZXk6ejZNa2V4ZWN1dG9yRml4dHVyZTAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDEiLCJleHAiOjE4MDAwMDAzMDAsImlzcyI6ImRpZDprZXk6ejZNa29uM05lY2Q2TmtreWZvR29IeGlkMnpuR2M1OUxVM0s3bXViYVJjRmJMZkxYIiwibmJmIjoxNzk5OTk5OTkwLCJubmMiOiJub25jZS12YWxpZCIsInBvbGljeV9jaWQiOiJiYWZ5YmVpZ2R5cnp0NXNmcDd1ZG03aHU3NnVoN3kyNm5mM2VmdXlscWFiZjNvY2xndHF5NTVmYnpkaSIsInByZiI6W119",
+    "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InJvb3QtdjEiLCJ0eXAiOiJVQ0FOIiwidiI6MX0.eyJhdHQiOlt7ImFiaWxpdHkiOiJ0b29scy9jYWxsIiwicmVzb3VyY2UiOiJ0ZW5hbnQtYS9idWNrZXQtYS9kb2N1bWVudHMvcmVwb3J0LnR4dCJ9XSwiYXVkIjoiZGlkOmtleTp6Nk1rdlJYTlljRTdNTWR1eW5XVGdlS2JEYVQxaWlqRFNDOHBacVhaYzhySFByZjIiLCJleGVjdXRvciI6ImRpZDprZXk6ejZNa2V4ZWN1dG9yRml4dHVyZTAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDEiLCJleHAiOjE4MDAwMDAzMDAsImlzcyI6ImRpZDprZXk6ejZNa29uM05lY2Q2TmtreWZvR29IeGlkMnpuR2M1OUxVM0s3bXViYVJjRmJMZkxYIiwibmJmIjoxNzk5OTk5OTkwLCJubmMiOiJub25jZS12YWxpZCIsInBvbGljeV9jaWQiOiJiYWZ5YmVpZ2R5cnp0NXNmcDd1ZG03aHU3NnVoN3kyNm5mM2VmdXlscWFiZjNvY2xndHF5NTVmYnpkaSIsInByZiI6W119.Kti2F8WOnvEoWoxtuvtZO8VQuzmUH41qlBXeRee_0oOkGwuyQq_tsb8c8wra6wqTrQdDfODFZaZXOzPxvJPMAg"
+  },
+  "delegation_cid": "bafyf79ba588ce0fad5796c9c057520aa58a0c317c22ff46107e95",
+  "detached": {
+    "alg": "EdDSA",
+    "att": [
+      {
+        "ability": "tools/call",
+        "resource": "tenant-a/bucket-a/documents/report.txt"
+      }
+    ],
+    "aud": "did:key:z6MkvRXNYcE7MMduynWTgeKbDaT1iijDSC8pZqXZc8rHPrf2",
+    "canonical_signing_bytes_hex": "7b22617474223a5b7b226162696c697479223a22746f6f6c732f63616c6c222c227265736f75726365223a2274656e616e742d612f6275636b65742d612f646f63756d656e74732f7265706f72742e747874227d5d2c22617564223a226469643a6b65793a7a364d6b7652584e596345374d4d6475796e575467654b624461543169696a44534338705a71585a6338724850726632222c226578656375746f72223a226469643a6b65793a7a364d6b6578656375746f724669787475726530303030303030303030303030303030303030303030303030303031222c22657870223a313830303030303330302c22697373223a226469643a6b65793a7a364d6b6f6e334e656364364e6b6b79666f476f48786964327a6e476335394c55334b376d756261526346624c664c58222c226e6266223a313739393939393939302c226e6e63223a226e6f6e63652d76616c6964222c22706f6c6963795f636964223a2262616679626569676479727a74357366703775646d37687537367568377932366e6633656675796c71616266336f636c67747179353566627a6469222c22707266223a5b5d7d",
+    "executor": "did:key:z6MkexecutorFixture0000000000000000000000000001",
+    "exp": 1800000300,
+    "iss": "did:key:z6Mkon3Necd6NkkyfoGoHxid2znGc59LU3K7mubaRcFbLfLX",
+    "kid": "root-v1",
+    "nbf": 1799999990,
+    "nnc": "nonce-valid",
+    "policy_cid": "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+    "prf": [],
+    "signature": "BBv9zzt3SdEdZK35_YnH4CLhOcSULb4ekQMGvYLllMIPfP8Js3L39zJGT8Eh0NV_16xm3VXgouxJ87d-dzwNCQ"
+  },
+  "id": "valid_token",
+  "issuer_public_keys": {
+    "did:key:z6Mkon3Necd6NkkyfoGoHxid2znGc59LU3K7mubaRcFbLfLX": "iojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1w"
+  },
+  "polarity": "positive"
+}

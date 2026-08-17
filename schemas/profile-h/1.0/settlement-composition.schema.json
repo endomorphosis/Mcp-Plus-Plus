@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcp-plus-plus.dev/schemas/profile-h/1.0/settlement-composition.schema.json",
+  "title": "MCP++ Profile H 1.0 settlement composition and ledger rules",
+  "description": "Composition shapes for price-version binding, quote settlement gates, idempotent settlement, single entitlement issuance, refund eligibility, and reconciliation. Codec modules enforce these rules fail-closed; they are not wallet or network side effects.",
+  "oneOf": [
+    {"$ref": "#/$defs/PriceVersionBinding"},
+    {"$ref": "#/$defs/SettlementUniquenessScope"},
+    {"$ref": "#/$defs/SettlementLedgerEntry"},
+    {"$ref": "#/$defs/EntitlementGrantEntry"},
+    {"$ref": "#/$defs/ReconciliationRecord"}
+  ],
+  "$defs": {
+    "cid": {"type": "string", "pattern": "^b[a-z2-7]+$", "maxLength": 128},
+    "did": {"type": "string", "pattern": "^did:[a-z0-9]+:[A-Za-z0-9._:%-]+(?:[/?#][^\\u0000]*)?$", "maxLength": 512},
+    "time": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
+    "amount": {"type": "string", "pattern": "^(?:0|[1-9][0-9]{0,77})$"},
+    "network": {"type": "string", "pattern": "^[a-z0-9-]{3,8}:[A-Za-z0-9_-]{1,32}$"},
+    "PriceVersionBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Normative equality surface between a signed PaidCapability (price + catalogVersion) and a request-bound PaymentQuote. Mismatch MUST fail closed before verify/settle.",
+      "required": [
+        "schema",
+        "capabilityCid",
+        "quoteCid",
+        "catalogVersion",
+        "catalogCid",
+        "descriptorCid",
+        "scheme",
+        "network",
+        "asset",
+        "amount",
+        "payee",
+        "sellerDid"
+      ],
+      "properties": {
+        "schema": {"const": "mcp++/profile-h/price-version-binding@1.0"},
+        "capabilityCid": {"$ref": "#/$defs/cid"},
+        "quoteCid": {"$ref": "#/$defs/cid"},
+        "catalogVersion": {"type": "string", "minLength": 1, "maxLength": 64},
+        "catalogCid": {"$ref": "#/$defs/cid"},
+        "descriptorCid": {"$ref": "#/$defs/cid"},
+        "scheme": {"type": "string", "minLength": 1, "maxLength": 64},
+        "network": {"$ref": "#/$defs/network"},
+        "asset": {"type": "string", "minLength": 1, "maxLength": 256},
+        "amount": {"$ref": "#/$defs/amount"},
+        "payee": {"type": "string", "minLength": 1, "maxLength": 256},
+        "sellerDid": {"$ref": "#/$defs/did"}
+      }
+    },
+    "SettlementUniquenessScope": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Durable uniqueness key for settlement and payment-authorization consumption. Spec section 10: uniqueness on (seller, idempotencyKey), payload commitment, and network settlement reference.",
+      "required": [
+        "schema",
+        "sellerDid",
+        "idempotencyKey",
+        "requestCid",
+        "payloadCommitment",
+        "networkReferenceCommitment"
+      ],
+      "properties": {
+        "schema": {"const": "mcp++/profile-h/settlement-uniqueness-scope@1.0"},
+        "sellerDid": {"$ref": "#/$defs/did"},
+        "idempotencyKey": {"type": "string", "minLength": 1, "maxLength": 128},
+        "requestCid": {"$ref": "#/$defs/cid"},
+        "payloadCommitment": {"$ref": "#/$defs/cid"},
+        "networkReferenceCommitment": {"$ref": "#/$defs/cid"}
+      }
+    },
+    "SettlementLedgerEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "At-most-once settlement record. Replays with the same uniqueness key MUST rejoin the stored settlementCid; a conflicting CID MUST fail closed (H_PAYMENT_REPLAY).",
+      "required": [
+        "schema",
+        "uniquenessKey",
+        "settlementCid",
+        "verificationCid",
+        "outcome",
+        "recordedAt"
+      ],
+      "properties": {
+        "schema": {"const": "mcp++/profile-h/settlement-ledger-entry@1.0"},
+        "uniquenessKey": {"type": "string", "minLength": 1, "maxLength": 512},
+        "settlementCid": {"$ref": "#/$defs/cid"},
+        "verificationCid": {"$ref": "#/$defs/cid"},
+        "outcome": {
+          "enum": ["settled", "failed", "pending", "reconciliation-required", "refunded"]
+        },
+        "recordedAt": {"$ref": "#/$defs/time"}
+      }
+    },
+    "EntitlementGrantEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "One settled SettlementReceipt mints at most one PaidEntitlement. Idempotent rejoin returns the same entitlementCid; a second distinct grant for the same settlementCid MUST fail closed (double-entitle).",
+      "required": [
+        "schema",
+        "settlementCid",
+        "entitlementCid",
+        "capabilityCid",
+        "subjectCommitment",
+        "grantedAt"
+      ],
+      "properties": {
+        "schema": {"const": "mcp++/profile-h/entitlement-grant-entry@1.0"},
+        "settlementCid": {"$ref": "#/$defs/cid"},
+        "entitlementCid": {"$ref": "#/$defs/cid"},
+        "capabilityCid": {"$ref": "#/$defs/cid"},
+        "subjectCommitment": {"$ref": "#/$defs/cid"},
+        "grantedAt": {"$ref": "#/$defs/time"}
+      }
+    },
+    "ReconciliationRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Operator recovery when external settlement outcome is ambiguous. Blocks new execution until resolved; does not mint authority.",
+      "required": [
+        "schema",
+        "createdAt",
+        "parents",
+        "correlationId",
+        "settlementCid",
+        "status",
+        "reasonCode",
+        "evidenceCid",
+        "openedAt",
+        "resolvedAt",
+        "resolutionCid"
+      ],
+      "properties": {
+        "schema": {"const": "mcp++/profile-h/reconciliation-record@1.0"},
+        "createdAt": {"$ref": "#/$defs/time"},
+        "parents": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/cid"}
+        },
+        "correlationId": {"type": "string", "minLength": 1, "maxLength": 128},
+        "settlementCid": {"$ref": "#/$defs/cid"},
+        "status": {"enum": ["open", "resolved", "failed"]},
+        "reasonCode": {"type": "string", "minLength": 1, "maxLength": 128},
+        "evidenceCid": {"$ref": "#/$defs/cid"},
+        "openedAt": {"$ref": "#/$defs/time"},
+        "resolvedAt": {"anyOf": [{"$ref": "#/$defs/time"}, {"type": "null"}]},
+        "resolutionCid": {"anyOf": [{"$ref": "#/$defs/cid"}, {"type": "null"}]}
+      }
+    }
+  }
+}

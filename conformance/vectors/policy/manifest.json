@@ -1,0 +1,108 @@
+{
+  "schema": "mcp++/conformance/policy-manifest@1",
+  "interface": "PolicyVector@1",
+  "task_id": "MCPP-048",
+  "spec": "docs/spec/temporal-deontic-policy.md",
+  "evaluator": "PolicyEvaluator@1",
+  "decision": "PolicyDecision@1",
+  "conflict_resolution_rule": "When multiple policies are supplied, any matching prohibition across the entire set wins (most restrictive). Permissions and obligations are unioned with stable ordering by (clause_id, clause_type, action, source_index). Documented in temporal-deontic-policy.md §6.4 and this suite README.",
+  "acceptance": {
+    "cases_required": [
+      "policy_version_mismatch",
+      "missing_context",
+      "stale_root",
+      "deadline",
+      "revoked_before_execution",
+      "allow_with_obligations",
+      "unsatisfied_obligation",
+      "compensating_action",
+      "conflicting_policies"
+    ],
+    "criteria": "Every listed case has an expected decision. Conflicting policies resolve by a documented deterministic rule."
+  },
+  "cases": [
+    {
+      "id": "policy_version_mismatch",
+      "file": "fixtures/policy_version_mismatch.json",
+      "polarity": "negative",
+      "layer": "gate",
+      "expected_decision": "deny",
+      "expected_reason_code": "policy_version_mismatch",
+      "languages": ["python", "typescript", "go", "rust"]
+    },
+    {
+      "id": "missing_context",
+      "file": "fixtures/missing_context.json",
+      "polarity": "negative",
+      "layer": "gate",
+      "expected_decision": "deny",
+      "expected_reason_code": "missing_context",
+      "languages": ["python", "typescript", "go", "rust"]
+    },
+    {
+      "id": "stale_root",
+      "file": "fixtures/stale_root.json",
+      "polarity": "negative",
+      "layer": "gate",
+      "expected_decision": "deny",
+      "expected_reason_code": "stale_root",
+      "languages": ["python", "typescript", "go", "rust"]
+    },
+    {
+      "id": "deadline",
+      "file": "fixtures/deadline.json",
+      "polarity": "negative",
+      "layer": "temporal",
+      "expected_decision": "deny",
+      "expected_reason_code": "no_matching_permission",
+      "languages": ["python", "typescript", "go", "rust"]
+    },
+    {
+      "id": "revoked_before_execution",
+      "file": "fixtures/revoked_before_execution.json",
+      "polarity": "negative",
+      "layer": "revocation",
+      "expected_decision": "deny",
+      "expected_reason_code": "revoked_before_execution",
+      "languages": ["python", "typescript", "go", "rust"]
+    },
+    {
+      "id": "allow_with_obligations",
+      "file": "fixtures/allow_with_obligations.json",
+      "polarity": "positive",
+      "layer": "deontic",
+      "expected_decision": "allow_with_obligations",
+      "expected_reason_code": null,
+      "languages": ["python", "typescript", "go", "rust"]
+    },
+    {
+      "id": "unsatisfied_obligation",
+      "file": "fixtures/unsatisfied_obligation.json",
+      "polarity": "negative",
+      "layer": "obligation",
+      "expected_decision": "allow_with_obligations",
+      "expected_reason_code": null,
+      "expected_obligation_status": "overdue",
+      "languages": ["python", "typescript", "go", "rust"]
+    },
+    {
+      "id": "compensating_action",
+      "file": "fixtures/compensating_action.json",
+      "polarity": "positive",
+      "layer": "obligation",
+      "expected_decision": "allow_with_obligations",
+      "expected_reason_code": null,
+      "languages": ["python", "typescript", "go", "rust"]
+    },
+    {
+      "id": "conflicting_policies",
+      "file": "fixtures/conflicting_policies.json",
+      "polarity": "negative",
+      "layer": "conflict",
+      "expected_decision": "deny",
+      "expected_reason_code": "prohibition_matched",
+      "conflict_resolution": "prohibition_wins_across_policy_set",
+      "languages": ["python", "typescript", "go", "rust"]
+    }
+  ]
+}

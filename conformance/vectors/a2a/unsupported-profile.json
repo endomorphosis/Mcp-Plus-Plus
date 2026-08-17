@@ -1,0 +1,180 @@
+{
+  "interface": "A2AExtensionSchema@1",
+  "schema": "mcp++/conformance/a2a-extension@1",
+  "task_id": "MCPP-055",
+  "kind": "negative",
+  "valid": false,
+  "description": "Unsupported MCP++ profile vectors under the A2A execution extension. Unknown profile letters and claims outside the agent advertisement are expected failures — MUST NOT silently claim success (a2a-extension.md §8).",
+  "extension_uri": "https://mcplusplus.io/extensions/execution/v1",
+  "cases": [
+    {
+      "id": "unknown-profile-letter-Z",
+      "schema_file": "extension-params-1.schema.json",
+      "schema_marker": "mcp++/a2a/extension-params@1",
+      "valid": false,
+      "expected_error": "A2A_UNSUPPORTED_PROFILE",
+      "description": "Profile letter Z is outside the closed A–H enum.",
+      "payload": {
+        "schema": "mcp++/a2a/extension-params@1",
+        "profiles": ["A", "B", "Z"],
+        "canonicalization": "mcpp-jcs-v1"
+      }
+    },
+    {
+      "id": "unknown-profile-letter-I",
+      "schema_file": "extension-params-1.schema.json",
+      "schema_marker": "mcp++/a2a/extension-params@1",
+      "valid": false,
+      "expected_error": "A2A_UNSUPPORTED_PROFILE",
+      "description": "Profile letter I is not a defined MCP++ profile.",
+      "payload": {
+        "profiles": ["I"],
+        "envelope_schema": "mcp++/execution/envelope@1"
+      }
+    },
+    {
+      "id": "lowercase-profile-letter",
+      "schema_file": "extension-params-1.schema.json",
+      "schema_marker": "mcp++/a2a/extension-params@1",
+      "valid": false,
+      "expected_error": "A2A_UNSUPPORTED_PROFILE",
+      "description": "Lowercase profile tokens are not accepted; letters are closed uppercase A–H.",
+      "payload": {
+        "profiles": ["a", "b"],
+        "canonicalization": "mcpp-jcs-v1"
+      }
+    },
+    {
+      "id": "profile-name-instead-of-letter",
+      "schema_file": "extension-params-1.schema.json",
+      "schema_marker": "mcp++/a2a/extension-params@1",
+      "valid": false,
+      "expected_error": "A2A_UNSUPPORTED_PROFILE",
+      "description": "Full profile name string is not a valid profile letter token.",
+      "payload": {
+        "profiles": ["risk-scheduling"],
+        "canonicalization": "mcpp-jcs-v1"
+      }
+    },
+    {
+      "id": "task-metadata-unknown-profile",
+      "schema_file": "task-metadata-1.schema.json",
+      "schema_marker": "mcp++/a2a/task-metadata@1",
+      "valid": false,
+      "expected_error": "A2A_UNSUPPORTED_PROFILE",
+      "description": "Task metadata claims profile X which is not in A–H.",
+      "payload": {
+        "schema": "mcp++/a2a/task-metadata@1",
+        "envelope_cid": "bafkreidpgkdasegkb6zkedd73ikdmzvqtw7y3njdqgk4scsyn62uf7ymvu",
+        "profiles": ["A", "X"]
+      }
+    },
+    {
+      "id": "task-metadata-single-unknown-profile",
+      "schema_file": "task-metadata-1.schema.json",
+      "schema_marker": "mcp++/a2a/task-metadata@1",
+      "valid": false,
+      "expected_error": "A2A_UNSUPPORTED_PROFILE",
+      "description": "Single profile field with unsupported letter.",
+      "payload": {
+        "schema": "mcp++/a2a/task-metadata@1",
+        "profile": "Z",
+        "method": "repo.status"
+      }
+    },
+    {
+      "id": "skill-metadata-unknown-profile",
+      "schema_file": "skill-metadata-1.schema.json",
+      "schema_marker": "mcp++/a2a/skill-metadata@1",
+      "valid": false,
+      "expected_error": "A2A_UNSUPPORTED_PROFILE",
+      "description": "Skill claims unsupported profile letter.",
+      "payload": {
+        "schema": "mcp++/a2a/skill-metadata@1",
+        "interface_cid": "bafkreigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+        "method": "repo.status",
+        "profiles": ["Q"]
+      }
+    },
+    {
+      "id": "agent-extension-params-unknown-profile",
+      "schema_file": "agent-extension-1.schema.json",
+      "schema_marker": "mcp++/a2a/agent-extension@1",
+      "valid": false,
+      "expected_error": "A2A_UNSUPPORTED_PROFILE",
+      "description": "Nested params.profiles contains unknown letter.",
+      "payload": {
+        "uri": "https://mcplusplus.io/extensions/execution/v1",
+        "required": false,
+        "params": {
+          "profiles": ["A", "B", "C", "D", "E", "F", "G", "H", "Z"],
+          "canonicalization": "mcpp-jcs-v1"
+        }
+      }
+    },
+    {
+      "id": "requested-profile-not-advertised-H",
+      "schema_file": "profile-request-1.schema.json",
+      "schema_marker": "mcp++/a2a/profile-request@1",
+      "valid": false,
+      "expected_error": "A2A_PROFILE_NOT_SUBSET",
+      "description": "Client requests profile H but agent only advertises A–G. Structurally valid letters; semantic subset check fails. Adapters MUST reject or error explicitly.",
+      "semantic_rules": ["requested_subset_of_advertised"],
+      "schema_valid": true,
+      "semantic_valid": false,
+      "payload": {
+        "schema": "mcp++/a2a/profile-request@1",
+        "extension_uri": "https://mcplusplus.io/extensions/execution/v1",
+        "advertised_profiles": ["A", "B", "C", "D", "F", "G"],
+        "requested_profiles": ["H"],
+        "task_id": "task-unsupported-h"
+      }
+    },
+    {
+      "id": "requested-profile-not-advertised-multi",
+      "schema_file": "profile-request-1.schema.json",
+      "schema_marker": "mcp++/a2a/profile-request@1",
+      "valid": false,
+      "expected_error": "A2A_PROFILE_NOT_SUBSET",
+      "description": "Client requests A and C; agent only advertises A and B. Semantic fail-closed.",
+      "semantic_rules": ["requested_subset_of_advertised"],
+      "schema_valid": true,
+      "semantic_valid": false,
+      "payload": {
+        "schema": "mcp++/a2a/profile-request@1",
+        "extension_uri": "https://mcplusplus.io/extensions/execution/v1",
+        "advertised_profiles": ["A", "B"],
+        "requested_profiles": ["A", "C"],
+        "task_id": "task-unsupported-c"
+      }
+    },
+    {
+      "id": "profile-request-unknown-letter-in-request",
+      "schema_file": "profile-request-1.schema.json",
+      "schema_marker": "mcp++/a2a/profile-request@1",
+      "valid": false,
+      "expected_error": "A2A_UNSUPPORTED_PROFILE",
+      "description": "requested_profiles contains unknown letter Z — structural schema failure.",
+      "payload": {
+        "schema": "mcp++/a2a/profile-request@1",
+        "extension_uri": "https://mcplusplus.io/extensions/execution/v1",
+        "advertised_profiles": ["A", "B", "C"],
+        "requested_profiles": ["Z"]
+      }
+    },
+    {
+      "id": "profile-request-unknown-letter-in-advertisement",
+      "schema_file": "profile-request-1.schema.json",
+      "schema_marker": "mcp++/a2a/profile-request@1",
+      "valid": false,
+      "expected_error": "A2A_UNSUPPORTED_PROFILE",
+      "description": "advertised_profiles itself contains an unknown letter — invalid card advertisement.",
+      "payload": {
+        "schema": "mcp++/a2a/profile-request@1",
+        "extension_uri": "https://mcplusplus.io/extensions/execution/v1",
+        "advertised_profiles": ["A", "Z"],
+        "requested_profiles": ["A"]
+      }
+    }
+  ]
+}

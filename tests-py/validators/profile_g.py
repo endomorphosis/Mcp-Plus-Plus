@@ -124,3 +124,74 @@ def evaluate_risk(model,factors):
  for n in model["factor_names"]:w=model["weight_millionths"][n];weighted+=w*min(1000000,mil(factors[n],"/factor_millionths/"+n)*1000000//model["saturation_millionths"][n]);total+=w
  score=min(1000000,weighted//total);return score,next(i for i,x in enumerate(model["risk_buckets"]) if score<=x)
 def claim_order_key(x):return(-x["logical_epoch"],x["risk_bucket"],-x["capability_fit_millionths"],x["expected_finish_ms"],x["claimant_did"].encode(),x["claim_cid"].encode())
+
+# --- Claims, leases, logical epochs, and fencing tokens (MCPP-067) ---
+# Protocol codes used by renew / takeover / completion enforcement.
+G_LEASE_EXPIRED="G_LEASE_EXPIRED";G_STALE_FENCE="G_STALE_FENCE";G_CLAIM_CONFLICT="G_CLAIM_CONFLICT"
+
+def next_fencing_token(logical_epoch,prior_fencing_token=0):
+ """Strictly increasing fence: max(epoch, prior+1); prior is 0 when none exists."""
+ return max(integer(logical_epoch,"/logical_epoch",1),integer(prior_fencing_token,"/prior_fencing_token",0)+1)
+
+def select_winning_claim(claims):
+ """Deterministic same-epoch winner under claim_order_key (minimum key wins)."""
+ a=arr(list(claims),"/claims",1,LIMITS["max_neighbors"])
+ for n,x in enumerate(a):
+  for f in "logical_epoch risk_bucket capability_fit_millionths expected_finish_ms claimant_did claim_cid".split():
+   if f not in x:fail(f"/claims/{n}/{f}","missing field")
+  integer(x["logical_epoch"],f"/claims/{n}/logical_epoch",1);integer(x["risk_bucket"],f"/claims/{n}/risk_bucket")
+  mil(x["capability_fit_millionths"],f"/claims/{n}/capability_fit_millionths");integer(x["expected_finish_ms"],f"/claims/{n}/expected_finish_ms")
+  did(x["claimant_did"],f"/claims/{n}/claimant_did");cid(x["claim_cid"],f"/claims/{n}/claim_cid")
+ return min(a,key=claim_order_key)
+
+def lease_is_live(lease_expires_at_ms,now_ms):
+ """True while wall/logical clock is still strictly before the exclusive bound."""
+ return integer(now_ms,"/now_ms")<integer(lease_expires_at_ms,"/lease_expires_at_ms")
+
+def lease_is_expired(lease_expires_at_ms,now_ms):
+ """True when renew/takeover must treat the lease as past its bound (now > expires)."""
+ return integer(now_ms,"/now_ms")>integer(lease_expires_at_ms,"/lease_expires_at_ms")
+
+def require_lease_renewable(lease_expires_at_ms,now_ms):
+ """Reject renew after expiry with G_LEASE_EXPIRED (protocol vector renew-after-expiry)."""
+ if lease_is_expired(lease_expires_at_ms,now_ms):fail("/lease_expires_at_ms","lease expired",G_LEASE_EXPIRED)
+ return True
+
+def require_current_fence(presented_token,current_token):
+ """Reject any presented fence that is not exactly the current accepted token."""
+ p=integer(presented_token,"/fencing_token",1);c=integer(current_token,"/current_fencing_token",1)
+ if p!=c:fail("/fencing_token","stale fencing token",G_STALE_FENCE)
+ return True
+
+def expected_claim_epoch(latest_terminal_epoch=0):
+ """Next legal logical epoch after the latest terminal/accepted epoch (0 => first claim)."""
+ return integer(latest_terminal_epoch,"/latest_terminal_epoch",0)+1
+
+def require_claim_epoch(*,submitted_epoch,latest_terminal_epoch=0,prior_lease_expires_at_ms=None,now_ms=None,prior_epoch_expired=False):
+ """Admit a claim epoch: no jumps, and takeover only after prior lease expiry + expiry record."""
+ submitted=integer(submitted_epoch,"/logical_epoch",1)
+ expected=expected_claim_epoch(latest_terminal_epoch)
+ if submitted!=expected:fail("/logical_epoch","epoch jump", "G_INVALID_ARTIFACT")
+ if submitted==1:return True
+ if not prior_epoch_expired:fail("/logical_epoch","takeover requires prior expiry",G_CLAIM_CONFLICT)
+ if prior_lease_expires_at_ms is not None and now_ms is not None and not lease_is_expired(prior_lease_expires_at_ms,now_ms):
+  fail("/logical_epoch","takeover before expiry",G_CLAIM_CONFLICT)
+ return True
+
+def require_completion_authority(*,claim_cid,fencing_token,accepted_claim_cid,current_fencing_token,lease_expires_at_ms,now_ms):
+ """Authorize exclusive completion; expired leases and stale fences fail closed."""
+ cid(claim_cid,"/claim_cid");cid(accepted_claim_cid,"/accepted_claim_cid")
+ presented=integer(fencing_token,"/fencing_token",1);current=integer(current_fencing_token,"/current_fencing_token",1)
+ if not lease_is_live(lease_expires_at_ms,now_ms):fail("/lease_expires_at_ms","expired lease cannot complete",G_STALE_FENCE)
+ if presented<current:fail("/fencing_token","stale fencing token",G_STALE_FENCE)
+ if claim_cid!=accepted_claim_cid or presented!=current:fail("/claim_cid","claim conflict",G_CLAIM_CONFLICT)
+ return True
+
+def resolve_claims(claims,*,logical_epoch,prior_fencing_token=0,now_ms,requested_lease_ms=None,resolver_did="did:web:resolver.example"):
+ """Pick the winner, issue fence+lease fields for an accepted ClaimResolution payload fragment."""
+ winner=select_winning_claim(claims)
+ epoch=integer(logical_epoch,"/logical_epoch",1)
+ if winner["logical_epoch"]!=epoch:fail("/logical_epoch","mixed epoch claims")
+ lease_ms=integer(requested_lease_ms if requested_lease_ms is not None else winner.get("requested_lease_ms",LIMITS["min_lease_ms"]),"/requested_lease_ms",LIMITS["min_lease_ms"],LIMITS["max_lease_ms"])
+ fence=next_fencing_token(epoch,prior_fencing_token)
+ return {"accepted_claim_cid":winner["claim_cid"],"logical_epoch":epoch,"fencing_token":fence,"lease_expires_at_ms":integer(now_ms,"/now_ms")+lease_ms,"outcome":"accepted","resolver_did":string(resolver_did,"/resolver_did"),"considered_claim_cids":sorted(x["claim_cid"] for x in claims)}

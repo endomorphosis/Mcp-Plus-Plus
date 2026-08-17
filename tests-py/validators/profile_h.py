@@ -46,6 +46,7 @@ SCHEMAS = {
     "UsageRecord": "usage-record",
     "RefundRecord": "refund-record",
     "AccessReceipt": "access-receipt",
+    "ReconciliationRecord": "reconciliation-record",
 }
 FIELDS = {
     "PaidCapability": "serverDid descriptorCid interfaceCid operationKind operationName httpMethod httpRoute catalogVersion ability policyCid termsCid scheme network asset amount payee validFrom expiresAt settlementTiming sellerDid signatureAlg signature",
@@ -57,6 +58,7 @@ FIELDS = {
     "UsageRecord": "entitlementCid unit inputCid outputCid units recordedAt",
     "RefundRecord": "settlementCid requestCid decision outcome evidenceCid requestedAt decidedAt",
     "AccessReceipt": "operationName requestCid ucanDecisionCid policyDecisionCid leaseDecisionCid commercialEvidenceCid decision resultCid reasonCode decidedAt",
+    "ReconciliationRecord": "settlementCid status reasonCode evidenceCid openedAt resolvedAt resolutionCid",
 }
 FIELDS = {key: value.split() for key, value in FIELDS.items()}
 COMMON_FIELDS = ("schema", "createdAt", "parents", "correlationId")
@@ -297,14 +299,35 @@ def _validate_artifact_specific(kind: str, obj: dict[str, Any], limits: Mapping[
     elif kind == "RefundRecord":
         c("settlementCid"); c("requestCid"); _enum(obj["decision"], "/decision", ("requested", "approved", "denied")); _enum(obj["outcome"], "/outcome", ("pending", "refunded", "failed", "not-applicable")); c("evidenceCid"); i("requestedAt"); i("decidedAt")
         if obj["decidedAt"] < obj["requestedAt"]: _fail("/decidedAt", "decision precedes request")
+        if obj["decision"] == "approved" and obj["outcome"] not in ("refunded", "pending"):
+            _fail("/outcome", "approved refund requires pending or refunded outcome")
+        if obj["decision"] == "denied" and obj["outcome"] not in ("not-applicable", "failed"):
+            _fail("/outcome", "denied refund requires not-applicable or failed outcome")
+    elif kind == "ReconciliationRecord":
+        c("settlementCid"); _enum(obj["status"], "/status", ("open", "resolved", "failed")); s("reasonCode", 128); c("evidenceCid"); i("openedAt")
+        if obj["resolvedAt"] is not None:
+            i("resolvedAt")
+            if obj["resolvedAt"] < obj["openedAt"]:
+                _fail("/resolvedAt", "resolution precedes open")
+        if obj["resolutionCid"] is not None:
+            c("resolutionCid")
+        if obj["status"] == "resolved" and (obj["resolvedAt"] is None or obj["resolutionCid"] is None):
+            _fail("/resolutionCid", "resolved reconciliation requires resolution evidence and timestamp", "H_RECONCILIATION_REQUIRED")
+        if obj["status"] == "open" and (obj["resolvedAt"] is not None or obj["resolutionCid"] is not None):
+            _fail("/status", "open reconciliation must not claim resolution", "H_RECONCILIATION_REQUIRED")
     else:
         s("operationName", 256); c("requestCid")
-        for name in ("ucanDecisionCid", "policyDecisionCid", "leaseDecisionCid", "commercialEvidenceCid"): 
+        for name in ("ucanDecisionCid", "policyDecisionCid", "leaseDecisionCid", "commercialEvidenceCid"):
             if obj[name] is not None: c(name)
         _enum(obj["decision"], "/decision", ("allow", "deny"))
         if obj["resultCid"] is not None: c("resultCid")
         s("reasonCode", 128); i("decidedAt")
-        if obj["decision"] == "allow" and (obj["commercialEvidenceCid"] is None or obj["resultCid"] is None): _fail("/commercialEvidenceCid", "allow requires commercial evidence and result")
+        # allow requires commercial evidence + result and non-null policy/delegation decisions
+        if obj["decision"] == "allow":
+            if obj["commercialEvidenceCid"] is None or obj["resultCid"] is None:
+                _fail("/commercialEvidenceCid", "allow requires commercial evidence and result", "H_PAYMENT_REQUIRED")
+            if obj["ucanDecisionCid"] is None or obj["policyDecisionCid"] is None:
+                _fail("/ucanDecisionCid", "allow requires policy and delegation decision evidence", "H_PAYMENT_POLICY_DENIED")
 
 
 def _validate_requirement(value: Any, path: str) -> None:
@@ -398,9 +421,287 @@ def validate_replay(seen_commitments: set[str], commitment: str) -> None:
         _fail("/commitment", "payment authorization was already consumed", "H_PAYMENT_REPLAY")
 
 
+def settlement_uniqueness_key(
+    seller_did: str,
+    idempotency_key: str,
+    request_cid: str,
+    *,
+    payload_commitment: str | None = None,
+    network_reference_commitment: str | None = None,
+) -> str:
+    """Canonical uniqueness scope for at-most-once settlement (spec §10)."""
+    _did(seller_did, "/sellerDid")
+    _string(idempotency_key, "/idempotencyKey", 128)
+    _cid(request_cid, "/requestCid")
+    parts = [seller_did, idempotency_key, request_cid]
+    if payload_commitment is not None:
+        _cid(payload_commitment, "/payloadCommitment")
+        parts.append(payload_commitment)
+    if network_reference_commitment is not None:
+        _cid(network_reference_commitment, "/networkReferenceCommitment")
+        parts.append(network_reference_commitment)
+    return "\x1f".join(parts)
+
+
+def validate_price_version_binding(
+    capability: Mapping[str, Any],
+    quote: Mapping[str, Any],
+    *,
+    limits: Mapping[str, int] | None = None,
+    now_ms: int | None = None,
+    expected_catalog_version: str | None = None,
+) -> tuple[str, str]:
+    """Fail closed when quote commercial terms diverge from the signed capability price/version.
+
+    Binds capability catalogVersion, descriptor, seller, scheme, network, asset,
+    amount, and payee to every quote requirement. Returns (capabilityCid, quoteCid).
+    """
+    negotiated = _limits(limits)
+    capability_cid = validate_profile_h_artifact("PaidCapability", capability, negotiated, now_ms=now_ms)
+    quote_cid = validate_profile_h_artifact("PaymentQuote", quote, negotiated, now_ms=now_ms)
+    cap = _object(capability)
+    q = _object(quote)
+    if q.get("capabilityCid") != capability_cid:
+        _fail("/capabilityCid", "quote is not bound to the provided capability", "H_REQUEST_MISMATCH")
+    if q.get("descriptorCid") != cap.get("descriptorCid"):
+        _fail("/descriptorCid", "quote descriptor diverges from capability", "H_REQUEST_MISMATCH")
+    if q.get("sellerDid") != cap.get("sellerDid"):
+        _fail("/sellerDid", "quote seller diverges from capability", "H_REQUEST_MISMATCH")
+    catalog_version = _string(cap["catalogVersion"], "/catalogVersion", 64)
+    if expected_catalog_version is not None:
+        _string(expected_catalog_version, "/expectedCatalogVersion", 64)
+        if catalog_version != expected_catalog_version:
+            _fail("/catalogVersion", "catalog price-version mismatch", "H_REQUEST_MISMATCH")
+    requirements = q["requirements"]
+    if not isinstance(requirements, list) or not requirements:
+        _fail("/requirements", "quote has no requirements", "H_INVALID_PAYMENT_MESSAGE")
+    for index, requirement in enumerate(requirements):
+        path = f"/requirements/{index}"
+        req = _object(requirement, path)
+        if req.get("scheme") != cap.get("scheme"):
+            _fail(f"{path}/scheme", "scheme diverges from capability price-version", "H_REQUEST_MISMATCH")
+        if req.get("network") != cap.get("network"):
+            _fail(f"{path}/network", "network diverges from capability price-version", "H_UNSUPPORTED_NETWORK")
+        if req.get("asset") != cap.get("asset"):
+            _fail(f"{path}/asset", "asset diverges from capability price-version", "H_AMOUNT_MISMATCH")
+        if req.get("amount") != cap.get("amount"):
+            _fail(f"{path}/amount", "amount diverges from capability price-version", "H_AMOUNT_MISMATCH")
+        if req.get("payTo") != cap.get("payee"):
+            _fail(f"{path}/payTo", "payee diverges from capability price-version", "H_AMOUNT_MISMATCH")
+    return capability_cid, quote_cid
+
+
+def validate_quote_not_expired_for_settlement(
+    quote: Mapping[str, Any],
+    *,
+    now_ms: int,
+    limits: Mapping[str, int] | None = None,
+) -> str:
+    """Expired quotes cannot settle. Returns the quote CID when settlement may proceed."""
+    _integer(now_ms, "/now_ms")
+    quote_cid = validate_profile_h_artifact("PaymentQuote", quote, limits, now_ms=now_ms)
+    expires_at = _integer(quote["expiresAt"], "/expiresAt")
+    if now_ms >= expires_at:
+        _fail("/expiresAt", "expired quote cannot settle", "H_QUOTE_EXPIRED")
+    return quote_cid
+
+
+def validate_settlement_against_quote(
+    quote: Mapping[str, Any],
+    settlement: Mapping[str, Any],
+    *,
+    now_ms: int | None = None,
+    verification: Mapping[str, Any] | None = None,
+    authorization: Mapping[str, Any] | None = None,
+    limits: Mapping[str, int] | None = None,
+) -> tuple[str, str]:
+    """Bind a settlement receipt to an unexpired quote requirement (amount/network).
+
+    Returns (quoteCid, settlementCid). Expired quotes fail closed with H_QUOTE_EXPIRED.
+    """
+    negotiated = _limits(limits)
+    settle_time = now_ms if now_ms is not None else _integer(
+        _object(settlement).get("settledAt", 0), "/settledAt"
+    )
+    quote_cid = validate_quote_not_expired_for_settlement(quote, now_ms=settle_time, limits=negotiated)
+    settlement_cid = validate_profile_h_artifact("SettlementReceipt", settlement, negotiated, now_ms=now_ms)
+    q = _object(quote)
+    s = _object(settlement)
+    if authorization is not None:
+        auth = _object(authorization)
+        auth_cid = validate_profile_h_artifact("PaymentAuthorization", auth, negotiated, now_ms=now_ms)
+        if auth.get("quoteCid") != quote_cid:
+            _fail("/quoteCid", "authorization is not bound to this quote", "H_REQUEST_MISMATCH")
+        if auth.get("requestCid") != q.get("requestCid"):
+            _fail("/requestCid", "authorization request diverges from quote", "H_REQUEST_MISMATCH")
+        index = _integer(auth["requirementIndex"], "/requirementIndex", 0, negotiated["max_requirements"] - 1)
+        if index >= len(q["requirements"]):
+            _fail("/requirementIndex", "authorization requirement index out of range", "H_REQUEST_MISMATCH")
+        selected = q["requirements"][index]
+    else:
+        auth_cid = None
+        selected = None
+        for requirement in q["requirements"]:
+            if requirement.get("amount") == s.get("amount") and requirement.get("network") == s.get("network"):
+                selected = requirement
+                break
+        if selected is None:
+            _fail("/amount", "settlement amount/network do not match any quote requirement", "H_AMOUNT_MISMATCH")
+    if selected.get("amount") != s.get("amount"):
+        _fail("/amount", "settlement amount diverges from quote requirement", "H_AMOUNT_MISMATCH")
+    if selected.get("network") != s.get("network"):
+        _fail("/network", "settlement network diverges from quote requirement", "H_UNSUPPORTED_NETWORK")
+    if verification is not None:
+        ver = _object(verification)
+        ver_cid = validate_profile_h_artifact("PaymentVerification", ver, negotiated, now_ms=now_ms)
+        if ver.get("decision") != "verified":
+            _fail("/decision", "only verified authorizations may settle", "H_VERIFICATION_FAILED")
+        if s.get("verificationCid") != ver_cid:
+            _fail("/verificationCid", "settlement is not bound to this verification", "H_REQUEST_MISMATCH")
+        if auth_cid is not None and ver.get("authorizationCid") != auth_cid:
+            _fail("/authorizationCid", "verification is not bound to this authorization", "H_REQUEST_MISMATCH")
+        if now_ms is not None and now_ms >= ver["expiresAt"]:
+            _fail("/expiresAt", "verification freshness expired before settlement", "H_VERIFICATION_FAILED")
+    if s.get("outcome") not in ("settled", "pending", "reconciliation-required", "failed", "refunded"):
+        _fail("/outcome", "unsupported settlement outcome")
+    return quote_cid, settlement_cid
+
+
+def validate_idempotent_settlement(
+    settlement: Mapping[str, Any],
+    ledger: dict[str, str],
+    *,
+    uniqueness_key: str,
+    limits: Mapping[str, int] | None = None,
+    now_ms: int | None = None,
+) -> str:
+    """Register settlement under a uniqueness key. Identical replays rejoin; conflicts fail closed.
+
+    ``ledger`` maps uniqueness_key -> settlementCid and is updated in place on first accept.
+    """
+    _string(uniqueness_key, "/uniquenessKey", 512)
+    settlement_cid = validate_profile_h_artifact("SettlementReceipt", settlement, limits, now_ms=now_ms)
+    prior = ledger.get(uniqueness_key)
+    if prior is None:
+        ledger[uniqueness_key] = settlement_cid
+        return settlement_cid
+    if prior != settlement_cid:
+        _fail(
+            "/uniquenessKey",
+            "idempotent settlement conflict: key already bound to a different settlement",
+            "H_PAYMENT_REPLAY",
+        )
+    return prior
+
+
+def validate_idempotent_entitlement(
+    settlement: Mapping[str, Any],
+    entitlement: Mapping[str, Any],
+    entitlement_ledger: dict[str, str],
+    *,
+    limits: Mapping[str, int] | None = None,
+    now_ms: int | None = None,
+) -> str:
+    """Issue or rejoin exactly one entitlement per settled settlement (no double-entitle).
+
+    ``entitlement_ledger`` maps settlementCid -> entitlementCid and is updated in place.
+    Replays with the same entitlement CID succeed; a second distinct grant fails closed.
+    """
+    negotiated = _limits(limits)
+    settlement_cid = validate_profile_h_artifact("SettlementReceipt", settlement, negotiated, now_ms=now_ms)
+    s = _object(settlement)
+    if s.get("outcome") != "settled":
+        _fail("/outcome", "only settled receipts may mint entitlements", "H_SETTLEMENT_FAILED")
+    entitlement_cid = validate_profile_h_artifact("PaidEntitlement", entitlement, negotiated, now_ms=now_ms)
+    e = _object(entitlement)
+    if e.get("settlementCid") != settlement_cid:
+        _fail("/settlementCid", "entitlement is not bound to this settlement", "H_REQUEST_MISMATCH")
+    prior = entitlement_ledger.get(settlement_cid)
+    if prior is None:
+        entitlement_ledger[settlement_cid] = entitlement_cid
+        return entitlement_cid
+    if prior != entitlement_cid:
+        _fail(
+            "/settlementCid",
+            "idempotent settlement must not double-entitle: settlement already granted a different entitlement",
+            "H_PAYMENT_REPLAY",
+        )
+    return prior
+
+
+def validate_refund_eligibility(
+    settlement: Mapping[str, Any],
+    refund: Mapping[str, Any],
+    *,
+    entitlement: Mapping[str, Any] | None = None,
+    limits: Mapping[str, int] | None = None,
+    now_ms: int | None = None,
+) -> str:
+    """Validate a refund against its settlement; refund-after-full-consumption fails closed."""
+    negotiated = _limits(limits)
+    settlement_cid = validate_profile_h_artifact("SettlementReceipt", settlement, negotiated, now_ms=now_ms)
+    refund_cid = validate_profile_h_artifact("RefundRecord", refund, negotiated, now_ms=now_ms)
+    s = _object(settlement)
+    r = _object(refund)
+    if r.get("settlementCid") != settlement_cid:
+        _fail("/settlementCid", "refund is not bound to this settlement", "H_REQUEST_MISMATCH")
+    if s.get("outcome") not in ("settled", "refunded", "reconciliation-required"):
+        _fail("/outcome", "refund requires a settled or reconciling settlement", "H_SETTLEMENT_FAILED")
+    if entitlement is not None:
+        e = _object(entitlement)
+        validate_profile_h_artifact("PaidEntitlement", e, negotiated, now_ms=now_ms)
+        if e.get("settlementCid") != settlement_cid:
+            _fail("/settlementCid", "entitlement is not bound to this settlement", "H_REQUEST_MISMATCH")
+        if (
+            r.get("decision") == "approved"
+            and r.get("outcome") == "refunded"
+            and e["consumedUnits"] >= e["quotaUnits"]
+            and e["quotaUnits"] > 0
+        ):
+            _fail(
+                "/consumedUnits",
+                "refund after full entitlement consumption fails closed",
+                "H_ENTITLEMENT_EXHAUSTED",
+            )
+    return refund_cid
+
+
+def validate_usage_against_entitlement(
+    entitlement: Mapping[str, Any],
+    usage: Mapping[str, Any],
+    *,
+    limits: Mapping[str, int] | None = None,
+    now_ms: int | None = None,
+) -> tuple[str, str]:
+    """Ensure usage is unit-compatible and does not exceed remaining entitlement quota."""
+    negotiated = _limits(limits)
+    entitlement_cid = validate_profile_h_artifact("PaidEntitlement", entitlement, negotiated, now_ms=now_ms)
+    usage_cid = validate_profile_h_artifact("UsageRecord", usage, negotiated, now_ms=now_ms)
+    e = _object(entitlement)
+    u = _object(usage)
+    if u.get("entitlementCid") != entitlement_cid:
+        _fail("/entitlementCid", "usage is not bound to this entitlement", "H_REQUEST_MISMATCH")
+    if u.get("unit") != e.get("unit"):
+        _fail("/unit", "usage unit diverges from entitlement", "H_AMOUNT_MISMATCH")
+    remaining = e["quotaUnits"] - e["consumedUnits"]
+    if u["units"] > remaining:
+        _fail("/units", "usage exceeds remaining entitlement quota", "H_ENTITLEMENT_EXHAUSTED")
+    if now_ms is not None and now_ms >= e["expiresAt"]:
+        _fail("/expiresAt", "entitlement expired before usage", "H_ENTITLEMENT_EXHAUSTED")
+    return entitlement_cid, usage_cid
+
+
 __all__ = [
     "DEFAULT_LIMITS", "HARD_LIMITS", "ProfileHValidationError",
     "canonical_profile_h_bytes", "profile_h_artifact_cid",
     "validate_profile_h_artifact", "decode_x402_header", "encode_x402_header",
     "validate_request_binding", "validate_replay",
+    "settlement_uniqueness_key",
+    "validate_price_version_binding",
+    "validate_quote_not_expired_for_settlement",
+    "validate_settlement_against_quote",
+    "validate_idempotent_settlement",
+    "validate_idempotent_entitlement",
+    "validate_refund_eligibility",
+    "validate_usage_against_entitlement",
 ]

@@ -1,0 +1,320 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcp-plus-plus.dev/schemas/execution/execution-envelope-1.schema.json",
+  "title": "MCP++ ExecutionEnvelope@1",
+  "description": "Canonical portable execution envelope for MCP++ 1.0. Top-level carrier covering identity, authority, intent, inputs/outputs, constraints, state, policy, and provenance. Profiles B, C, D, F, and G remain modular contents or CID references; this object is the shared wire carrier (plan KD-7). Interface: ExecutionEnvelope@1. Normative prose: ipfs_accelerate_py/mcplusplus/docs/spec/execution-envelope.md.",
+  "$comment": "Interface label: ExecutionEnvelope@1. Schema marker: mcp++/execution/envelope@1. Historical Profile B envelopes adapt without silent CID breakage (MCPP-031). Wall-clock timestamps are informational; causal order comes from parents and logical clocks.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "interface_cid",
+    "input_cid",
+    "intent_cid",
+    "parents",
+    "created_at_ms",
+    "correlation_id",
+    "requester",
+    "authority"
+  ],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "mcp++/execution/envelope@1",
+      "description": "Closed schema marker for ExecutionEnvelope@1."
+    },
+    "interface_cid": {
+      "$ref": "#/$defs/cid",
+      "description": "Identity: CID of the MCP-IDL Interface Descriptor (Profile A) being invoked."
+    },
+    "method": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "maxLength": 256,
+      "description": "Optional method / tool name within the interface. When null, the method is recovered solely from intent_cid contents."
+    },
+    "input_cid": {
+      "$ref": "#/$defs/cid",
+      "description": "Inputs: CID of the canonicalized request input payload."
+    },
+    "expected_output_schema_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "Outputs: optional CID of the expected output schema / contract for this invocation."
+    },
+    "intent_cid": {
+      "$ref": "#/$defs/cid",
+      "description": "Intent: CID of the immutable plan-to-act object (what will be attempted)."
+    },
+    "constraints": {
+      "anyOf": [
+        { "$ref": "#/$defs/constraints" },
+        { "type": "null" }
+      ],
+      "description": "Constraints: optional inline operational bounds. Prefer constraints_cid when the constraint object is large or shared."
+    },
+    "constraints_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "Constraints: optional CID of a content-addressed constraints object (may equal or narrow policy_cid)."
+    },
+    "state_refs": {
+      "type": "array",
+      "maxItems": 64,
+      "items": { "$ref": "#/$defs/stateRefHandle" },
+      "description": "State: declared StateRef handles this envelope may read or write. Empty when the invocation is pure / immutable-only."
+    },
+    "policy_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "Policy: CID of the temporal deontic policy (Profile D) to evaluate. Null when policy is not required for this invocation."
+    },
+    "decision_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "Policy: optional precomputed decision CID when evaluation already occurred and is being carried for replay."
+    },
+    "requester": {
+      "$ref": "#/$defs/partyIdentity",
+      "description": "Identity: principal that requests execution."
+    },
+    "authority": {
+      "$ref": "#/$defs/authorityBlock",
+      "description": "Authority: delegation / proof references that authorize this envelope. Transport identity is never sufficient (KD-14)."
+    },
+    "audience": {
+      "anyOf": [
+        { "$ref": "#/$defs/partyIdentity" },
+        { "type": "null" }
+      ],
+      "description": "Identity: intended executor / audience principal when known before dispatch."
+    },
+    "parents": {
+      "type": "array",
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/cid" },
+      "description": "Provenance: causal parent CIDs (prior envelopes, events, or receipts). Empty for root invocations."
+    },
+    "created_at_ms": {
+      "$ref": "#/$defs/timestampMs",
+      "description": "Provenance: wall-clock creation time (epoch ms). Informational only; not causal authority."
+    },
+    "correlation_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Provenance / observability: correlation hook for multi-step tasks (non-normative for causality)."
+    },
+    "nonce": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Optional anti-replay nonce. Distinct from correlation_id when both are present."
+    },
+    "deadline_ms": {
+      "anyOf": [
+        { "$ref": "#/$defs/timestampMs" },
+        { "type": "null" }
+      ],
+      "description": "Optional absolute deadline (epoch ms) for starting or completing execution."
+    },
+    "declared_side_effects": {
+      "type": "array",
+      "maxItems": 256,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "description": "Declared intended side effects (capability strings or effect CIDs as strings) for policy evaluation."
+    },
+    "canonicalization": {
+      "type": "string",
+      "const": "mcpp-jcs-v1",
+      "description": "Canonicalization algorithm for envelope CID minting. Required on new mints."
+    },
+    "metadata_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "Optional CID of non-authoritative metadata (UI labels, free-form tags). MUST NOT carry authority or policy."
+    },
+    "profile_b_envelope_cid": {
+      "anyOf": [
+        { "$ref": "#/$defs/cid" },
+        { "type": "null" }
+      ],
+      "description": "Optional adapter field: historical Profile B envelope CID when adapting without rewriting it (MCPP-031)."
+    }
+  },
+  "$defs": {
+    "cid": {
+      "type": "string",
+      "description": "IPFS CID. CIDv1 base32 (b…) preferred for new mints; CIDv0 (Qm…) remains readable when historical.",
+      "pattern": "^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58,})$",
+      "minLength": 46,
+      "maxLength": 128
+    },
+    "did": {
+      "type": "string",
+      "pattern": "^did:[a-z0-9]+:[A-Za-z0-9._:%-]+(?:[/?#][^\\u0000]*)?$",
+      "minLength": 7,
+      "maxLength": 512,
+      "description": "DID-compatible identity (ADR-0002)."
+    },
+    "timestampMs": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "Unix epoch milliseconds (safe integer range)."
+    },
+    "partyIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["did"],
+      "properties": {
+        "did": {
+          "$ref": "#/$defs/did",
+          "description": "Principal DID."
+        },
+        "key_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 256,
+          "description": "Explicit key id when known."
+        },
+        "peer_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Optional transport PeerID. NEVER grants execution authority (KD-14)."
+        }
+      }
+    },
+    "authorityBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["proof_cids"],
+      "properties": {
+        "proof_cids": {
+          "type": "array",
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/cid" },
+          "description": "UCAN / delegation proof CIDs authorizing this envelope. Empty only for same-trust-domain local execution that does not claim portable authority."
+        },
+        "proof_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ],
+          "description": "Optional single primary proof-bundle CID (Profile B compatibility)."
+        },
+        "delegation_cids": {
+          "type": "array",
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/cid" },
+          "description": "Optional explicit delegation record CIDs (full-name wire form) when distinct from proof bundles."
+        },
+        "resource": {
+          "type": ["string", "null"],
+          "maxLength": 512,
+          "description": "Optional primary resource string the authority is scoped to."
+        },
+        "ability": {
+          "type": ["string", "null"],
+          "maxLength": 256,
+          "description": "Optional primary ability string (e.g. tool/invoke)."
+        }
+      }
+    },
+    "constraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "timeout_ms": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "maximum": 86400000,
+          "description": "Maximum wall-clock execution time in milliseconds."
+        },
+        "max_output_bytes": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Maximum output payload size in bytes."
+        },
+        "max_retries": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 100000,
+          "description": "Client/executor retry budget for this envelope."
+        },
+        "idempotency_key": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Idempotency key for durable executors (crash recovery without duplicate effects)."
+        },
+        "fencing_token": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Optional fencing token for exclusive work (Profile G)."
+        },
+        "lease_ms": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "maximum": 86400000,
+          "description": "Optional lease duration for exclusive claims."
+        },
+        "budget_cid": {
+          "anyOf": [
+            { "$ref": "#/$defs/cid" },
+            { "type": "null" }
+          ],
+          "description": "Optional content-addressed resource budget object."
+        }
+      }
+    },
+    "stateRefHandle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state_ref_cid"],
+      "properties": {
+        "state_ref_cid": {
+          "$ref": "#/$defs/cid",
+          "description": "CID of a StateRef@1 (or historical state handle) this envelope may touch."
+        },
+        "mode": {
+          "type": ["string", "null"],
+          "enum": [
+            "immutable",
+            "single_authority",
+            "causal",
+            "crdt",
+            "consensus",
+            null
+          ],
+          "description": "Declared consistency mode when known in advance (KD-8). MUST match the StateRef when both are present."
+        },
+        "access": {
+          "type": ["string", "null"],
+          "enum": ["read", "write", "read_write", null],
+          "description": "Declared access intent for policy evaluation."
+        }
+      }
+    }
+  }
+}
