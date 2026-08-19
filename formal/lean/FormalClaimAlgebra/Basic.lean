@@ -504,4 +504,3 @@ def negativeRuleIds : List String := ["digest-to-truth", "payment-to-authority",
 def requiredNegativeRuleIds : List String := ["digest-to-truth", "payment-to-authority", "hermetic-to-live", "fixture-to-observed"]
 
 end FormalClaimAlgebra
-
