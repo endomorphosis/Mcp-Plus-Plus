@@ -1,0 +1,187 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcp-plus-plus.dev/schemas/assurance/v1/evidence-envelope.schema.json",
+  "title": "EvidenceEnvelope@1",
+  "description": "Closed, bounded Cartesian product of the nine Formal Claim Algebra evidence dimensions (facp/evidence-envelope@1). Unknown fields, unknown enum spellings, floats, and missing dimensions fail closed.",
+  "x-facp": {
+    "schema": "facp/evidence-envelope@1",
+    "schema_version": 1,
+    "task_id": "FACP-016",
+    "goal_id": "FACP-G120",
+    "bundle": "facp/fca/vectors",
+    "release": "formal-claim-algebra-v1",
+    "vocabulary_schema": "facp/formal-claim-algebra-v1@1",
+    "rules_schema": "facp/promotion-rules@1",
+    "product_kind": "evidence_product",
+    "fail_closed": true,
+    "total_ladder_forbidden": true,
+    "floats_forbidden": true,
+    "unknown_fields_forbidden": true,
+    "dimension_order": [
+      "origin",
+      "integrity",
+      "authority",
+      "policy",
+      "proof",
+      "freshness",
+      "effect",
+      "environment",
+      "review"
+    ],
+    "stable_error_codes": [
+      "UNKNOWN_FIELD",
+      "MISSING_FIELD",
+      "UNKNOWN_ENUM",
+      "INVALID_TYPE",
+      "FORBIDDEN_FLOAT",
+      "UNKNOWN_TRANSITION",
+      "MISSING_TRANSITION_EVIDENCE",
+      "MISSING_DIMENSIONS",
+      "MISSING_EVIDENCE",
+      "FORBIDDEN_RELABEL",
+      "NONIMP_DIGEST_TO_TRUTH",
+      "NONIMP_PAYMENT_TO_AUTHORITY",
+      "NONIMP_HERMETIC_TO_LIVE",
+      "NONIMP_FIXTURE_TO_OBSERVED",
+      "NONIMP_SIMULATED_TO_LIVE",
+      "NONIMP_DECLARED_TO_OBSERVED",
+      "NONIMP_SIGNATURE_TO_AUTHORITY",
+      "NONIMP_BROWSER_TO_HOST_POLICY",
+      "NONIMP_CANDIDATE_TO_VERIFIED",
+      "NONIMP_INVENTORY_TO_LIVE",
+      "NONIMP_STALE_TO_CURRENT",
+      "NONIMP_UNKNOWN_TO_OBSERVED",
+      "NONIMP_DISCOVERY_TO_COMPLETION",
+      "NONIMP_REVIEW_FILLS_EVIDENCE",
+      "NONIMP_SINGLE_DIMENSION_TO_PRODUCT",
+      "NONIMP_SUCCESS_BOOLEAN_TO_OBSERVED",
+      "NONIMP_MUTABLE_DEP_TO_RELEASE",
+      "NONIMP_LICENSE_TO_RELEASE"
+    ]
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "required": [
+    "origin",
+    "integrity",
+    "authority",
+    "policy",
+    "proof",
+    "freshness",
+    "effect",
+    "environment",
+    "review"
+  ],
+  "properties": {
+    "origin": { "$ref": "#/$defs/origin" },
+    "integrity": { "$ref": "#/$defs/integrity" },
+    "authority": { "$ref": "#/$defs/authority" },
+    "policy": { "$ref": "#/$defs/policy" },
+    "proof": { "$ref": "#/$defs/proof" },
+    "freshness": { "$ref": "#/$defs/freshness" },
+    "effect": { "$ref": "#/$defs/effect" },
+    "environment": { "$ref": "#/$defs/environment" },
+    "review": { "$ref": "#/$defs/review" }
+  },
+  "$defs": {
+    "origin": {
+      "type": "string",
+      "enum": [
+        "absent",
+        "declared",
+        "fixture",
+        "simulated",
+        "hermetic_observed",
+        "live_observed"
+      ],
+      "maxLength": 32
+    },
+    "integrity": {
+      "type": "string",
+      "enum": [
+        "unchecked",
+        "structurally_valid",
+        "digest_valid",
+        "signature_valid"
+      ],
+      "maxLength": 32
+    },
+    "authority": {
+      "type": "string",
+      "enum": [
+        "unchecked",
+        "absent",
+        "valid",
+        "expired",
+        "revoked",
+        "denied"
+      ],
+      "maxLength": 32
+    },
+    "policy": {
+      "type": "string",
+      "enum": [
+        "unchecked",
+        "allowed",
+        "denied",
+        "allowed_with_obligations",
+        "indeterminate"
+      ],
+      "maxLength": 32
+    },
+    "proof": {
+      "type": "string",
+      "enum": [
+        "none",
+        "candidate",
+        "verified",
+        "refuted",
+        "unknown",
+        "verifier_unavailable"
+      ],
+      "maxLength": 32
+    },
+    "freshness": {
+      "type": "string",
+      "enum": [
+        "current",
+        "stale",
+        "superseded",
+        "withdrawn"
+      ],
+      "maxLength": 32
+    },
+    "effect": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "reserved",
+        "started",
+        "externally_unknown",
+        "observed",
+        "compensated",
+        "failed"
+      ],
+      "maxLength": 32
+    },
+    "environment": {
+      "type": "string",
+      "enum": [
+        "hermetic",
+        "conditional",
+        "live"
+      ],
+      "maxLength": 32
+    },
+    "review": {
+      "type": "string",
+      "enum": [
+        "unreviewed",
+        "machine_reviewed",
+        "human_reviewed"
+      ],
+      "maxLength": 32
+    }
+  }
+}

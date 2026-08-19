@@ -1,0 +1,1865 @@
+{
+  "schema": "facp/formal-claim-algebra-vectors@1",
+  "schema_version": 1,
+  "task_id": "FACP-016",
+  "goal_id": "FACP-G120",
+  "bundle": "facp/fca/vectors",
+  "release": "formal-claim-algebra-v1",
+  "vocabulary_schema": "facp/formal-claim-algebra-v1@1",
+  "rules_schema": "facp/promotion-rules@1",
+  "envelope_schema": "facp/evidence-envelope@1",
+  "fail_closed": true,
+  "dimension_order": [
+    "origin",
+    "integrity",
+    "authority",
+    "policy",
+    "proof",
+    "freshness",
+    "effect",
+    "environment",
+    "review"
+  ],
+  "predicate_order": [
+    "production_supported",
+    "effect_successful",
+    "proof_reusable",
+    "receipt_authoritative",
+    "release_admissible"
+  ],
+  "fixtures": {
+    "weakest": {
+      "origin": "absent",
+      "integrity": "unchecked",
+      "authority": "unchecked",
+      "policy": "unchecked",
+      "proof": "none",
+      "freshness": "stale",
+      "effect": "not_started",
+      "environment": "hermetic",
+      "review": "unreviewed"
+    },
+    "strong_product": {
+      "origin": "live_observed",
+      "integrity": "signature_valid",
+      "authority": "valid",
+      "policy": "allowed",
+      "proof": "verified",
+      "freshness": "current",
+      "effect": "observed",
+      "environment": "live",
+      "review": "human_reviewed"
+    }
+  },
+  "evidence_bags": {
+    "all_normative": [
+      "admission_token",
+      "argument_bound_delegation",
+      "authentic_signature",
+      "authenticated_host_policy_decision",
+      "canonical_digest_match",
+      "contract_compatibility",
+      "current_capability_admission",
+      "current_proofs_and_tests",
+      "exact_source_binding",
+      "human_legal_clearance",
+      "identified_build_environment",
+      "immutable_dependency_closure",
+      "independent_effect_observation",
+      "live_qualification_receipt",
+      "named_current_verifier",
+      "non_revoked_delegation",
+      "non_revoked_ucan",
+      "obligations_discharged",
+      "reproducibility_inputs",
+      "rights_resolution",
+      "signed_provenance",
+      "signed_receipt",
+      "verifier_admission_closure"
+    ],
+    "production_supported": [
+      "live_qualification_receipt",
+      "current_capability_admission",
+      "authenticated_host_policy_decision"
+    ],
+    "effect_successful": [
+      "independent_effect_observation",
+      "admission_token"
+    ],
+    "proof_reusable": [
+      "named_current_verifier",
+      "verifier_admission_closure"
+    ],
+    "receipt_authoritative": [
+      "signed_receipt",
+      "non_revoked_delegation"
+    ],
+    "release_admissible": [
+      "exact_source_binding",
+      "immutable_dependency_closure",
+      "identified_build_environment",
+      "current_proofs_and_tests",
+      "contract_compatibility",
+      "rights_resolution",
+      "reproducibility_inputs",
+      "signed_provenance"
+    ]
+  },
+  "theorem_cases": [
+    {
+      "theorem_id": "absolute_effect_forbidden_implies_not_allowed",
+      "negative_vector_ids": [
+        "neg:effect:externally_unknown->observed:missing_evidence",
+        "neg:effect:not_started->observed"
+      ]
+    },
+    {
+      "theorem_id": "authority_forbidden_implies_not_allowed",
+      "negative_vector_ids": [
+        "neg:authority:denied->valid",
+        "neg:authority:expired->valid",
+        "neg:authority:revoked->valid"
+      ]
+    },
+    {
+      "theorem_id": "browser_policy_to_host_policy",
+      "negative_vector_ids": [
+        "neg:nonimp:browser_policy_to_host_policy"
+      ]
+    },
+    {
+      "theorem_id": "candidate_forbidden_without_verifier",
+      "negative_vector_ids": [
+        "neg:proof:candidate->verified:missing_evidence"
+      ]
+    },
+    {
+      "theorem_id": "candidate_to_verified",
+      "negative_vector_ids": [
+        "neg:proof:candidate->verified:missing_evidence"
+      ]
+    },
+    {
+      "theorem_id": "conditional_live_forbidden_without_qualification",
+      "negative_vector_ids": [
+        "neg:environment:conditional->live:missing_evidence"
+      ]
+    },
+    {
+      "theorem_id": "declared_to_observed",
+      "negative_vector_ids": [
+        "neg:effect:not_started->observed",
+        "neg:nonimp:declared_to_observed"
+      ]
+    },
+    {
+      "theorem_id": "denied_not_to_valid",
+      "negative_vector_ids": [
+        "neg:authority:denied->valid"
+      ]
+    },
+    {
+      "theorem_id": "digest_to_truth",
+      "negative_vector_ids": [
+        "neg:nonimp:digest_to_truth"
+      ]
+    },
+    {
+      "theorem_id": "discovery_to_completion",
+      "negative_vector_ids": [
+        "neg:nonimp:discovery_to_completion"
+      ]
+    },
+    {
+      "theorem_id": "expired_delegation_not_production_supported",
+      "negative_vector_ids": [
+        "neg:predicate:production_supported:expired"
+      ]
+    },
+    {
+      "theorem_id": "expired_not_to_valid",
+      "negative_vector_ids": [
+        "neg:authority:expired->valid"
+      ]
+    },
+    {
+      "theorem_id": "externally_unknown_forbidden_without_observation",
+      "negative_vector_ids": [
+        "neg:effect:externally_unknown->observed:missing_evidence"
+      ]
+    },
+    {
+      "theorem_id": "externally_unknown_to_observed",
+      "negative_vector_ids": [
+        "neg:effect:externally_unknown->observed:missing_evidence"
+      ]
+    },
+    {
+      "theorem_id": "fixture_not_production_supported",
+      "negative_vector_ids": [
+        "neg:predicate:production_supported:fixture"
+      ]
+    },
+    {
+      "theorem_id": "fixture_not_to_hermetic_observed",
+      "negative_vector_ids": [
+        "neg:origin:fixture->hermetic_observed"
+      ]
+    },
+    {
+      "theorem_id": "fixture_not_to_live_observed",
+      "negative_vector_ids": [
+        "neg:origin:fixture->live_observed"
+      ]
+    },
+    {
+      "theorem_id": "freshness_forbidden_implies_not_allowed",
+      "negative_vector_ids": [
+        "neg:freshness:stale->current",
+        "neg:freshness:superseded->current",
+        "neg:freshness:withdrawn->current",
+        "neg:freshness:withdrawn->stale"
+      ]
+    },
+    {
+      "theorem_id": "hermetic_not_to_live",
+      "negative_vector_ids": [
+        "neg:environment:hermetic->live"
+      ]
+    },
+    {
+      "theorem_id": "inventory_to_live_qualification",
+      "negative_vector_ids": [
+        "neg:environment:conditional->live:missing_evidence"
+      ]
+    },
+    {
+      "theorem_id": "license_conflict_to_release",
+      "negative_vector_ids": [
+        "neg:nonimp:license_conflict_to_release"
+      ]
+    },
+    {
+      "theorem_id": "mutable_dependency_to_release",
+      "negative_vector_ids": [
+        "neg:nonimp:mutable_dependency_to_release"
+      ]
+    },
+    {
+      "theorem_id": "not_started_not_to_observed",
+      "negative_vector_ids": [
+        "neg:effect:not_started->observed"
+      ]
+    },
+    {
+      "theorem_id": "origin_forbidden_implies_not_allowed",
+      "negative_vector_ids": [
+        "neg:origin:fixture->hermetic_observed",
+        "neg:origin:fixture->live_observed",
+        "neg:origin:simulated->hermetic_observed",
+        "neg:origin:simulated->live_observed"
+      ]
+    },
+    {
+      "theorem_id": "payment_to_authority",
+      "negative_vector_ids": [
+        "neg:nonimp:payment_to_authority"
+      ]
+    },
+    {
+      "theorem_id": "policy_denied_not_to_allowed",
+      "negative_vector_ids": [
+        "neg:policy:denied->allowed"
+      ]
+    },
+    {
+      "theorem_id": "policy_forbidden_implies_not_allowed",
+      "negative_vector_ids": [
+        "neg:policy:denied->allowed"
+      ]
+    },
+    {
+      "theorem_id": "production_supported_requires_current_freshness",
+      "negative_vector_ids": [
+        "neg:predicate:production_supported:stale"
+      ]
+    },
+    {
+      "theorem_id": "production_supported_requires_live_origin",
+      "negative_vector_ids": [
+        "neg:predicate:production_supported:fixture",
+        "neg:predicate:production_supported:simulated"
+      ]
+    },
+    {
+      "theorem_id": "production_supported_requires_valid_authority",
+      "negative_vector_ids": [
+        "neg:predicate:production_supported:expired",
+        "neg:predicate:production_supported:revoked"
+      ]
+    },
+    {
+      "theorem_id": "proof_reusable_requires_verified",
+      "negative_vector_ids": [
+        "neg:predicate:proof_reusable:candidate"
+      ]
+    },
+    {
+      "theorem_id": "release_admissible_requires_verified_proof",
+      "negative_vector_ids": [
+        "neg:predicate:release_admissible:proof_none"
+      ]
+    },
+    {
+      "theorem_id": "review_fills_missing_evidence",
+      "negative_vector_ids": [
+        "neg:nonimp:review_fills_missing_evidence"
+      ]
+    },
+    {
+      "theorem_id": "revoked_delegation_not_production_supported",
+      "negative_vector_ids": [
+        "neg:predicate:production_supported:revoked"
+      ]
+    },
+    {
+      "theorem_id": "revoked_not_to_valid",
+      "negative_vector_ids": [
+        "neg:authority:revoked->valid"
+      ]
+    },
+    {
+      "theorem_id": "signature_to_authority",
+      "negative_vector_ids": [
+        "neg:nonimp:signature_to_authority"
+      ]
+    },
+    {
+      "theorem_id": "simulated_not_production_supported",
+      "negative_vector_ids": [
+        "neg:predicate:production_supported:simulated"
+      ]
+    },
+    {
+      "theorem_id": "simulated_not_to_hermetic_observed",
+      "negative_vector_ids": [
+        "neg:origin:simulated->hermetic_observed"
+      ]
+    },
+    {
+      "theorem_id": "simulated_not_to_live_observed",
+      "negative_vector_ids": [
+        "neg:origin:simulated->live_observed"
+      ]
+    },
+    {
+      "theorem_id": "single_dimension_to_production_success",
+      "negative_vector_ids": [
+        "neg:nonimp:single_dimension_to_product"
+      ]
+    },
+    {
+      "theorem_id": "stale_not_to_current",
+      "negative_vector_ids": [
+        "neg:freshness:stale->current"
+      ]
+    },
+    {
+      "theorem_id": "stale_receipt_not_production_supported",
+      "negative_vector_ids": [
+        "neg:predicate:production_supported:stale"
+      ]
+    },
+    {
+      "theorem_id": "success_boolean_to_observed",
+      "negative_vector_ids": [
+        "neg:nonimp:success_boolean_to_observed"
+      ]
+    },
+    {
+      "theorem_id": "superseded_not_to_current",
+      "negative_vector_ids": [
+        "neg:freshness:superseded->current"
+      ]
+    },
+    {
+      "theorem_id": "unchecked_hash_not_production",
+      "negative_vector_ids": [
+        "neg:predicate:production_supported:unchecked_integrity"
+      ]
+    },
+    {
+      "theorem_id": "withdrawn_not_to_current",
+      "negative_vector_ids": [
+        "neg:freshness:withdrawn->current"
+      ]
+    },
+    {
+      "theorem_id": "withdrawn_not_to_stale",
+      "negative_vector_ids": [
+        "neg:freshness:withdrawn->stale"
+      ]
+    }
+  ],
+  "positive_vectors": [
+    {
+      "id": "pos:envelope:weakest",
+      "kind": "envelope",
+      "fixture": "weakest"
+    },
+    {
+      "id": "pos:envelope:strong_product",
+      "kind": "envelope",
+      "fixture": "strong_product"
+    },
+    {
+      "id": "pos:transition:origin:absent->declared",
+      "kind": "transition",
+      "dimension": "origin",
+      "from": "absent",
+      "to": "declared",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:origin:absent->fixture",
+      "kind": "transition",
+      "dimension": "origin",
+      "from": "absent",
+      "to": "fixture",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:origin:absent->simulated",
+      "kind": "transition",
+      "dimension": "origin",
+      "from": "absent",
+      "to": "simulated",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:origin:absent->hermetic_observed",
+      "kind": "transition",
+      "dimension": "origin",
+      "from": "absent",
+      "to": "hermetic_observed",
+      "evidence": [
+        "independent_effect_observation"
+      ]
+    },
+    {
+      "id": "pos:transition:origin:absent->live_observed",
+      "kind": "transition",
+      "dimension": "origin",
+      "from": "absent",
+      "to": "live_observed",
+      "evidence": [
+        "live_qualification_receipt"
+      ]
+    },
+    {
+      "id": "pos:transition:origin:declared->hermetic_observed",
+      "kind": "transition",
+      "dimension": "origin",
+      "from": "declared",
+      "to": "hermetic_observed",
+      "evidence": [
+        "independent_effect_observation"
+      ]
+    },
+    {
+      "id": "pos:transition:origin:declared->live_observed",
+      "kind": "transition",
+      "dimension": "origin",
+      "from": "declared",
+      "to": "live_observed",
+      "evidence": [
+        "live_qualification_receipt",
+        "independent_effect_observation"
+      ]
+    },
+    {
+      "id": "pos:transition:origin:hermetic_observed->live_observed",
+      "kind": "transition",
+      "dimension": "origin",
+      "from": "hermetic_observed",
+      "to": "live_observed",
+      "evidence": [
+        "live_qualification_receipt"
+      ]
+    },
+    {
+      "id": "pos:transition:integrity:unchecked->structurally_valid",
+      "kind": "transition",
+      "dimension": "integrity",
+      "from": "unchecked",
+      "to": "structurally_valid",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:integrity:unchecked->digest_valid",
+      "kind": "transition",
+      "dimension": "integrity",
+      "from": "unchecked",
+      "to": "digest_valid",
+      "evidence": [
+        "canonical_digest_match"
+      ]
+    },
+    {
+      "id": "pos:transition:integrity:unchecked->signature_valid",
+      "kind": "transition",
+      "dimension": "integrity",
+      "from": "unchecked",
+      "to": "signature_valid",
+      "evidence": [
+        "canonical_digest_match",
+        "authentic_signature"
+      ]
+    },
+    {
+      "id": "pos:transition:integrity:structurally_valid->digest_valid",
+      "kind": "transition",
+      "dimension": "integrity",
+      "from": "structurally_valid",
+      "to": "digest_valid",
+      "evidence": [
+        "canonical_digest_match"
+      ]
+    },
+    {
+      "id": "pos:transition:integrity:structurally_valid->signature_valid",
+      "kind": "transition",
+      "dimension": "integrity",
+      "from": "structurally_valid",
+      "to": "signature_valid",
+      "evidence": [
+        "canonical_digest_match",
+        "authentic_signature"
+      ]
+    },
+    {
+      "id": "pos:transition:integrity:digest_valid->signature_valid",
+      "kind": "transition",
+      "dimension": "integrity",
+      "from": "digest_valid",
+      "to": "signature_valid",
+      "evidence": [
+        "authentic_signature"
+      ]
+    },
+    {
+      "id": "pos:transition:authority:unchecked->absent",
+      "kind": "transition",
+      "dimension": "authority",
+      "from": "unchecked",
+      "to": "absent",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:authority:unchecked->valid",
+      "kind": "transition",
+      "dimension": "authority",
+      "from": "unchecked",
+      "to": "valid",
+      "evidence": [
+        "argument_bound_delegation",
+        "non_revoked_ucan"
+      ]
+    },
+    {
+      "id": "pos:transition:authority:unchecked->expired",
+      "kind": "transition",
+      "dimension": "authority",
+      "from": "unchecked",
+      "to": "expired",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:authority:unchecked->revoked",
+      "kind": "transition",
+      "dimension": "authority",
+      "from": "unchecked",
+      "to": "revoked",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:authority:unchecked->denied",
+      "kind": "transition",
+      "dimension": "authority",
+      "from": "unchecked",
+      "to": "denied",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:authority:absent->valid",
+      "kind": "transition",
+      "dimension": "authority",
+      "from": "absent",
+      "to": "valid",
+      "evidence": [
+        "argument_bound_delegation",
+        "non_revoked_ucan"
+      ]
+    },
+    {
+      "id": "pos:transition:authority:valid->expired",
+      "kind": "transition",
+      "dimension": "authority",
+      "from": "valid",
+      "to": "expired",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:authority:valid->revoked",
+      "kind": "transition",
+      "dimension": "authority",
+      "from": "valid",
+      "to": "revoked",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:authority:valid->denied",
+      "kind": "transition",
+      "dimension": "authority",
+      "from": "valid",
+      "to": "denied",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:policy:unchecked->allowed",
+      "kind": "transition",
+      "dimension": "policy",
+      "from": "unchecked",
+      "to": "allowed",
+      "evidence": [
+        "authenticated_host_policy_decision"
+      ]
+    },
+    {
+      "id": "pos:transition:policy:unchecked->denied",
+      "kind": "transition",
+      "dimension": "policy",
+      "from": "unchecked",
+      "to": "denied",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:policy:unchecked->allowed_with_obligations",
+      "kind": "transition",
+      "dimension": "policy",
+      "from": "unchecked",
+      "to": "allowed_with_obligations",
+      "evidence": [
+        "authenticated_host_policy_decision"
+      ]
+    },
+    {
+      "id": "pos:transition:policy:unchecked->indeterminate",
+      "kind": "transition",
+      "dimension": "policy",
+      "from": "unchecked",
+      "to": "indeterminate",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:policy:indeterminate->allowed",
+      "kind": "transition",
+      "dimension": "policy",
+      "from": "indeterminate",
+      "to": "allowed",
+      "evidence": [
+        "authenticated_host_policy_decision"
+      ]
+    },
+    {
+      "id": "pos:transition:policy:indeterminate->denied",
+      "kind": "transition",
+      "dimension": "policy",
+      "from": "indeterminate",
+      "to": "denied",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:policy:allowed_with_obligations->allowed",
+      "kind": "transition",
+      "dimension": "policy",
+      "from": "allowed_with_obligations",
+      "to": "allowed",
+      "evidence": [
+        "obligations_discharged"
+      ]
+    },
+    {
+      "id": "pos:transition:policy:allowed_with_obligations->denied",
+      "kind": "transition",
+      "dimension": "policy",
+      "from": "allowed_with_obligations",
+      "to": "denied",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:proof:none->candidate",
+      "kind": "transition",
+      "dimension": "proof",
+      "from": "none",
+      "to": "candidate",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:proof:none->unknown",
+      "kind": "transition",
+      "dimension": "proof",
+      "from": "none",
+      "to": "unknown",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:proof:none->verifier_unavailable",
+      "kind": "transition",
+      "dimension": "proof",
+      "from": "none",
+      "to": "verifier_unavailable",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:proof:candidate->verified",
+      "kind": "transition",
+      "dimension": "proof",
+      "from": "candidate",
+      "to": "verified",
+      "evidence": [
+        "named_current_verifier",
+        "verifier_admission_closure"
+      ]
+    },
+    {
+      "id": "pos:transition:proof:candidate->refuted",
+      "kind": "transition",
+      "dimension": "proof",
+      "from": "candidate",
+      "to": "refuted",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:proof:candidate->unknown",
+      "kind": "transition",
+      "dimension": "proof",
+      "from": "candidate",
+      "to": "unknown",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:proof:candidate->verifier_unavailable",
+      "kind": "transition",
+      "dimension": "proof",
+      "from": "candidate",
+      "to": "verifier_unavailable",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:proof:unknown->verified",
+      "kind": "transition",
+      "dimension": "proof",
+      "from": "unknown",
+      "to": "verified",
+      "evidence": [
+        "named_current_verifier",
+        "verifier_admission_closure"
+      ]
+    },
+    {
+      "id": "pos:transition:proof:unknown->refuted",
+      "kind": "transition",
+      "dimension": "proof",
+      "from": "unknown",
+      "to": "refuted",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:proof:verifier_unavailable->verified",
+      "kind": "transition",
+      "dimension": "proof",
+      "from": "verifier_unavailable",
+      "to": "verified",
+      "evidence": [
+        "named_current_verifier",
+        "verifier_admission_closure"
+      ]
+    },
+    {
+      "id": "pos:transition:proof:verified->refuted",
+      "kind": "transition",
+      "dimension": "proof",
+      "from": "verified",
+      "to": "refuted",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:proof:verified->unknown",
+      "kind": "transition",
+      "dimension": "proof",
+      "from": "verified",
+      "to": "unknown",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:freshness:current->stale",
+      "kind": "transition",
+      "dimension": "freshness",
+      "from": "current",
+      "to": "stale",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:freshness:current->superseded",
+      "kind": "transition",
+      "dimension": "freshness",
+      "from": "current",
+      "to": "superseded",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:freshness:current->withdrawn",
+      "kind": "transition",
+      "dimension": "freshness",
+      "from": "current",
+      "to": "withdrawn",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:freshness:stale->superseded",
+      "kind": "transition",
+      "dimension": "freshness",
+      "from": "stale",
+      "to": "superseded",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:freshness:stale->withdrawn",
+      "kind": "transition",
+      "dimension": "freshness",
+      "from": "stale",
+      "to": "withdrawn",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:freshness:superseded->withdrawn",
+      "kind": "transition",
+      "dimension": "freshness",
+      "from": "superseded",
+      "to": "withdrawn",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:effect:not_started->reserved",
+      "kind": "transition",
+      "dimension": "effect",
+      "from": "not_started",
+      "to": "reserved",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:effect:not_started->started",
+      "kind": "transition",
+      "dimension": "effect",
+      "from": "not_started",
+      "to": "started",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:effect:reserved->started",
+      "kind": "transition",
+      "dimension": "effect",
+      "from": "reserved",
+      "to": "started",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:effect:started->externally_unknown",
+      "kind": "transition",
+      "dimension": "effect",
+      "from": "started",
+      "to": "externally_unknown",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:effect:started->observed",
+      "kind": "transition",
+      "dimension": "effect",
+      "from": "started",
+      "to": "observed",
+      "evidence": [
+        "independent_effect_observation"
+      ]
+    },
+    {
+      "id": "pos:transition:effect:started->failed",
+      "kind": "transition",
+      "dimension": "effect",
+      "from": "started",
+      "to": "failed",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:effect:externally_unknown->observed",
+      "kind": "transition",
+      "dimension": "effect",
+      "from": "externally_unknown",
+      "to": "observed",
+      "evidence": [
+        "independent_effect_observation"
+      ]
+    },
+    {
+      "id": "pos:transition:effect:externally_unknown->failed",
+      "kind": "transition",
+      "dimension": "effect",
+      "from": "externally_unknown",
+      "to": "failed",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:effect:externally_unknown->compensated",
+      "kind": "transition",
+      "dimension": "effect",
+      "from": "externally_unknown",
+      "to": "compensated",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:effect:observed->compensated",
+      "kind": "transition",
+      "dimension": "effect",
+      "from": "observed",
+      "to": "compensated",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:effect:failed->compensated",
+      "kind": "transition",
+      "dimension": "effect",
+      "from": "failed",
+      "to": "compensated",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:environment:hermetic->conditional",
+      "kind": "transition",
+      "dimension": "environment",
+      "from": "hermetic",
+      "to": "conditional",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:environment:conditional->live",
+      "kind": "transition",
+      "dimension": "environment",
+      "from": "conditional",
+      "to": "live",
+      "evidence": [
+        "live_qualification_receipt",
+        "current_capability_admission"
+      ]
+    },
+    {
+      "id": "pos:transition:review:unreviewed->machine_reviewed",
+      "kind": "transition",
+      "dimension": "review",
+      "from": "unreviewed",
+      "to": "machine_reviewed",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:review:unreviewed->human_reviewed",
+      "kind": "transition",
+      "dimension": "review",
+      "from": "unreviewed",
+      "to": "human_reviewed",
+      "evidence": []
+    },
+    {
+      "id": "pos:transition:review:machine_reviewed->human_reviewed",
+      "kind": "transition",
+      "dimension": "review",
+      "from": "machine_reviewed",
+      "to": "human_reviewed",
+      "evidence": []
+    },
+    {
+      "id": "pos:predicate:production_supported",
+      "kind": "predicate",
+      "predicate": "production_supported",
+      "fixture": "strong_product",
+      "evidence": "all_normative"
+    },
+    {
+      "id": "pos:predicate:effect_successful",
+      "kind": "predicate",
+      "predicate": "effect_successful",
+      "fixture": "strong_product",
+      "evidence": "all_normative"
+    },
+    {
+      "id": "pos:predicate:proof_reusable",
+      "kind": "predicate",
+      "predicate": "proof_reusable",
+      "fixture": "strong_product",
+      "evidence": "all_normative"
+    },
+    {
+      "id": "pos:predicate:receipt_authoritative",
+      "kind": "predicate",
+      "predicate": "receipt_authoritative",
+      "fixture": "strong_product",
+      "evidence": "all_normative"
+    },
+    {
+      "id": "pos:predicate:release_admissible",
+      "kind": "predicate",
+      "predicate": "release_admissible",
+      "fixture": "strong_product",
+      "evidence": "all_normative"
+    }
+  ],
+  "negative_vectors": [
+    {
+      "id": "neg:origin:fixture->live_observed",
+      "kind": "transition",
+      "dimension": "origin",
+      "from": "fixture",
+      "to": "live_observed",
+      "evidence": [
+        "live_qualification_receipt"
+      ],
+      "error_code": "NONIMP_FIXTURE_TO_OBSERVED",
+      "theorem_ids": [
+        "fixture_not_to_live_observed",
+        "origin_forbidden_implies_not_allowed"
+      ]
+    },
+    {
+      "id": "neg:origin:fixture->hermetic_observed",
+      "kind": "transition",
+      "dimension": "origin",
+      "from": "fixture",
+      "to": "hermetic_observed",
+      "evidence": [
+        "independent_effect_observation"
+      ],
+      "error_code": "NONIMP_FIXTURE_TO_OBSERVED",
+      "theorem_ids": [
+        "fixture_not_to_hermetic_observed",
+        "origin_forbidden_implies_not_allowed"
+      ]
+    },
+    {
+      "id": "neg:origin:simulated->live_observed",
+      "kind": "transition",
+      "dimension": "origin",
+      "from": "simulated",
+      "to": "live_observed",
+      "evidence": [
+        "live_qualification_receipt"
+      ],
+      "error_code": "NONIMP_SIMULATED_TO_LIVE",
+      "theorem_ids": [
+        "simulated_not_to_live_observed",
+        "origin_forbidden_implies_not_allowed"
+      ]
+    },
+    {
+      "id": "neg:origin:simulated->hermetic_observed",
+      "kind": "transition",
+      "dimension": "origin",
+      "from": "simulated",
+      "to": "hermetic_observed",
+      "evidence": [
+        "independent_effect_observation"
+      ],
+      "error_code": "NONIMP_SIMULATED_TO_LIVE",
+      "theorem_ids": [
+        "simulated_not_to_hermetic_observed",
+        "origin_forbidden_implies_not_allowed"
+      ]
+    },
+    {
+      "id": "neg:authority:expired->valid",
+      "kind": "transition",
+      "dimension": "authority",
+      "from": "expired",
+      "to": "valid",
+      "evidence": [
+        "argument_bound_delegation",
+        "non_revoked_ucan"
+      ],
+      "error_code": "FORBIDDEN_RELABEL:authority:expired->valid",
+      "theorem_ids": [
+        "expired_not_to_valid",
+        "authority_forbidden_implies_not_allowed"
+      ]
+    },
+    {
+      "id": "neg:authority:revoked->valid",
+      "kind": "transition",
+      "dimension": "authority",
+      "from": "revoked",
+      "to": "valid",
+      "evidence": [
+        "argument_bound_delegation",
+        "non_revoked_ucan"
+      ],
+      "error_code": "FORBIDDEN_RELABEL:authority:revoked->valid",
+      "theorem_ids": [
+        "revoked_not_to_valid",
+        "authority_forbidden_implies_not_allowed"
+      ]
+    },
+    {
+      "id": "neg:authority:denied->valid",
+      "kind": "transition",
+      "dimension": "authority",
+      "from": "denied",
+      "to": "valid",
+      "evidence": [
+        "argument_bound_delegation",
+        "non_revoked_ucan"
+      ],
+      "error_code": "FORBIDDEN_RELABEL:authority:denied->valid",
+      "theorem_ids": [
+        "denied_not_to_valid",
+        "authority_forbidden_implies_not_allowed"
+      ]
+    },
+    {
+      "id": "neg:policy:denied->allowed",
+      "kind": "transition",
+      "dimension": "policy",
+      "from": "denied",
+      "to": "allowed",
+      "evidence": [
+        "authenticated_host_policy_decision"
+      ],
+      "error_code": "FORBIDDEN_RELABEL:policy:denied->allowed",
+      "theorem_ids": [
+        "policy_denied_not_to_allowed",
+        "policy_forbidden_implies_not_allowed"
+      ]
+    },
+    {
+      "id": "neg:proof:candidate->verified:missing_evidence",
+      "kind": "transition",
+      "dimension": "proof",
+      "from": "candidate",
+      "to": "verified",
+      "evidence": [],
+      "error_code": "NONIMP_CANDIDATE_TO_VERIFIED",
+      "theorem_ids": [
+        "candidate_forbidden_without_verifier",
+        "candidate_to_verified"
+      ]
+    },
+    {
+      "id": "neg:freshness:stale->current",
+      "kind": "transition",
+      "dimension": "freshness",
+      "from": "stale",
+      "to": "current",
+      "evidence": [],
+      "error_code": "NONIMP_STALE_TO_CURRENT",
+      "theorem_ids": [
+        "stale_not_to_current",
+        "freshness_forbidden_implies_not_allowed"
+      ]
+    },
+    {
+      "id": "neg:freshness:superseded->current",
+      "kind": "transition",
+      "dimension": "freshness",
+      "from": "superseded",
+      "to": "current",
+      "evidence": [],
+      "error_code": "NONIMP_STALE_TO_CURRENT",
+      "theorem_ids": [
+        "superseded_not_to_current",
+        "freshness_forbidden_implies_not_allowed"
+      ]
+    },
+    {
+      "id": "neg:freshness:withdrawn->current",
+      "kind": "transition",
+      "dimension": "freshness",
+      "from": "withdrawn",
+      "to": "current",
+      "evidence": [],
+      "error_code": "NONIMP_STALE_TO_CURRENT",
+      "theorem_ids": [
+        "withdrawn_not_to_current",
+        "freshness_forbidden_implies_not_allowed"
+      ]
+    },
+    {
+      "id": "neg:freshness:withdrawn->stale",
+      "kind": "transition",
+      "dimension": "freshness",
+      "from": "withdrawn",
+      "to": "stale",
+      "evidence": [],
+      "error_code": "NONIMP_STALE_TO_CURRENT",
+      "theorem_ids": [
+        "withdrawn_not_to_stale",
+        "freshness_forbidden_implies_not_allowed"
+      ]
+    },
+    {
+      "id": "neg:effect:not_started->observed",
+      "kind": "transition",
+      "dimension": "effect",
+      "from": "not_started",
+      "to": "observed",
+      "evidence": [
+        "independent_effect_observation"
+      ],
+      "error_code": "NONIMP_DECLARED_TO_OBSERVED",
+      "theorem_ids": [
+        "not_started_not_to_observed",
+        "absolute_effect_forbidden_implies_not_allowed",
+        "declared_to_observed"
+      ]
+    },
+    {
+      "id": "neg:effect:externally_unknown->observed:missing_evidence",
+      "kind": "transition",
+      "dimension": "effect",
+      "from": "externally_unknown",
+      "to": "observed",
+      "evidence": [],
+      "error_code": "NONIMP_UNKNOWN_TO_OBSERVED",
+      "theorem_ids": [
+        "externally_unknown_forbidden_without_observation",
+        "externally_unknown_to_observed",
+        "absolute_effect_forbidden_implies_not_allowed"
+      ]
+    },
+    {
+      "id": "neg:environment:hermetic->live",
+      "kind": "transition",
+      "dimension": "environment",
+      "from": "hermetic",
+      "to": "live",
+      "evidence": [
+        "live_qualification_receipt",
+        "current_capability_admission"
+      ],
+      "error_code": "NONIMP_HERMETIC_TO_LIVE",
+      "theorem_ids": [
+        "hermetic_not_to_live"
+      ]
+    },
+    {
+      "id": "neg:environment:conditional->live:missing_evidence",
+      "kind": "transition",
+      "dimension": "environment",
+      "from": "conditional",
+      "to": "live",
+      "evidence": [],
+      "error_code": "NONIMP_INVENTORY_TO_LIVE",
+      "theorem_ids": [
+        "conditional_live_forbidden_without_qualification",
+        "inventory_to_live_qualification"
+      ]
+    },
+    {
+      "id": "neg:nonimp:digest_to_truth",
+      "kind": "non_implication",
+      "negative_rule": "digest-to-truth",
+      "envelope": {
+        "integrity": "digest_valid",
+        "proof": "verified"
+      },
+      "evidence": [],
+      "claim_tokens": [],
+      "error_code": "NONIMP_DIGEST_TO_TRUTH",
+      "theorem_ids": [
+        "digest_to_truth"
+      ]
+    },
+    {
+      "id": "neg:nonimp:signature_to_authority",
+      "kind": "non_implication",
+      "negative_rule": "signature-to-authority",
+      "envelope": {
+        "integrity": "signature_valid",
+        "authority": "valid"
+      },
+      "evidence": [],
+      "claim_tokens": [],
+      "error_code": "NONIMP_SIGNATURE_TO_AUTHORITY",
+      "theorem_ids": [
+        "signature_to_authority"
+      ]
+    },
+    {
+      "id": "neg:nonimp:payment_to_authority",
+      "kind": "non_implication",
+      "negative_rule": "payment-to-authority",
+      "envelope": {
+        "authority": "valid"
+      },
+      "evidence": [],
+      "claim_tokens": [
+        "payment_or_confirmation"
+      ],
+      "error_code": "NONIMP_PAYMENT_TO_AUTHORITY",
+      "theorem_ids": [
+        "payment_to_authority"
+      ]
+    },
+    {
+      "id": "neg:nonimp:browser_policy_to_host_policy",
+      "kind": "non_implication",
+      "negative_rule": "browser-policy-to-host-policy",
+      "envelope": {
+        "policy": "allowed"
+      },
+      "evidence": [],
+      "claim_tokens": [
+        "browser_policy"
+      ],
+      "error_code": "NONIMP_BROWSER_TO_HOST_POLICY",
+      "theorem_ids": [
+        "browser_policy_to_host_policy"
+      ]
+    },
+    {
+      "id": "neg:nonimp:discovery_to_completion",
+      "kind": "non_implication",
+      "negative_rule": "discovery-to-completion",
+      "envelope": {
+        "proof": "verified",
+        "effect": "observed",
+        "origin": "live_observed",
+        "environment": "live"
+      },
+      "evidence": [],
+      "claim_tokens": [
+        "discovery"
+      ],
+      "error_code": "NONIMP_DISCOVERY_TO_COMPLETION",
+      "theorem_ids": [
+        "discovery_to_completion"
+      ]
+    },
+    {
+      "id": "neg:nonimp:review_fills_missing_evidence",
+      "kind": "non_implication",
+      "negative_rule": "review-fills-missing-evidence",
+      "envelope": {
+        "review": "human_reviewed",
+        "origin": "live_observed",
+        "effect": "observed",
+        "authority": "valid"
+      },
+      "evidence": [],
+      "claim_tokens": [],
+      "error_code": "NONIMP_REVIEW_FILLS_EVIDENCE",
+      "theorem_ids": [
+        "review_fills_missing_evidence"
+      ]
+    },
+    {
+      "id": "neg:nonimp:single_dimension_to_product",
+      "kind": "non_implication",
+      "negative_rule": "single-dimension-to-production-success",
+      "envelope": {
+        "origin": "live_observed"
+      },
+      "claimed_predicate": "production_supported",
+      "evidence": [],
+      "claim_tokens": [
+        "single_dimension_value"
+      ],
+      "error_code": "NONIMP_SINGLE_DIMENSION_TO_PRODUCT",
+      "theorem_ids": [
+        "single_dimension_to_production_success"
+      ]
+    },
+    {
+      "id": "neg:nonimp:success_boolean_to_observed",
+      "kind": "non_implication",
+      "negative_rule": "success-boolean-to-observed",
+      "envelope": {
+        "effect": "observed"
+      },
+      "evidence": [],
+      "claim_tokens": [
+        "success_true"
+      ],
+      "error_code": "NONIMP_SUCCESS_BOOLEAN_TO_OBSERVED",
+      "theorem_ids": [
+        "success_boolean_to_observed"
+      ]
+    },
+    {
+      "id": "neg:nonimp:mutable_dependency_to_release",
+      "kind": "non_implication",
+      "negative_rule": "mutable-dependency-to-release",
+      "envelope": {},
+      "claimed_predicate": "release_admissible",
+      "evidence": [],
+      "claim_tokens": [
+        "mutable_vcs_dependency"
+      ],
+      "error_code": "NONIMP_MUTABLE_DEP_TO_RELEASE",
+      "theorem_ids": [
+        "mutable_dependency_to_release"
+      ]
+    },
+    {
+      "id": "neg:nonimp:license_conflict_to_release",
+      "kind": "non_implication",
+      "negative_rule": "license-conflict-to-release",
+      "envelope": {},
+      "claimed_predicate": "release_admissible",
+      "evidence": [],
+      "claim_tokens": [
+        "license_conflict"
+      ],
+      "error_code": "NONIMP_LICENSE_TO_RELEASE",
+      "theorem_ids": [
+        "license_conflict_to_release"
+      ]
+    },
+    {
+      "id": "neg:nonimp:declared_to_observed",
+      "kind": "non_implication",
+      "negative_rule": "declared-to-observed",
+      "envelope": {
+        "origin": "declared",
+        "effect": "observed"
+      },
+      "evidence": [],
+      "claim_tokens": [],
+      "error_code": "NONIMP_DECLARED_TO_OBSERVED",
+      "theorem_ids": [
+        "declared_to_observed"
+      ]
+    },
+    {
+      "id": "neg:predicate:production_supported:fixture",
+      "kind": "predicate",
+      "predicate": "production_supported",
+      "envelope": {
+        "origin": "fixture",
+        "integrity": "signature_valid",
+        "authority": "valid",
+        "policy": "allowed",
+        "proof": "verified",
+        "freshness": "current",
+        "effect": "observed",
+        "environment": "live",
+        "review": "human_reviewed"
+      },
+      "evidence": "production_supported",
+      "error_code": "MISSING_DIMENSIONS:production_supported",
+      "theorem_ids": [
+        "fixture_not_production_supported",
+        "production_supported_requires_live_origin"
+      ]
+    },
+    {
+      "id": "neg:predicate:production_supported:simulated",
+      "kind": "predicate",
+      "predicate": "production_supported",
+      "envelope": {
+        "origin": "simulated",
+        "integrity": "signature_valid",
+        "authority": "valid",
+        "policy": "allowed",
+        "proof": "verified",
+        "freshness": "current",
+        "effect": "observed",
+        "environment": "live",
+        "review": "human_reviewed"
+      },
+      "evidence": "production_supported",
+      "error_code": "MISSING_DIMENSIONS:production_supported",
+      "theorem_ids": [
+        "simulated_not_production_supported",
+        "production_supported_requires_live_origin"
+      ]
+    },
+    {
+      "id": "neg:predicate:production_supported:stale",
+      "kind": "predicate",
+      "predicate": "production_supported",
+      "envelope": {
+        "origin": "live_observed",
+        "integrity": "signature_valid",
+        "authority": "valid",
+        "policy": "allowed",
+        "proof": "verified",
+        "freshness": "stale",
+        "effect": "observed",
+        "environment": "live",
+        "review": "human_reviewed"
+      },
+      "evidence": "production_supported",
+      "error_code": "MISSING_DIMENSIONS:production_supported",
+      "theorem_ids": [
+        "stale_receipt_not_production_supported",
+        "production_supported_requires_current_freshness"
+      ]
+    },
+    {
+      "id": "neg:predicate:production_supported:expired",
+      "kind": "predicate",
+      "predicate": "production_supported",
+      "envelope": {
+        "origin": "live_observed",
+        "integrity": "signature_valid",
+        "authority": "expired",
+        "policy": "allowed",
+        "proof": "verified",
+        "freshness": "current",
+        "effect": "observed",
+        "environment": "live",
+        "review": "human_reviewed"
+      },
+      "evidence": "production_supported",
+      "error_code": "MISSING_DIMENSIONS:production_supported",
+      "theorem_ids": [
+        "expired_delegation_not_production_supported",
+        "production_supported_requires_valid_authority"
+      ]
+    },
+    {
+      "id": "neg:predicate:production_supported:revoked",
+      "kind": "predicate",
+      "predicate": "production_supported",
+      "envelope": {
+        "origin": "live_observed",
+        "integrity": "signature_valid",
+        "authority": "revoked",
+        "policy": "allowed",
+        "proof": "verified",
+        "freshness": "current",
+        "effect": "observed",
+        "environment": "live",
+        "review": "human_reviewed"
+      },
+      "evidence": "production_supported",
+      "error_code": "MISSING_DIMENSIONS:production_supported",
+      "theorem_ids": [
+        "revoked_delegation_not_production_supported",
+        "production_supported_requires_valid_authority"
+      ]
+    },
+    {
+      "id": "neg:predicate:production_supported:unchecked_integrity",
+      "kind": "predicate",
+      "predicate": "production_supported",
+      "envelope": {
+        "origin": "live_observed",
+        "integrity": "unchecked",
+        "authority": "valid",
+        "policy": "allowed",
+        "proof": "verified",
+        "freshness": "current",
+        "effect": "observed",
+        "environment": "live",
+        "review": "human_reviewed"
+      },
+      "evidence": "production_supported",
+      "error_code": "MISSING_DIMENSIONS:production_supported",
+      "theorem_ids": [
+        "unchecked_hash_not_production"
+      ]
+    },
+    {
+      "id": "neg:predicate:proof_reusable:candidate",
+      "kind": "predicate",
+      "predicate": "proof_reusable",
+      "envelope": {
+        "origin": "live_observed",
+        "integrity": "signature_valid",
+        "authority": "valid",
+        "policy": "allowed",
+        "proof": "candidate",
+        "freshness": "current",
+        "effect": "observed",
+        "environment": "live",
+        "review": "human_reviewed"
+      },
+      "evidence": "proof_reusable",
+      "error_code": "MISSING_DIMENSIONS:proof_reusable",
+      "theorem_ids": [
+        "proof_reusable_requires_verified"
+      ]
+    },
+    {
+      "id": "neg:predicate:release_admissible:proof_none",
+      "kind": "predicate",
+      "predicate": "release_admissible",
+      "envelope": {
+        "origin": "live_observed",
+        "integrity": "signature_valid",
+        "authority": "valid",
+        "policy": "allowed",
+        "proof": "none",
+        "freshness": "current",
+        "effect": "observed",
+        "environment": "live",
+        "review": "human_reviewed"
+      },
+      "evidence": "release_admissible",
+      "error_code": "MISSING_DIMENSIONS:release_admissible",
+      "theorem_ids": [
+        "release_admissible_requires_verified_proof"
+      ]
+    }
+  ],
+  "mutation_vectors": [
+    {
+      "id": "mut:schema:unknown-field",
+      "kind": "schema",
+      "base": "strong_product",
+      "mutation": {
+        "op": "set",
+        "path": "extra",
+        "value": true
+      },
+      "error_code": "UNKNOWN_FIELD",
+      "reason": "unknown normative field rejected"
+    },
+    {
+      "id": "mut:schema:unknown-enum-origin",
+      "kind": "schema",
+      "base": "strong_product",
+      "mutation": {
+        "op": "set",
+        "path": "origin",
+        "value": "production"
+      },
+      "error_code": "UNKNOWN_ENUM",
+      "reason": "unknown origin spelling rejected"
+    },
+    {
+      "id": "mut:schema:missing-field-origin",
+      "kind": "schema",
+      "base": "strong_product",
+      "mutation": {
+        "op": "delete",
+        "path": "origin"
+      },
+      "error_code": "MISSING_FIELD",
+      "reason": "missing required dimension rejected"
+    },
+    {
+      "id": "mut:schema:float-forbidden",
+      "kind": "schema",
+      "base": "strong_product",
+      "mutation": {
+        "op": "set",
+        "path": "review",
+        "value": 1.0
+      },
+      "error_code": "FORBIDDEN_FLOAT",
+      "reason": "float dimension value rejected"
+    },
+    {
+      "id": "mut:schema:invalid-type-array",
+      "kind": "schema",
+      "base": "strong_product",
+      "mutation": {
+        "op": "set",
+        "path": "policy",
+        "value": [
+          "allowed"
+        ]
+      },
+      "error_code": "INVALID_TYPE",
+      "reason": "non-string dimension value rejected"
+    },
+    {
+      "id": "mut:schema:unbounded-string-rejected-as-enum",
+      "kind": "schema",
+      "base": "weakest",
+      "mutation": {
+        "op": "set",
+        "path": "effect",
+        "value": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      },
+      "error_code": "UNKNOWN_ENUM",
+      "reason": "non-enum / overlong dimension spelling rejected"
+    },
+    {
+      "id": "mut:field:origin->fixture",
+      "kind": "semantic",
+      "base": "strong_product",
+      "mutation": {
+        "op": "set",
+        "path": "origin",
+        "value": "fixture"
+      },
+      "error_code": "NONIMP_FIXTURE_TO_OBSERVED",
+      "reason": "fixture origin cannot remain production-supported",
+      "check": "production_supported"
+    },
+    {
+      "id": "mut:field:origin->simulated",
+      "kind": "semantic",
+      "base": "strong_product",
+      "mutation": {
+        "op": "set",
+        "path": "origin",
+        "value": "simulated"
+      },
+      "error_code": "NONIMP_SIMULATED_TO_LIVE",
+      "reason": "simulated origin cannot remain production-supported",
+      "check": "production_supported"
+    },
+    {
+      "id": "mut:field:authority->expired",
+      "kind": "semantic",
+      "base": "strong_product",
+      "mutation": {
+        "op": "set",
+        "path": "authority",
+        "value": "expired"
+      },
+      "error_code": "MISSING_DIMENSIONS:production_supported",
+      "reason": "expired authority fails production_supported",
+      "check": "production_supported"
+    },
+    {
+      "id": "mut:field:authority->revoked",
+      "kind": "semantic",
+      "base": "strong_product",
+      "mutation": {
+        "op": "set",
+        "path": "authority",
+        "value": "revoked"
+      },
+      "error_code": "MISSING_DIMENSIONS:production_supported",
+      "reason": "revoked authority fails production_supported",
+      "check": "production_supported"
+    },
+    {
+      "id": "mut:field:freshness->stale",
+      "kind": "semantic",
+      "base": "strong_product",
+      "mutation": {
+        "op": "set",
+        "path": "freshness",
+        "value": "stale"
+      },
+      "error_code": "NONIMP_STALE_TO_CURRENT",
+      "reason": "stale freshness fails production_supported",
+      "check": "production_supported"
+    },
+    {
+      "id": "mut:field:freshness->withdrawn",
+      "kind": "semantic",
+      "base": "strong_product",
+      "mutation": {
+        "op": "set",
+        "path": "freshness",
+        "value": "withdrawn"
+      },
+      "error_code": "NONIMP_STALE_TO_CURRENT",
+      "reason": "withdrawn freshness fails production_supported",
+      "check": "production_supported"
+    },
+    {
+      "id": "mut:field:proof->candidate",
+      "kind": "semantic",
+      "base": "strong_product",
+      "mutation": {
+        "op": "set",
+        "path": "proof",
+        "value": "candidate"
+      },
+      "error_code": "MISSING_DIMENSIONS:proof_reusable",
+      "reason": "candidate proof fails proof_reusable",
+      "check": "proof_reusable"
+    },
+    {
+      "id": "mut:field:proof->none",
+      "kind": "semantic",
+      "base": "strong_product",
+      "mutation": {
+        "op": "set",
+        "path": "proof",
+        "value": "none"
+      },
+      "error_code": "MISSING_DIMENSIONS:release_admissible",
+      "reason": "missing verified proof fails release_admissible",
+      "check": "release_admissible"
+    },
+    {
+      "id": "mut:field:effect->externally_unknown",
+      "kind": "semantic",
+      "base": "strong_product",
+      "mutation": {
+        "op": "set",
+        "path": "effect",
+        "value": "externally_unknown"
+      },
+      "error_code": "NONIMP_UNKNOWN_TO_OBSERVED",
+      "reason": "unknown effect fails effect_successful",
+      "check": "effect_successful"
+    },
+    {
+      "id": "mut:field:effect->not_started",
+      "kind": "semantic",
+      "base": "strong_product",
+      "mutation": {
+        "op": "set",
+        "path": "effect",
+        "value": "not_started"
+      },
+      "error_code": "MISSING_DIMENSIONS:effect_successful",
+      "reason": "not_started effect fails effect_successful",
+      "check": "effect_successful"
+    },
+    {
+      "id": "mut:field:environment->hermetic",
+      "kind": "semantic",
+      "base": "strong_product",
+      "mutation": {
+        "op": "set",
+        "path": "environment",
+        "value": "hermetic"
+      },
+      "error_code": "NONIMP_HERMETIC_TO_LIVE",
+      "reason": "hermetic environment fails production_supported",
+      "check": "production_supported"
+    },
+    {
+      "id": "mut:field:integrity->unchecked",
+      "kind": "semantic",
+      "base": "strong_product",
+      "mutation": {
+        "op": "set",
+        "path": "integrity",
+        "value": "unchecked"
+      },
+      "error_code": "MISSING_DIMENSIONS:production_supported",
+      "reason": "unchecked integrity fails production_supported",
+      "check": "production_supported"
+    },
+    {
+      "id": "mut:field:policy->denied",
+      "kind": "semantic",
+      "base": "strong_product",
+      "mutation": {
+        "op": "set",
+        "path": "policy",
+        "value": "denied"
+      },
+      "error_code": "MISSING_DIMENSIONS:production_supported",
+      "reason": "denied policy fails production_supported",
+      "check": "production_supported"
+    }
+  ]
+}
