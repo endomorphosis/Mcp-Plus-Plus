@@ -1,0 +1,399 @@
+{
+  "schema": "facp/assurance-canonical-encoding-vectors@1",
+  "schema_version": 1,
+  "task_id": "FACP-033",
+  "goal_id": "FACP-G310",
+  "bundle": "facp/contracts/encoding",
+  "profile": "facp/dag-cbor-profile@1",
+  "fail_closed": true,
+  "spec_path": "Mcp-Plus-Plus/docs/spec/assurance-canonical-encoding.md",
+  "cid_families": {
+    "assurance_signed_dag_cbor": {
+      "cid_version": 1,
+      "multicodec": "dag-cbor",
+      "multicodec_code": 113,
+      "multihash": "sha2-256",
+      "multihash_code": 18,
+      "digest_length": 32,
+      "multibase": "base32",
+      "multibase_prefix": "b",
+      "binary_prefix_hex": "01711220",
+      "example_prefix": "bafyrei",
+      "used_by": [
+        "facp/evidence-envelope@1",
+        "facp/operation-spec@1",
+        "facp/admission-token@1",
+        "facp/effect-receipt@1"
+      ]
+    },
+    "assurance_opaque_raw": {
+      "cid_version": 1,
+      "multicodec": "raw",
+      "multicodec_code": 85,
+      "multihash": "sha2-256",
+      "multihash_code": 18,
+      "digest_length": 32,
+      "multibase": "base32",
+      "multibase_prefix": "b",
+      "binary_prefix_hex": "01551220",
+      "example_prefix": "bafkrei",
+      "used_by": [
+        "opaque-byte-blobs",
+        "ed25519-pub-multicodec-material"
+      ]
+    }
+  },
+  "artifact_families": [
+    {
+      "schema": "facp/evidence-envelope@1",
+      "cid_family": "assurance_signed_dag_cbor"
+    },
+    {
+      "schema": "facp/operation-spec@1",
+      "cid_family": "assurance_signed_dag_cbor"
+    },
+    {
+      "schema": "facp/admission-token@1",
+      "cid_family": "assurance_signed_dag_cbor"
+    },
+    {
+      "schema": "facp/effect-receipt@1",
+      "cid_family": "assurance_signed_dag_cbor"
+    }
+  ],
+  "error_codes": [
+    "NON_DEFINITE_LENGTH",
+    "DUPLICATE_MAP_KEY",
+    "UNSORTED_MAP_KEYS",
+    "NON_MINIMAL_INTEGER",
+    "FORBIDDEN_FLOAT",
+    "FORBIDDEN_TAG",
+    "INVALID_CID_LINK",
+    "NON_STRING_MAP_KEY",
+    "MALLEABLE_ENCODING",
+    "WRONG_CID_FAMILY",
+    "NON_CANONICAL_CID_TEXT",
+    "PSEUDO_CID",
+    "UNKNOWN_FIELD",
+    "REGEX_ONLY_CID"
+  ],
+  "positive": [
+    {
+      "id": "empty_map",
+      "artifact_family": null,
+      "value": {},
+      "canonical_hex": "a0",
+      "cid": "bafyreigbtj4x7ip5legnfznufuopl4sg4knzc2cof6duas4b3q2fy6swua",
+      "cid_family": "assurance_signed_dag_cbor"
+    },
+    {
+      "id": "bools_null",
+      "value": {
+        "a": true,
+        "b": false,
+        "c": null
+      },
+      "canonical_hex": "a36161f56162f46163f6",
+      "cid": "bafyreidg4dawcsfsujszlv5xuhgiwrgcsat7wshdtuutcz3omxr7rdmr7q",
+      "cid_family": "assurance_signed_dag_cbor"
+    },
+    {
+      "id": "sorted_len_then_lex",
+      "description": "Keys sort by increasing length, then UTF-8 lexicographic order: a, b, aa",
+      "value": {
+        "aa": 1,
+        "b": 2,
+        "a": 3
+      },
+      "canonical_hex": "a361610361620262616101",
+      "cid": "bafyreidpxecqvzu63ziw5cy2jqkfmhegzfbj37hvqlbx3n22wrl2yznvvq",
+      "cid_family": "assurance_signed_dag_cbor"
+    },
+    {
+      "id": "int_boundaries",
+      "description": "Minimal integer widths for 0, 23, 24, 255, 256, -1",
+      "value": {
+        "n0": 0,
+        "n23": 23,
+        "n24": 24,
+        "n255": 255,
+        "n256": 256,
+        "neg1": -1
+      },
+      "canonical_hex": "a6626e3000636e323317636e32341818646e32353518ff646e323536190100646e65673120",
+      "cid": "bafyreib5dqorbgf7ws3v57vbvw4zkwpwwz4ecgairaozp4ql2zyhgdetjm",
+      "cid_family": "assurance_signed_dag_cbor"
+    },
+    {
+      "id": "bytes_value",
+      "value": {
+        "b": {
+          "$bytes": "0001"
+        }
+      },
+      "canonical_hex": "a16162420001",
+      "cid": "bafyreicmwp5wbjojdms4iqlqv4zzj6bg4yxswa37om3npu2xf6sbfk32su",
+      "cid_family": "assurance_signed_dag_cbor"
+    },
+    {
+      "id": "inner_link_target",
+      "value": {
+        "x": 1
+      },
+      "canonical_hex": "a1617801",
+      "cid": "bafyreibjk2zm52hfizr454i2vrctndr2q2oimlwxu36s3or2icabptr6by",
+      "cid_family": "assurance_signed_dag_cbor"
+    },
+    {
+      "id": "ipld_link_wrap",
+      "description": "Tag 42 link with identity multibase 0x00 prefix",
+      "value": {
+        "child": {
+          "$link": "bafyreibjk2zm52hfizr454i2vrctndr2q2oimlwxu36s3or2icabptr6by"
+        }
+      },
+      "canonical_hex": "a1656368696c64d82a582500017112202956b2cee8e54663cef11aac45368e3a869c862ed7a6fd2dba3a408017ce3e0e",
+      "cid": "bafyreiar7ey7pff4cuqr6uhh2muopjbvspgyqoqjprr3osg7dyujmg4tsa",
+      "cid_family": "assurance_signed_dag_cbor"
+    },
+    {
+      "id": "opspec_identity_core",
+      "artifact_family": "facp/operation-spec@1",
+      "value": {
+        "schema": "facp/operation-spec@1",
+        "schema_version": 1,
+        "operation_id": "datasets.get",
+        "namespace": "ipfs_datasets_py",
+        "name": "get",
+        "version": 1
+      },
+      "canonical_hex": "a6646e616d656367657466736368656d6175666163702f6f7065726174696f6e2d7370656340316776657273696f6e01696e616d65737061636570697066735f64617461736574735f70796c6f7065726174696f6e5f69646c64617461736574732e6765746e736368656d615f76657273696f6e01",
+      "cid": "bafyreidoekiti334iknk3kopzwgg6iknipag2seeqsregyofju5utzx7ye",
+      "cid_family": "assurance_signed_dag_cbor"
+    },
+    {
+      "id": "evidence_envelope_product",
+      "artifact_family": "facp/evidence-envelope@1",
+      "value": {
+        "schema": "facp/evidence-envelope@1",
+        "schema_version": 1,
+        "origin": "live_observed",
+        "integrity": "digest_valid",
+        "authority": "valid",
+        "policy": "allowed",
+        "proof": "verified",
+        "freshness": "current",
+        "effect": "observed",
+        "environment": "live",
+        "review": "unreviewed"
+      },
+      "canonical_hex": "ab6570726f6f6668766572696669656466656666656374686f62736572766564666f726967696e6d6c6976655f6f6273657276656466706f6c69637967616c6c6f776564667265766965776a756e726576696577656466736368656d617818666163702f65766964656e63652d656e76656c6f7065403169617574686f726974796576616c69646966726573686e6573736763757272656e7469696e746567726974796c6469676573745f76616c69646b656e7669726f6e6d656e74646c6976656e736368656d615f76657273696f6e01",
+      "cid": "bafyreiguuepnw7ifbeotkdjv7wzaikbi2ovj3jc6l6bd7wtwlzp7ivaqpa",
+      "cid_family": "assurance_signed_dag_cbor"
+    },
+    {
+      "id": "admission_token_links",
+      "artifact_family": "facp/admission-token@1",
+      "value": {
+        "schema": "facp/admission-token@1",
+        "schema_version": 1,
+        "operation_id": "datasets.get",
+        "actor_cid": {
+          "$link": "bafkreifojmzibzlof6xyh5auu3r5vpu5l67brf3fitaf73isdlglqw2t7q"
+        },
+        "argument_cid": {
+          "$link": "bafyreidoekiti334iknk3kopzwgg6iknipag2seeqsregyofju5utzx7ye"
+        },
+        "nonce": "01",
+        "not_after": 1783872000
+      },
+      "canonical_hex": "a7656e6f6e636562303166736368656d6176666163702f61646d697373696f6e2d746f6b656e4031696163746f725f636964d82a58250001551220ae4b3280e56e2faf83f414a6e3dabe9d5fbe18976544c05fed121accb85b53fc696e6f745f61667465721a6a53ba006c617267756d656e745f636964d82a582500017112206e2291346f7c429aada9cfcd8c6f214d43c06d488484a24361c54d3b49e6ffc16c6f7065726174696f6e5f69646c64617461736574732e6765746e736368656d615f76657273696f6e01",
+      "cid": "bafyreiatqqn3qgbt2sgz6serm2eo2en55bfv3psmwjzu2c22kgnmvcdpv4",
+      "cid_family": "assurance_signed_dag_cbor"
+    },
+    {
+      "id": "effect_receipt_link",
+      "artifact_family": "facp/effect-receipt@1",
+      "value": {
+        "schema": "facp/effect-receipt@1",
+        "schema_version": 1,
+        "admission_token_cid": {
+          "$link": "bafyreiatqqn3qgbt2sgz6serm2eo2en55bfv3psmwjzu2c22kgnmvcdpv4"
+        },
+        "outcome": "Observed",
+        "effect": "observed"
+      },
+      "canonical_hex": "a566656666656374686f6273657276656466736368656d6175666163702f6566666563742d726563656970744031676f7574636f6d65684f627365727665646e736368656d615f76657273696f6e017361646d697373696f6e5f746f6b656e5f636964d82a5825000171122013841bb81833d48d9f48916688ed11bde84b5dbe4cb2734d0b5a519aca886faf",
+      "cid": "bafyreibefqz4mp2w6fueax77edu7pmwtszqqdwzroxqhkahv4v2npwz57e",
+      "cid_family": "assurance_signed_dag_cbor"
+    },
+    {
+      "id": "opaque_raw_bytes",
+      "description": "Opaque blob under assurance_opaque_raw family",
+      "raw_hex": "000102",
+      "cid": "bafkreifojmzibzlof6xyh5auu3r5vpu5l67brf3fitaf73isdlglqw2t7q",
+      "cid_family": "assurance_opaque_raw"
+    }
+  ],
+  "negative": [
+    {
+      "id": "indefinite_map",
+      "kind": "bytes",
+      "hex": "bf616101ff",
+      "expected_error": "NON_DEFINITE_LENGTH"
+    },
+    {
+      "id": "indefinite_string",
+      "kind": "bytes",
+      "hex": "a161737f61616162ff",
+      "expected_error": "NON_DEFINITE_LENGTH"
+    },
+    {
+      "id": "duplicate_map_key",
+      "kind": "bytes",
+      "hex": "a2616101616102",
+      "expected_error": "DUPLICATE_MAP_KEY"
+    },
+    {
+      "id": "unsorted_map_keys_lex",
+      "kind": "bytes",
+      "description": "Same-length keys out of lexicographic order: b before a",
+      "hex": "a2616201616102",
+      "expected_error": "UNSORTED_MAP_KEYS"
+    },
+    {
+      "id": "unsorted_map_keys_length",
+      "kind": "bytes",
+      "description": "Longer key before shorter key: aa before a",
+      "hex": "a262616101616102",
+      "expected_error": "UNSORTED_MAP_KEYS"
+    },
+    {
+      "id": "non_minimal_integer",
+      "kind": "bytes",
+      "description": "Integer 1 encoded as uint8 (0x18 0x01) instead of one-byte 0x01",
+      "hex": "a1616e1801",
+      "expected_error": "NON_MINIMAL_INTEGER"
+    },
+    {
+      "id": "forbidden_float_1_5",
+      "kind": "bytes",
+      "hex": "a1616efb3ff8000000000000",
+      "expected_error": "FORBIDDEN_FLOAT"
+    },
+    {
+      "id": "forbidden_float_neg_zero",
+      "kind": "bytes",
+      "hex": "a1616efb8000000000000000",
+      "expected_error": "FORBIDDEN_FLOAT"
+    },
+    {
+      "id": "forbidden_tag_43",
+      "kind": "bytes",
+      "hex": "a16178d82b01",
+      "expected_error": "FORBIDDEN_TAG"
+    },
+    {
+      "id": "cid_link_missing_identity_multibase",
+      "kind": "bytes",
+      "hex": "a1616cd82a582401711220c19a797fa1fd590cd2e5b42d1cf5f246e29b91684e2f87404b81dc345c7a56a0",
+      "expected_error": "INVALID_CID_LINK"
+    },
+    {
+      "id": "float_in_logical_value",
+      "kind": "value",
+      "value": {
+        "n": 1.5
+      },
+      "expected_error": "FORBIDDEN_FLOAT"
+    },
+    {
+      "id": "non_string_map_key",
+      "kind": "value",
+      "value": {
+        "$non_string_key": true,
+        "entries": [
+          {
+            "key_kind": "int",
+            "key": 1,
+            "value": "x"
+          }
+        ]
+      },
+      "expected_error": "NON_STRING_MAP_KEY"
+    },
+    {
+      "id": "pseudo_cid_raw_hex",
+      "kind": "cid",
+      "cid": "ae4b3280e56e2faf83f414a6e3dabe9d5fbe18976544c05fed121accb85b53fc",
+      "expected_error": "PSEUDO_CID"
+    },
+    {
+      "id": "pseudo_cid_qm",
+      "kind": "cid",
+      "cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+      "expected_error": "PSEUDO_CID"
+    },
+    {
+      "id": "wrong_family_dag_json_for_signed_bytes",
+      "kind": "cid_family",
+      "retained_from_positive_id": "evidence_envelope_product",
+      "claimed_cid": "baguqeera2sqr5w35auer2ningx63ebbifdj2vhnelzpyep62ozpf75cucb4a",
+      "expected_error": "WRONG_CID_FAMILY"
+    },
+    {
+      "id": "non_canonical_cid_text_uppercase",
+      "kind": "cid",
+      "cid": "BAFYREIGBTJ4X7IP5LEGNFZNUFUOPL4SG4KNZC2COF6DUAS4B3Q2FY6SWUA",
+      "expected_error": "NON_CANONICAL_CID_TEXT"
+    },
+    {
+      "id": "unknown_field_opspec",
+      "kind": "value",
+      "artifact_family": "facp/operation-spec@1",
+      "value": {
+        "schema": "facp/operation-spec@1",
+        "schema_version": 1,
+        "operation_id": "datasets.get",
+        "namespace": "ipfs_datasets_py",
+        "name": "get",
+        "version": 1,
+        "authority": "free-form"
+      },
+      "expected_error": "UNKNOWN_FIELD"
+    }
+  ],
+  "mutations": [
+    {
+      "id": "flip_one_canonical_byte",
+      "base_positive_id": "empty_map",
+      "op": "xor_byte",
+      "offset": 0,
+      "mask": 1,
+      "expected_error": "MALLEABLE_ENCODING"
+    },
+    {
+      "id": "substitute_indefinite_for_empty_map",
+      "base_positive_id": "empty_map",
+      "op": "replace_hex",
+      "hex": "bfff",
+      "expected_error": "NON_DEFINITE_LENGTH"
+    },
+    {
+      "id": "reorder_keys_same_logical_value",
+      "base_positive_id": "sorted_len_then_lex",
+      "op": "replace_hex",
+      "hex": "a361620262616101616103",
+      "description": "Logical {a:3,b:2,aa:1} with keys in illegal order",
+      "expected_error": "UNSORTED_MAP_KEYS"
+    },
+    {
+      "id": "cid_bit_flip_vs_retained_bytes",
+      "base_positive_id": "opspec_identity_core",
+      "op": "xor_retained_byte_keep_cid",
+      "offset": 5,
+      "mask": 1,
+      "expected_error": "WRONG_CID_FAMILY"
+    }
+  ]
+}

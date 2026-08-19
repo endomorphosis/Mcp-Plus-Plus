@@ -1,0 +1,713 @@
+{
+  "schema": "facp/repository-contracts@1",
+  "schema_version": 1,
+  "task_id": "FACP-048",
+  "goal_id": "FACP-G620",
+  "bundle": "facp/composition/contracts",
+  "release": "formal-claim-algebra-v1",
+  "composition_boundaries_schema": "facp/composition-boundaries@1",
+  "assume_guarantee_schema": "facp/assume-guarantee@1",
+  "vocabulary_schema": "facp/formal-claim-algebra-v1@1",
+  "fail_closed": true,
+  "discovery_via_repository_import_forbidden": true,
+  "undisclosed_environmental_premise_forbidden": true,
+  "assume_away_component_defect_forbidden": true,
+  "normative_owner": "Mcp-Plus-Plus",
+  "repositories_supply_evidence_not_rewritten_copies": true,
+  "counterexamples_may_refine_assumptions": true,
+  "environmental_assumption_requires_provider_discharge": true,
+  "contract_change_invalidates_downstream_capsules": true,
+  "repository_order": [
+    "ipfs_datasets_py",
+    "ipfs_kit_py",
+    "ipfs_accelerate_py",
+    "swissknife"
+  ],
+  "proposition_kinds": [
+    "guarantee",
+    "assumption",
+    "environment"
+  ],
+  "discharge_statuses": [
+    "discharged",
+    "unresolved",
+    "violated"
+  ],
+  "qualification_statuses": [
+    "qualified",
+    "unqualified",
+    "revoked"
+  ],
+  "contracts": {
+    "ipfs_datasets_py": {
+      "id": "contract:ipfs_datasets_py@1",
+      "version": 1,
+      "repository_id": "ipfs_datasets_py",
+      "path": "external/ipfs_datasets",
+      "evidence_focus": "pure_semantics",
+      "owns": [
+        "ir_semantics",
+        "translation_validation",
+        "proof_obligations",
+        "datalog_impact_facts",
+        "source_policy_logic"
+      ],
+      "must_not_own": [
+        "external_effect_success_claims",
+        "production_storage",
+        "ui_authority"
+      ],
+      "guarantees": [
+        {
+          "id": "guarantee:datasets.pure_ir_semantics",
+          "proposition": "Semantic IR compilation and decompilation preserve declared meaning without performing external effects.",
+          "qualification": {
+            "status": "qualified",
+            "requires_evidence": [
+              "import_purity_receipt",
+              "translation_receipt"
+            ]
+          },
+          "provides_to": [
+            "ipfs_accelerate_py",
+            "swissknife"
+          ]
+        },
+        {
+          "id": "guarantee:datasets.translation_receipt_names_loss",
+          "proposition": "Every lossy translation emits an explicit named-loss receipt; unsupported constructs never silently widen permission.",
+          "qualification": {
+            "status": "qualified",
+            "requires_evidence": [
+              "translation_receipt"
+            ]
+          },
+          "provides_to": [
+            "ipfs_accelerate_py",
+            "swissknife"
+          ]
+        },
+        {
+          "id": "guarantee:datasets.no_external_effect_success",
+          "proposition": "Datasets never claims external-effect success; success-shaped values require independent observation elsewhere.",
+          "qualification": {
+            "status": "qualified",
+            "requires_evidence": [
+              "typed_outcome_envelope"
+            ]
+          },
+          "provides_to": [
+            "ipfs_accelerate_py",
+            "ipfs_kit_py",
+            "swissknife"
+          ]
+        }
+      ],
+      "assumptions": [
+        {
+          "id": "assumption:datasets.canonical_contracts",
+          "proposition": "Normative wire contracts and canonical encodings are owned by MCP++ and are not rewritten locally.",
+          "kind": "assumption",
+          "required_guarantee": "guarantee:mcp.normative_contract_registry",
+          "provider_repository": "mcp_plus_plus",
+          "environment": false,
+          "explicit_unresolved": false
+        },
+        {
+          "id": "assumption:datasets.no_host_effect_without_admission",
+          "proposition": "Any path that would perform a host or network effect is admitted by the Effect Admission Kernel before execution.",
+          "kind": "assumption",
+          "required_guarantee": "guarantee:accelerate.admission_token_consumption",
+          "provider_repository": "ipfs_accelerate_py",
+          "environment": false,
+          "explicit_unresolved": false
+        },
+        {
+          "id": "assumption:datasets.rights_conflict_review",
+          "proposition": "Package/repository license conflict remains under explicit human legal review and does not satisfy release_admissible alone.",
+          "kind": "assumption",
+          "required_guarantee": null,
+          "provider_repository": null,
+          "environment": true,
+          "explicit_unresolved": true,
+          "unresolved_reason": "MIT/AGPL conflict encoded as unresolved_human_legal_review; not discharged by component guarantee."
+        }
+      ]
+    },
+    "ipfs_kit_py": {
+      "id": "contract:ipfs_kit_py@1",
+      "version": 1,
+      "repository_id": "ipfs_kit_py",
+      "path": "external/ipfs_kit",
+      "evidence_focus": "integrity_cas_role_separation",
+      "owns": [
+        "immutable_artifacts",
+        "proof_seal_store",
+        "wal_cas_current_pointers",
+        "backend_receipts"
+      ],
+      "must_not_own": [
+        "logical_proof_validity",
+        "authorization",
+        "ui_authority"
+      ],
+      "guarantees": [
+        {
+          "id": "guarantee:kit.cas_integrity",
+          "proposition": "Content-addressed storage and WAL retain immutable history; concurrent pointer changes fail CAS rather than silently overwrite.",
+          "qualification": {
+            "status": "qualified",
+            "requires_evidence": [
+              "cas_expected_root",
+              "wal_receipt"
+            ]
+          },
+          "provides_to": [
+            "ipfs_accelerate_py",
+            "swissknife"
+          ]
+        },
+        {
+          "id": "guarantee:kit.proof_role_separation",
+          "proposition": "Proof roles remain separated: candidate never implies admitted; admitted with stale evidence cannot become current.",
+          "qualification": {
+            "status": "qualified",
+            "requires_evidence": [
+              "proof_role_gate_receipt",
+              "freshness_binding"
+            ]
+          },
+          "provides_to": [
+            "ipfs_accelerate_py",
+            "swissknife",
+            "ipfs_datasets_py"
+          ]
+        },
+        {
+          "id": "guarantee:kit.no_logical_validity_decision",
+          "proposition": "Kit persists seals and receipts but never decides logical proof validity or authorization.",
+          "qualification": {
+            "status": "qualified",
+            "requires_evidence": [
+              "proof_role_gate_receipt"
+            ]
+          },
+          "provides_to": [
+            "ipfs_accelerate_py",
+            "swissknife"
+          ]
+        }
+      ],
+      "assumptions": [
+        {
+          "id": "assumption:kit.payload_from_qualified_producer",
+          "proposition": "Sealed payloads originate from a qualified producer under Datasets semantics or Accelerate observation, not from browser authority.",
+          "kind": "assumption",
+          "required_guarantee": "guarantee:datasets.pure_ir_semantics",
+          "provider_repository": "ipfs_datasets_py",
+          "environment": false,
+          "explicit_unresolved": false
+        },
+        {
+          "id": "assumption:kit.admission_before_current_update",
+          "proposition": "Current-pointer updates occur only after Accelerate-monitored admission and observation.",
+          "kind": "assumption",
+          "required_guarantee": "guarantee:accelerate.observed_execution",
+          "provider_repository": "ipfs_accelerate_py",
+          "environment": false,
+          "explicit_unresolved": false
+        },
+        {
+          "id": "assumption:kit.live_backend_qualification",
+          "proposition": "Live backend support claims require a current live-qualified capability receipt; hermetic matrices do not relabel to live.",
+          "kind": "assumption",
+          "required_guarantee": null,
+          "provider_repository": null,
+          "environment": true,
+          "explicit_unresolved": true,
+          "unresolved_reason": "Live backend qualification is environment-discharged per deployment; hermetic absence remains explicit."
+        }
+      ]
+    },
+    "ipfs_accelerate_py": {
+      "id": "contract:ipfs_accelerate_py@1",
+      "version": 1,
+      "repository_id": "ipfs_accelerate_py",
+      "path": "external/ipfs_accelerate",
+      "evidence_focus": "admission_execution_observation",
+      "owns": [
+        "admission_consumption",
+        "scheduling",
+        "provider_routes",
+        "isolated_execution",
+        "monitors",
+        "repair_orchestration",
+        "observation"
+      ],
+      "must_not_own": [
+        "simulation_presented_as_live_completion",
+        "browser_authority",
+        "normative_contract_rewrites"
+      ],
+      "guarantees": [
+        {
+          "id": "guarantee:accelerate.admission_token_consumption",
+          "proposition": "Handlers unlock only on kernel-issued, one-use admission tokens bound to operation, actor, arguments, and policy.",
+          "qualification": {
+            "status": "qualified",
+            "requires_evidence": [
+              "admission_token",
+              "effect_admission_receipt"
+            ]
+          },
+          "provides_to": [
+            "swissknife",
+            "ipfs_datasets_py",
+            "ipfs_kit_py"
+          ]
+        },
+        {
+          "id": "guarantee:accelerate.observed_execution",
+          "proposition": "Execution completion requires independent observation; Unknown and CompensationRequired remain explicit.",
+          "qualification": {
+            "status": "qualified",
+            "requires_evidence": [
+              "independent_effect_observation",
+              "transition_monitor_receipt"
+            ]
+          },
+          "provides_to": [
+            "ipfs_kit_py",
+            "swissknife"
+          ]
+        },
+        {
+          "id": "guarantee:accelerate.no_simulation_as_live",
+          "proposition": "Simulation, fixtures, and hermetic runs never present as live completion or production_supported.",
+          "qualification": {
+            "status": "qualified",
+            "requires_evidence": [
+              "origin_binding",
+              "environment_binding"
+            ]
+          },
+          "provides_to": [
+            "swissknife",
+            "ipfs_kit_py",
+            "ipfs_datasets_py"
+          ]
+        }
+      ],
+      "assumptions": [
+        {
+          "id": "assumption:accelerate.datasets_semantics",
+          "proposition": "Scheduled semantic work consumes Datasets pure IR semantics and translation receipts.",
+          "kind": "assumption",
+          "required_guarantee": "guarantee:datasets.pure_ir_semantics",
+          "provider_repository": "ipfs_datasets_py",
+          "environment": false,
+          "explicit_unresolved": false
+        },
+        {
+          "id": "assumption:accelerate.kit_persistence",
+          "proposition": "Durable persistence and current pointers are supplied by Kit CAS/WAL with role separation.",
+          "kind": "assumption",
+          "required_guarantee": "guarantee:kit.cas_integrity",
+          "provider_repository": "ipfs_kit_py",
+          "environment": false,
+          "explicit_unresolved": false
+        },
+        {
+          "id": "assumption:accelerate.host_authenticated_policy",
+          "proposition": "Host authentication and policy decisions originate outside the browser; browser fields never create admission.",
+          "kind": "assumption",
+          "required_guarantee": "guarantee:swissknife.nonauthority",
+          "provider_repository": "swissknife",
+          "environment": false,
+          "explicit_unresolved": false
+        },
+        {
+          "id": "assumption:accelerate.operation_spec_closed",
+          "proposition": "OperationSpec and Effect Admission contracts are the closed MCP++ normative vocabulary.",
+          "kind": "assumption",
+          "required_guarantee": "guarantee:mcp.normative_contract_registry",
+          "provider_repository": "mcp_plus_plus",
+          "environment": false,
+          "explicit_unresolved": false
+        }
+      ]
+    },
+    "swissknife": {
+      "id": "contract:swissknife@1",
+      "version": 1,
+      "repository_id": "swissknife",
+      "path": "swissknife",
+      "evidence_focus": "nonauthority_presentation",
+      "owns": [
+        "presentation",
+        "intent",
+        "confirmation_interaction",
+        "evidence_display",
+        "human_review"
+      ],
+      "must_not_own": [
+        "authority",
+        "permission",
+        "production_evidence",
+        "admission_token_construction"
+      ],
+      "guarantees": [
+        {
+          "id": "guarantee:swissknife.nonauthority",
+          "proposition": "Browser and UI surfaces never originate authority, permission, consent-as-allow, or admission tokens.",
+          "qualification": {
+            "status": "qualified",
+            "requires_evidence": [
+              "browser_nonauthority_gate",
+              "host_token_client_projection"
+            ]
+          },
+          "provides_to": [
+            "ipfs_accelerate_py",
+            "ipfs_kit_py",
+            "ipfs_datasets_py"
+          ]
+        },
+        {
+          "id": "guarantee:swissknife.presentation_fidelity",
+          "proposition": "Evidence presentation displays sealed receipts without rewriting normative contracts or inventing production claims.",
+          "qualification": {
+            "status": "qualified",
+            "requires_evidence": [
+              "evidence_display_binding"
+            ]
+          },
+          "provides_to": [
+            "ipfs_accelerate_py"
+          ]
+        },
+        {
+          "id": "guarantee:swissknife.confirmation_nonauthority",
+          "proposition": "Human confirmation is interaction evidence only; it does not grant authority.valid or release_admissible.",
+          "qualification": {
+            "status": "qualified",
+            "requires_evidence": [
+              "confirmation_interaction_receipt"
+            ]
+          },
+          "provides_to": [
+            "ipfs_accelerate_py"
+          ]
+        }
+      ],
+      "assumptions": [
+        {
+          "id": "assumption:swissknife.host_admission",
+          "proposition": "Host authentication and Effect Admission Kernel tokens authorize effects; the UI only requests and displays.",
+          "kind": "assumption",
+          "required_guarantee": "guarantee:accelerate.admission_token_consumption",
+          "provider_repository": "ipfs_accelerate_py",
+          "environment": false,
+          "explicit_unresolved": false
+        },
+        {
+          "id": "assumption:swissknife.kit_receipt_integrity",
+          "proposition": "Displayed persistence and proof-seal receipts bind Kit CAS integrity and role separation.",
+          "kind": "assumption",
+          "required_guarantee": "guarantee:kit.proof_role_separation",
+          "provider_repository": "ipfs_kit_py",
+          "environment": false,
+          "explicit_unresolved": false
+        },
+        {
+          "id": "assumption:swissknife.datasets_translation",
+          "proposition": "Displayed semantic and translation artifacts bind Datasets pure semantics and named-loss receipts.",
+          "kind": "assumption",
+          "required_guarantee": "guarantee:datasets.translation_receipt_names_loss",
+          "provider_repository": "ipfs_datasets_py",
+          "environment": false,
+          "explicit_unresolved": false
+        },
+        {
+          "id": "assumption:swissknife.human_rights_review",
+          "proposition": "Human review of rights and residual risks remains an explicit environmental premise until cleared.",
+          "kind": "assumption",
+          "required_guarantee": null,
+          "provider_repository": null,
+          "environment": true,
+          "explicit_unresolved": true,
+          "unresolved_reason": "Human legal/rights review is environment-discharged; presentation must keep it explicit."
+        }
+      ]
+    }
+  },
+  "external_guarantees": {
+    "mcp_plus_plus": {
+      "id": "contract:mcp_plus_plus@1",
+      "version": 1,
+      "repository_id": "mcp_plus_plus",
+      "path": "Mcp-Plus-Plus",
+      "evidence_focus": "normative_contracts",
+      "guarantees": [
+        {
+          "id": "guarantee:mcp.normative_contract_registry",
+          "proposition": "MCP++ is the sole owner of normative repository-contract, OperationSpec, Effect Admission, and FCA registries; repositories supply evidence, not rewritten copies.",
+          "qualification": {
+            "status": "qualified",
+            "requires_evidence": [
+              "repository_contracts_registry",
+              "operation_spec_schema",
+              "effect_admission_schema"
+            ]
+          },
+          "provides_to": [
+            "ipfs_datasets_py",
+            "ipfs_kit_py",
+            "ipfs_accelerate_py",
+            "swissknife"
+          ]
+        }
+      ],
+      "assumptions": []
+    }
+  },
+  "composition_boundaries": [
+    {
+      "id": "boundary:swissknife->accelerate.admission",
+      "consumer_repository": "swissknife",
+      "provider_repository": "ipfs_accelerate_py",
+      "assumption_id": "assumption:swissknife.host_admission",
+      "guarantee_id": "guarantee:accelerate.admission_token_consumption",
+      "workflow_step": "host_authentication_and_admission",
+      "violation_code": "BOUNDARY_VIOLATED:boundary:swissknife->accelerate.admission"
+    },
+    {
+      "id": "boundary:swissknife->kit.proof_roles",
+      "consumer_repository": "swissknife",
+      "provider_repository": "ipfs_kit_py",
+      "assumption_id": "assumption:swissknife.kit_receipt_integrity",
+      "guarantee_id": "guarantee:kit.proof_role_separation",
+      "workflow_step": "kit_immutable_persistence_current_pointer",
+      "violation_code": "BOUNDARY_VIOLATED:boundary:swissknife->kit.proof_roles"
+    },
+    {
+      "id": "boundary:swissknife->datasets.translation",
+      "consumer_repository": "swissknife",
+      "provider_repository": "ipfs_datasets_py",
+      "assumption_id": "assumption:swissknife.datasets_translation",
+      "guarantee_id": "guarantee:datasets.translation_receipt_names_loss",
+      "workflow_step": "datasets_semantic_compilation_translation_receipt",
+      "violation_code": "BOUNDARY_VIOLATED:boundary:swissknife->datasets.translation"
+    },
+    {
+      "id": "boundary:accelerate->datasets.semantics",
+      "consumer_repository": "ipfs_accelerate_py",
+      "provider_repository": "ipfs_datasets_py",
+      "assumption_id": "assumption:accelerate.datasets_semantics",
+      "guarantee_id": "guarantee:datasets.pure_ir_semantics",
+      "workflow_step": "datasets_semantic_compilation_translation_receipt",
+      "violation_code": "BOUNDARY_VIOLATED:boundary:accelerate->datasets.semantics"
+    },
+    {
+      "id": "boundary:accelerate->kit.persistence",
+      "consumer_repository": "ipfs_accelerate_py",
+      "provider_repository": "ipfs_kit_py",
+      "assumption_id": "assumption:accelerate.kit_persistence",
+      "guarantee_id": "guarantee:kit.cas_integrity",
+      "workflow_step": "kit_immutable_persistence_current_pointer",
+      "violation_code": "BOUNDARY_VIOLATED:boundary:accelerate->kit.persistence"
+    },
+    {
+      "id": "boundary:accelerate->swissknife.nonauthority",
+      "consumer_repository": "ipfs_accelerate_py",
+      "provider_repository": "swissknife",
+      "assumption_id": "assumption:accelerate.host_authenticated_policy",
+      "guarantee_id": "guarantee:swissknife.nonauthority",
+      "workflow_step": "swissknife_request",
+      "violation_code": "BOUNDARY_VIOLATED:boundary:accelerate->swissknife.nonauthority"
+    },
+    {
+      "id": "boundary:accelerate->mcp.contracts",
+      "consumer_repository": "ipfs_accelerate_py",
+      "provider_repository": "mcp_plus_plus",
+      "assumption_id": "assumption:accelerate.operation_spec_closed",
+      "guarantee_id": "guarantee:mcp.normative_contract_registry",
+      "workflow_step": "normative_contract_resolution",
+      "violation_code": "BOUNDARY_VIOLATED:boundary:accelerate->mcp.contracts"
+    },
+    {
+      "id": "boundary:kit->datasets.payload",
+      "consumer_repository": "ipfs_kit_py",
+      "provider_repository": "ipfs_datasets_py",
+      "assumption_id": "assumption:kit.payload_from_qualified_producer",
+      "guarantee_id": "guarantee:datasets.pure_ir_semantics",
+      "workflow_step": "datasets_semantic_compilation_translation_receipt",
+      "violation_code": "BOUNDARY_VIOLATED:boundary:kit->datasets.payload"
+    },
+    {
+      "id": "boundary:kit->accelerate.observation",
+      "consumer_repository": "ipfs_kit_py",
+      "provider_repository": "ipfs_accelerate_py",
+      "assumption_id": "assumption:kit.admission_before_current_update",
+      "guarantee_id": "guarantee:accelerate.observed_execution",
+      "workflow_step": "accelerate_scheduling_and_observed_execution",
+      "violation_code": "BOUNDARY_VIOLATED:boundary:kit->accelerate.observation"
+    },
+    {
+      "id": "boundary:datasets->accelerate.admission",
+      "consumer_repository": "ipfs_datasets_py",
+      "provider_repository": "ipfs_accelerate_py",
+      "assumption_id": "assumption:datasets.no_host_effect_without_admission",
+      "guarantee_id": "guarantee:accelerate.admission_token_consumption",
+      "workflow_step": "host_authentication_and_admission",
+      "violation_code": "BOUNDARY_VIOLATED:boundary:datasets->accelerate.admission"
+    },
+    {
+      "id": "boundary:datasets->mcp.contracts",
+      "consumer_repository": "ipfs_datasets_py",
+      "provider_repository": "mcp_plus_plus",
+      "assumption_id": "assumption:datasets.canonical_contracts",
+      "guarantee_id": "guarantee:mcp.normative_contract_registry",
+      "workflow_step": "normative_contract_resolution",
+      "violation_code": "BOUNDARY_VIOLATED:boundary:datasets->mcp.contracts"
+    }
+  ],
+  "environment_discharge_rules": [
+    {
+      "id": "env-discharge:explicit-unresolved-allowed",
+      "description": "An environmental assumption may remain composition-safe only when marked explicit_unresolved with a non-empty unresolved_reason.",
+      "requires_fields": [
+        "explicit_unresolved",
+        "unresolved_reason"
+      ],
+      "rejection_code": "ENV_UNDISCLOSED_PREMISE"
+    },
+    {
+      "id": "env-discharge:provider-before-composition",
+      "description": "A non-environment assumption must be discharged by a qualified provider guarantee before composition admits the consumer.",
+      "rejection_code": "ENV_PROVIDER_DISCHARGE_REQUIRED"
+    },
+    {
+      "id": "env-discharge:no-assume-away-defect",
+      "description": "Counterexamples may refine assumptions but must not erase a component defect by silently dropping a required guarantee.",
+      "rejection_code": "ENV_ASSUME_AWAY_COMPONENT_DEFECT"
+    }
+  ],
+  "terminal_workflow": [
+    "swissknife_request",
+    "host_authentication_and_admission",
+    "datasets_semantic_compilation_translation_receipt",
+    "accelerate_scheduling_and_observed_execution",
+    "kit_immutable_persistence_current_pointer",
+    "swissknife_evidence_presentation"
+  ],
+  "seeded_integration_failures": [
+    {
+      "id": "seed:browser-allow-as-admission",
+      "description": "Browser constructs an allow-like decision and attempts to unlock a handler.",
+      "violated_boundary_id": "boundary:accelerate->swissknife.nonauthority",
+      "broken_guarantee_id": "guarantee:swissknife.nonauthority",
+      "broken_assumption_id": "assumption:accelerate.host_authenticated_policy",
+      "fault": {
+        "actor": "browser",
+        "action": "construct_allow_decision",
+        "claimed_effect": "admission_unlock"
+      },
+      "expected_violation_code": "BOUNDARY_VIOLATED:boundary:accelerate->swissknife.nonauthority"
+    },
+    {
+      "id": "seed:candidate-to-current",
+      "description": "Kit promotes a candidate proof seal directly to current.",
+      "violated_boundary_id": "boundary:swissknife->kit.proof_roles",
+      "broken_guarantee_id": "guarantee:kit.proof_role_separation",
+      "broken_assumption_id": "assumption:swissknife.kit_receipt_integrity",
+      "fault": {
+        "actor": "ipfs_kit_py",
+        "action": "promote_candidate_to_current",
+        "claimed_effect": "current_pointer_update"
+      },
+      "expected_violation_code": "BOUNDARY_VIOLATED:boundary:swissknife->kit.proof_roles"
+    },
+    {
+      "id": "seed:success-without-observation",
+      "description": "Accelerate reports execution success without independent observation.",
+      "violated_boundary_id": "boundary:kit->accelerate.observation",
+      "broken_guarantee_id": "guarantee:accelerate.observed_execution",
+      "broken_assumption_id": "assumption:kit.admission_before_current_update",
+      "fault": {
+        "actor": "ipfs_accelerate_py",
+        "action": "report_success_boolean",
+        "claimed_effect": "execution_complete"
+      },
+      "expected_violation_code": "BOUNDARY_VIOLATED:boundary:kit->accelerate.observation"
+    },
+    {
+      "id": "seed:datasets-external-effect-success",
+      "description": "Datasets emits a success-shaped external-effect claim, breaking pure-semantics qualification.",
+      "violated_boundary_id": "boundary:accelerate->datasets.semantics",
+      "broken_guarantee_id": "guarantee:datasets.pure_ir_semantics",
+      "also_unqualified_guarantee_ids": [
+        "guarantee:datasets.no_external_effect_success"
+      ],
+      "broken_assumption_id": "assumption:accelerate.datasets_semantics",
+      "fault": {
+        "actor": "ipfs_datasets_py",
+        "action": "claim_external_effect_success",
+        "claimed_effect": "network_write_success"
+      },
+      "expected_violation_code": "BOUNDARY_VIOLATED:boundary:accelerate->datasets.semantics"
+    },
+    {
+      "id": "seed:undisclosed-environment-premise",
+      "description": "Composition introduces an environmental premise without explicit_unresolved marking.",
+      "violated_boundary_id": null,
+      "broken_guarantee_id": null,
+      "broken_assumption_id": "assumption:ephemeral.undisclosed_live_backend",
+      "fault": {
+        "actor": "composer",
+        "action": "inject_undisclosed_environment_assumption",
+        "claimed_effect": "silent_live_qualification"
+      },
+      "expected_violation_code": "ENV_UNDISCLOSED_PREMISE",
+      "environment_rule_id": "env-discharge:explicit-unresolved-allowed"
+    }
+  ],
+  "capsule_invalidation": {
+    "schema": "facp/composition-boundaries@1",
+    "contract_field": "required_contract_ids",
+    "consumer_kinds": [
+      "proof",
+      "test",
+      "release",
+      "contract"
+    ],
+    "rule": "Changing the content digest of a published repository contract invalidates every downstream capsule that lists that contract id in required_contract_ids.",
+    "minimal_path_required": true,
+    "examples": [
+      {
+        "id": "invalidation:accelerate-consumes-datasets-contract",
+        "producer_contract_id": "contract:ipfs_datasets_py@1",
+        "consumer_capsule_id": "capsule:accelerate.workflow@1",
+        "consumer_kind": "release"
+      },
+      {
+        "id": "invalidation:swissknife-consumes-kit-contract",
+        "producer_contract_id": "contract:ipfs_kit_py@1",
+        "consumer_capsule_id": "capsule:swissknife.presentation@1",
+        "consumer_kind": "test"
+      }
+    ]
+  },
+  "evaluation": {
+    "every_assumption_discharged_or_explicit_unresolved": true,
+    "qualified_guarantee_required_for_discharge": true,
+    "seeded_failure_must_name_exact_boundary": true,
+    "contract_digest_binds_capsules": true,
+    "forbid_repository_import_for_discovery": true
+  },
+  "prohibited_effects": [
+    "assume_away_component_defect",
+    "undisclosed_environmental_premise",
+    "repository_import_for_contract_discovery"
+  ]
+}

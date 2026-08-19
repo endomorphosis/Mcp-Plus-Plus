@@ -1,0 +1,317 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcp-plus-plus.dev/schemas/assurance/v1/operation-spec.schema.json",
+  "title": "OperationSpec@1",
+  "description": "Closed, bounded Assurance IDL operation contract (facp/operation-spec@1). Describes input/output/error surfaces, effect/idempotency/reversibility classes, authority/policy/confirmation/lease/observation obligations, evidence class, closed allowed outcomes, and integer resource bounds. Unknown fields, unknown enum spellings, free-form authority/outcome strings, and floats fail closed.",
+  "x-facp": {
+    "schema": "facp/operation-spec@1",
+    "schema_version": 1,
+    "task_id": "FACP-032",
+    "goal_id": "FACP-G310",
+    "bundle": "facp/contracts/idl",
+    "release": "formal-claim-algebra-v1",
+    "extends": "mcp-idl",
+    "vocabulary_schema": "facp/formal-claim-algebra-v1@1",
+    "evidence_envelope_schema": "facp/evidence-envelope@1",
+    "fail_closed": true,
+    "floats_forbidden": true,
+    "unknown_fields_forbidden": true,
+    "free_form_authority_forbidden": true,
+    "free_form_outcome_forbidden": true,
+    "boolean_success_forbidden": true,
+    "field_order": [
+      "schema",
+      "schema_version",
+      "operation_id",
+      "namespace",
+      "name",
+      "version",
+      "input_schema_cid",
+      "output_schema_cid",
+      "error_codes",
+      "effect_class",
+      "idempotency_class",
+      "reversibility_class",
+      "authority_obligation",
+      "policy_obligation",
+      "confirmation_obligation",
+      "lease_obligation",
+      "observation_obligation",
+      "evidence_class",
+      "allowed_outcomes",
+      "resource_bounds"
+    ],
+    "stable_error_codes": [
+      "UNKNOWN_FIELD",
+      "MISSING_FIELD",
+      "UNKNOWN_ENUM",
+      "INVALID_TYPE",
+      "FORBIDDEN_FLOAT",
+      "UNBOUNDED_STRING",
+      "UNBOUNDED_ARRAY",
+      "INVALID_CID",
+      "INVALID_BOUNDS",
+      "FREE_FORM_AUTHORITY",
+      "FREE_FORM_OUTCOME",
+      "FORBIDDEN_SUCCESS_BOOLEAN",
+      "EMPTY_ALLOWED_OUTCOMES",
+      "DUPLICATE_ERROR_CODE",
+      "DUPLICATE_ALLOWED_OUTCOME"
+    ]
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "required": [
+    "schema",
+    "schema_version",
+    "operation_id",
+    "namespace",
+    "name",
+    "version",
+    "input_schema_cid",
+    "output_schema_cid",
+    "error_codes",
+    "effect_class",
+    "idempotency_class",
+    "reversibility_class",
+    "authority_obligation",
+    "policy_obligation",
+    "confirmation_obligation",
+    "lease_obligation",
+    "observation_obligation",
+    "evidence_class",
+    "allowed_outcomes",
+    "resource_bounds"
+  ],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "facp/operation-spec@1",
+      "maxLength": 64
+    },
+    "schema_version": {
+      "type": "integer",
+      "const": 1,
+      "minimum": 1,
+      "maximum": 1
+    },
+    "operation_id": { "$ref": "#/$defs/operation_id" },
+    "namespace": { "$ref": "#/$defs/namespace" },
+    "name": { "$ref": "#/$defs/operation_name" },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483647
+    },
+    "input_schema_cid": { "$ref": "#/$defs/cid_v1" },
+    "output_schema_cid": { "$ref": "#/$defs/cid_v1" },
+    "error_codes": {
+      "type": "array",
+      "description": "Closed, bounded operation error identifiers. Not free-form outcome text.",
+      "minItems": 1,
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/error_code" }
+    },
+    "effect_class": { "$ref": "#/$defs/effect_class" },
+    "idempotency_class": { "$ref": "#/$defs/idempotency_class" },
+    "reversibility_class": { "$ref": "#/$defs/reversibility_class" },
+    "authority_obligation": { "$ref": "#/$defs/authority_obligation" },
+    "policy_obligation": { "$ref": "#/$defs/policy_obligation" },
+    "confirmation_obligation": { "$ref": "#/$defs/confirmation_obligation" },
+    "lease_obligation": { "$ref": "#/$defs/lease_obligation" },
+    "observation_obligation": { "$ref": "#/$defs/observation_obligation" },
+    "evidence_class": { "$ref": "#/$defs/evidence_class" },
+    "allowed_outcomes": {
+      "type": "array",
+      "description": "Closed Formal Claim Algebra outcome algebra subset. Free-form outcome strings and boolean success fields are forbidden.",
+      "minItems": 1,
+      "maxItems": 9,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/closed_outcome" }
+    },
+    "resource_bounds": { "$ref": "#/$defs/resource_bounds" }
+  },
+  "$defs": {
+    "cid_v1": {
+      "type": "string",
+      "description": "CIDv1 lowercase multibase base32 (bafkrei… family preferred for raw sha2-256).",
+      "pattern": "^b[a-z2-7]{58,128}$",
+      "minLength": 59,
+      "maxLength": 129
+    },
+    "operation_id": {
+      "type": "string",
+      "description": "Stable dotted operation identity (namespace-qualified).",
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*){1,7}$",
+      "minLength": 3,
+      "maxLength": 128
+    },
+    "namespace": {
+      "type": "string",
+      "description": "Owning repository or package namespace for the operation.",
+      "pattern": "^[a-z][a-z0-9_.-]{1,63}$",
+      "minLength": 2,
+      "maxLength": 64
+    },
+    "operation_name": {
+      "type": "string",
+      "description": "Local operation name within the namespace.",
+      "pattern": "^[a-z][a-z0-9_]{0,63}$",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "error_code": {
+      "type": "string",
+      "description": "Bounded error identifier; not an authority or outcome claim.",
+      "pattern": "^[a-z][a-z0-9_]{0,63}$",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "effect_class": {
+      "type": "string",
+      "description": "Closed effect class assigned to every migrated operation.",
+      "enum": [
+        "pure",
+        "read",
+        "write",
+        "process",
+        "credential",
+        "install",
+        "repository",
+        "publish",
+        "payment",
+        "private",
+        "legal",
+        "irreversible"
+      ],
+      "maxLength": 32
+    },
+    "idempotency_class": {
+      "type": "string",
+      "enum": [
+        "pure_idempotent",
+        "idempotent",
+        "at_most_once",
+        "non_idempotent"
+      ],
+      "maxLength": 32
+    },
+    "reversibility_class": {
+      "type": "string",
+      "enum": [
+        "reversible",
+        "compensatable",
+        "irreversible"
+      ],
+      "maxLength": 32
+    },
+    "authority_obligation": {
+      "type": "string",
+      "description": "Closed authority obligation. Free-form authority strings and browser-authored grants are forbidden.",
+      "enum": [
+        "none",
+        "actor_authenticated",
+        "capability_verified"
+      ],
+      "maxLength": 32
+    },
+    "policy_obligation": {
+      "type": "string",
+      "description": "Closed host-policy obligation. Browser allow/consent/dry_run fields are not policy.",
+      "enum": [
+        "none",
+        "host_policy_required",
+        "host_policy_with_obligations"
+      ],
+      "maxLength": 32
+    },
+    "confirmation_obligation": {
+      "type": "string",
+      "enum": [
+        "none",
+        "one_use_confirmation_required"
+      ],
+      "maxLength": 32
+    },
+    "lease_obligation": {
+      "type": "string",
+      "enum": [
+        "none",
+        "lease_required"
+      ],
+      "maxLength": 32
+    },
+    "observation_obligation": {
+      "type": "string",
+      "enum": [
+        "none",
+        "independent_observation_required",
+        "delegated_observation_allowed"
+      ],
+      "maxLength": 32
+    },
+    "evidence_class": {
+      "type": "string",
+      "description": "Minimum evidence environment class the operation may claim under live qualification rules.",
+      "enum": [
+        "none",
+        "hermetic",
+        "conditional",
+        "live"
+      ],
+      "maxLength": 32
+    },
+    "closed_outcome": {
+      "type": "string",
+      "description": "Formal Claim Algebra closed outcome algebra value.",
+      "enum": [
+        "Unavailable",
+        "Rejected",
+        "Simulated",
+        "Attempted",
+        "Unknown",
+        "Observed",
+        "Verified",
+        "Failed",
+        "Compensated"
+      ],
+      "maxLength": 32
+    },
+    "resource_bounds": {
+      "type": "object",
+      "description": "Integer-only size and time bounds. Floats are forbidden.",
+      "additionalProperties": false,
+      "unevaluatedProperties": false,
+      "required": [
+        "max_input_bytes",
+        "max_output_bytes",
+        "max_duration_ms",
+        "max_memory_bytes"
+      ],
+      "properties": {
+        "max_input_bytes": { "$ref": "#/$defs/byte_bound" },
+        "max_output_bytes": { "$ref": "#/$defs/byte_bound" },
+        "max_duration_ms": { "$ref": "#/$defs/duration_bound_ms" },
+        "max_memory_bytes": { "$ref": "#/$defs/byte_bound" },
+        "max_cpu_ms": { "$ref": "#/$defs/duration_bound_ms" },
+        "max_effect_retries": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1024
+        }
+      }
+    },
+    "byte_bound": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1099511627776
+    },
+    "duration_bound_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 86400000
+    }
+  }
+}

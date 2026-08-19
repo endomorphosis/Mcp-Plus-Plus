@@ -1,0 +1,796 @@
+{
+  "schema": "facp/promotion-rules@1",
+  "schema_version": 1,
+  "task_id": "FACP-010",
+  "goal_id": "FACP-G110",
+  "bundle": "facp/fca/predicates",
+  "release": "formal-claim-algebra-v1",
+  "vocabulary_schema": "facp/formal-claim-algebra-v1@1",
+  "product_kind": "evidence_product",
+  "fail_closed": true,
+  "unknown_transition_policy": "reject",
+  "label_only_promotion_forbidden": true,
+  "permissive_unknown_transition_forbidden": true,
+  "dimension_order": [
+    "origin",
+    "integrity",
+    "authority",
+    "policy",
+    "proof",
+    "freshness",
+    "effect",
+    "environment",
+    "review"
+  ],
+  "predicate_order": [
+    "production_supported",
+    "effect_successful",
+    "proof_reusable",
+    "receipt_authoritative",
+    "release_admissible"
+  ],
+  "predicates": {
+    "production_supported": {
+      "id": "production_supported",
+      "reading": "Live-qualified production support claim.",
+      "necessary_dimensions": {
+        "origin": ["live_observed"],
+        "integrity": ["digest_valid", "signature_valid"],
+        "authority": ["valid"],
+        "policy": ["allowed", "allowed_with_obligations"],
+        "freshness": ["current"],
+        "environment": ["live"]
+      },
+      "necessary_evidence": [
+        "live_qualification_receipt",
+        "current_capability_admission",
+        "authenticated_host_policy_decision"
+      ],
+      "blocked_by_negative_rules": [
+        "fixture-to-observed",
+        "hermetic-to-live",
+        "inventory-to-live-qualification",
+        "discovery-to-completion",
+        "single-dimension-to-production-success"
+      ]
+    },
+    "effect_successful": {
+      "id": "effect_successful",
+      "reading": "Effect observed successful under admission.",
+      "necessary_dimensions": {
+        "origin": ["hermetic_observed", "live_observed"],
+        "integrity": ["digest_valid", "signature_valid"],
+        "authority": ["valid"],
+        "policy": ["allowed", "allowed_with_obligations"],
+        "freshness": ["current"],
+        "effect": ["observed"]
+      },
+      "necessary_evidence": [
+        "independent_effect_observation",
+        "admission_token"
+      ],
+      "blocked_by_negative_rules": [
+        "fixture-to-observed",
+        "declared-to-observed",
+        "externally-unknown-to-observed",
+        "success-boolean-to-observed"
+      ]
+    },
+    "proof_reusable": {
+      "id": "proof_reusable",
+      "reading": "Proof may be reused under current verifier and closure.",
+      "necessary_dimensions": {
+        "integrity": ["digest_valid", "signature_valid"],
+        "proof": ["verified"],
+        "freshness": ["current"]
+      },
+      "necessary_evidence": [
+        "named_current_verifier",
+        "verifier_admission_closure"
+      ],
+      "blocked_by_negative_rules": [
+        "digest-to-truth",
+        "candidate-to-verified",
+        "stale-to-current"
+      ]
+    },
+    "receipt_authoritative": {
+      "id": "receipt_authoritative",
+      "reading": "Receipt may authorize downstream consumers.",
+      "necessary_dimensions": {
+        "origin": ["hermetic_observed", "live_observed"],
+        "integrity": ["signature_valid"],
+        "authority": ["valid"],
+        "policy": ["allowed", "allowed_with_obligations"],
+        "freshness": ["current"]
+      },
+      "necessary_evidence": [
+        "signed_receipt",
+        "non_revoked_delegation"
+      ],
+      "blocked_by_negative_rules": [
+        "payment-to-authority",
+        "browser-policy-to-host-policy",
+        "signature-to-authority",
+        "stale-to-current"
+      ]
+    },
+    "release_admissible": {
+      "id": "release_admissible",
+      "reading": "Release and rights gate may pass.",
+      "necessary_dimensions": {
+        "origin": ["hermetic_observed", "live_observed"],
+        "integrity": ["signature_valid"],
+        "authority": ["valid"],
+        "policy": ["allowed", "allowed_with_obligations"],
+        "proof": ["verified"],
+        "freshness": ["current"],
+        "review": ["machine_reviewed", "human_reviewed"]
+      },
+      "necessary_evidence": [
+        "exact_source_binding",
+        "immutable_dependency_closure",
+        "identified_build_environment",
+        "current_proofs_and_tests",
+        "contract_compatibility",
+        "rights_resolution",
+        "reproducibility_inputs",
+        "signed_provenance"
+      ],
+      "blocked_by_negative_rules": [
+        "digest-to-truth",
+        "payment-to-authority",
+        "mutable-dependency-to-release",
+        "license-conflict-to-release",
+        "stale-to-current",
+        "review-fills-missing-evidence"
+      ]
+    }
+  },
+  "negative_rules": [
+    {
+      "id": "digest-to-truth",
+      "kind": "non_implication",
+      "executable": true,
+      "aliases": ["digest_to_truth", "authenticity_is_not_truth"],
+      "description": "integrity.digest_valid or signature_valid does not establish proof.verified.",
+      "antecedent": {
+        "dimensions": {
+          "integrity": ["digest_valid", "signature_valid"]
+        }
+      },
+      "consequent": {
+        "dimensions": {
+          "proof": ["verified"]
+        },
+        "independent_evidence_required": [
+          "named_current_verifier",
+          "verifier_admission_closure"
+        ]
+      },
+      "absolute": false,
+      "rejection_code": "NONIMP_DIGEST_TO_TRUTH"
+    },
+    {
+      "id": "payment-to-authority",
+      "kind": "non_implication",
+      "executable": true,
+      "aliases": ["payment_to_authority"],
+      "description": "Payment or confirmation tokens do not grant authority.valid.",
+      "antecedent": {
+        "claim_tokens": [
+          "payment_or_confirmation",
+          "browser_consent",
+          "ui_confirmation"
+        ]
+      },
+      "consequent": {
+        "dimensions": {
+          "authority": ["valid"]
+        },
+        "independent_evidence_required": [
+          "argument_bound_delegation",
+          "non_revoked_ucan"
+        ]
+      },
+      "absolute": false,
+      "rejection_code": "NONIMP_PAYMENT_TO_AUTHORITY"
+    },
+    {
+      "id": "hermetic-to-live",
+      "kind": "non_implication",
+      "executable": true,
+      "aliases": ["hermetic_to_live"],
+      "description": "environment.hermetic cannot become environment.live by relabeling.",
+      "antecedent": {
+        "dimensions": {
+          "environment": ["hermetic"]
+        }
+      },
+      "consequent": {
+        "dimensions": {
+          "environment": ["live"]
+        },
+        "independent_evidence_required": []
+      },
+      "absolute": true,
+      "rejection_code": "NONIMP_HERMETIC_TO_LIVE"
+    },
+    {
+      "id": "fixture-to-observed",
+      "kind": "non_implication",
+      "executable": true,
+      "aliases": ["fixture_to_observed", "fixture-to-live-observed"],
+      "description": "origin.fixture cannot become origin.live_observed or effect.observed by relabeling.",
+      "antecedent": {
+        "dimensions": {
+          "origin": ["fixture"]
+        }
+      },
+      "consequent": {
+        "dimensions": {
+          "origin": ["live_observed"],
+          "effect": ["observed"]
+        },
+        "independent_evidence_required": []
+      },
+      "absolute": true,
+      "rejection_code": "NONIMP_FIXTURE_TO_OBSERVED"
+    },
+    {
+      "id": "simulated-to-live-observed",
+      "kind": "non_implication",
+      "executable": true,
+      "description": "origin.simulated cannot become origin.live_observed by relabeling.",
+      "antecedent": {
+        "dimensions": {
+          "origin": ["simulated"]
+        }
+      },
+      "consequent": {
+        "dimensions": {
+          "origin": ["live_observed"]
+        },
+        "independent_evidence_required": []
+      },
+      "absolute": true,
+      "rejection_code": "NONIMP_SIMULATED_TO_LIVE"
+    },
+    {
+      "id": "declared-to-observed",
+      "kind": "non_implication",
+      "executable": true,
+      "description": "origin.declared does not imply effect.observed.",
+      "antecedent": {
+        "dimensions": {
+          "origin": ["declared"]
+        }
+      },
+      "consequent": {
+        "dimensions": {
+          "effect": ["observed"]
+        },
+        "independent_evidence_required": [
+          "independent_effect_observation"
+        ]
+      },
+      "absolute": false,
+      "rejection_code": "NONIMP_DECLARED_TO_OBSERVED"
+    },
+    {
+      "id": "signature-to-authority",
+      "kind": "non_implication",
+      "executable": true,
+      "description": "integrity.signature_valid authenticates bytes, not authority.valid.",
+      "antecedent": {
+        "dimensions": {
+          "integrity": ["signature_valid"]
+        }
+      },
+      "consequent": {
+        "dimensions": {
+          "authority": ["valid"]
+        },
+        "independent_evidence_required": [
+          "argument_bound_delegation",
+          "non_revoked_ucan"
+        ]
+      },
+      "absolute": false,
+      "rejection_code": "NONIMP_SIGNATURE_TO_AUTHORITY"
+    },
+    {
+      "id": "browser-policy-to-host-policy",
+      "kind": "non_implication",
+      "executable": true,
+      "description": "Browser policy/consent/allow objects do not set host policy.allowed.",
+      "antecedent": {
+        "claim_tokens": [
+          "browser_policy",
+          "browser_consent",
+          "browser_allow",
+          "browser_dry_run"
+        ]
+      },
+      "consequent": {
+        "dimensions": {
+          "policy": ["allowed", "allowed_with_obligations"]
+        },
+        "independent_evidence_required": [
+          "authenticated_host_policy_decision"
+        ]
+      },
+      "absolute": false,
+      "rejection_code": "NONIMP_BROWSER_TO_HOST_POLICY"
+    },
+    {
+      "id": "candidate-to-verified",
+      "kind": "non_implication",
+      "executable": true,
+      "description": "proof.candidate cannot become proof.verified without current verifier evidence.",
+      "antecedent": {
+        "dimensions": {
+          "proof": ["candidate"]
+        }
+      },
+      "consequent": {
+        "dimensions": {
+          "proof": ["verified"]
+        },
+        "independent_evidence_required": [
+          "named_current_verifier",
+          "verifier_admission_closure"
+        ]
+      },
+      "absolute": false,
+      "rejection_code": "NONIMP_CANDIDATE_TO_VERIFIED"
+    },
+    {
+      "id": "inventory-to-live-qualification",
+      "kind": "non_implication",
+      "executable": true,
+      "description": "Inventory or configuration support tiers do not imply live qualification.",
+      "antecedent": {
+        "claim_tokens": [
+          "inventory_or_configuration_support",
+          "backend_support_tier",
+          "configured_provider"
+        ]
+      },
+      "consequent": {
+        "dimensions": {
+          "environment": ["live"],
+          "origin": ["live_observed"]
+        },
+        "independent_evidence_required": [
+          "live_qualification_receipt",
+          "current_capability_admission"
+        ]
+      },
+      "absolute": false,
+      "rejection_code": "NONIMP_INVENTORY_TO_LIVE"
+    },
+    {
+      "id": "stale-to-current",
+      "kind": "non_implication",
+      "executable": true,
+      "description": "freshness.stale receipts cannot become freshness.current by relabeling.",
+      "antecedent": {
+        "dimensions": {
+          "freshness": ["stale", "superseded", "withdrawn"]
+        }
+      },
+      "consequent": {
+        "dimensions": {
+          "freshness": ["current"]
+        },
+        "independent_evidence_required": []
+      },
+      "absolute": true,
+      "rejection_code": "NONIMP_STALE_TO_CURRENT"
+    },
+    {
+      "id": "externally-unknown-to-observed",
+      "kind": "non_implication",
+      "executable": true,
+      "description": "effect.externally_unknown cannot become effect.observed without independent observation.",
+      "antecedent": {
+        "dimensions": {
+          "effect": ["externally_unknown"]
+        }
+      },
+      "consequent": {
+        "dimensions": {
+          "effect": ["observed"]
+        },
+        "independent_evidence_required": [
+          "independent_effect_observation"
+        ]
+      },
+      "absolute": false,
+      "rejection_code": "NONIMP_UNKNOWN_TO_OBSERVED"
+    },
+    {
+      "id": "discovery-to-completion",
+      "kind": "non_implication",
+      "executable": true,
+      "description": "Discovery or inventory presence is not completion, proof, or live qualification.",
+      "antecedent": {
+        "claim_tokens": ["discovery", "inventory_presence"]
+      },
+      "consequent": {
+        "dimensions": {
+          "proof": ["verified"],
+          "effect": ["observed"],
+          "origin": ["live_observed"],
+          "environment": ["live"]
+        },
+        "independent_evidence_required": [
+          "live_qualification_receipt",
+          "independent_effect_observation",
+          "named_current_verifier"
+        ]
+      },
+      "absolute": false,
+      "rejection_code": "NONIMP_DISCOVERY_TO_COMPLETION"
+    },
+    {
+      "id": "review-fills-missing-evidence",
+      "kind": "non_implication",
+      "executable": true,
+      "description": "Human or machine review cannot invent missing origin, effect, or authority evidence.",
+      "antecedent": {
+        "dimensions": {
+          "review": ["machine_reviewed", "human_reviewed"]
+        }
+      },
+      "consequent": {
+        "dimensions": {
+          "origin": ["live_observed"],
+          "effect": ["observed"],
+          "authority": ["valid"]
+        },
+        "independent_evidence_required": [
+          "live_qualification_receipt",
+          "independent_effect_observation",
+          "argument_bound_delegation"
+        ]
+      },
+      "absolute": false,
+      "rejection_code": "NONIMP_REVIEW_FILLS_EVIDENCE"
+    },
+    {
+      "id": "single-dimension-to-production-success",
+      "kind": "non_implication",
+      "executable": true,
+      "description": "Any single dimension value does not imply full-product production success.",
+      "antecedent": {
+        "claim_tokens": ["single_dimension_value", "legacy_total_ladder_rank"]
+      },
+      "consequent": {
+        "predicates": [
+          "production_supported",
+          "effect_successful",
+          "proof_reusable",
+          "receipt_authoritative",
+          "release_admissible"
+        ],
+        "independent_evidence_required": []
+      },
+      "absolute": true,
+      "rejection_code": "NONIMP_SINGLE_DIMENSION_TO_PRODUCT"
+    },
+    {
+      "id": "success-boolean-to-observed",
+      "kind": "non_implication",
+      "executable": true,
+      "description": "Generic success:true without observation cannot become effect.observed.",
+      "antecedent": {
+        "claim_tokens": ["success_true", "legacy_success_boolean"]
+      },
+      "consequent": {
+        "dimensions": {
+          "effect": ["observed"]
+        },
+        "independent_evidence_required": [
+          "independent_effect_observation"
+        ]
+      },
+      "absolute": false,
+      "rejection_code": "NONIMP_SUCCESS_BOOLEAN_TO_OBSERVED"
+    },
+    {
+      "id": "mutable-dependency-to-release",
+      "kind": "non_implication",
+      "executable": true,
+      "description": "Mutable VCS or unpinned dependencies cannot satisfy release_admissible.",
+      "antecedent": {
+        "claim_tokens": [
+          "mutable_vcs_dependency",
+          "floating_branch",
+          "nightly_index"
+        ]
+      },
+      "consequent": {
+        "predicates": ["release_admissible"],
+        "independent_evidence_required": [
+          "immutable_dependency_closure"
+        ]
+      },
+      "absolute": false,
+      "rejection_code": "NONIMP_MUTABLE_DEP_TO_RELEASE"
+    },
+    {
+      "id": "license-conflict-to-release",
+      "kind": "non_implication",
+      "executable": true,
+      "description": "Conflicting or missing SPDX rights cannot mechanically clear release_admissible.",
+      "antecedent": {
+        "claim_tokens": [
+          "license_conflict",
+          "missing_spdx",
+          "ambiguous_rights"
+        ]
+      },
+      "consequent": {
+        "predicates": ["release_admissible"],
+        "independent_evidence_required": [
+          "rights_resolution",
+          "human_legal_clearance"
+        ]
+      },
+      "absolute": false,
+      "rejection_code": "NONIMP_LICENSE_TO_RELEASE"
+    }
+  ],
+  "required_negative_rule_ids": [
+    "digest-to-truth",
+    "payment-to-authority",
+    "hermetic-to-live",
+    "fixture-to-observed"
+  ],
+  "transitions": {
+    "unknown_policy": "reject",
+    "by_dimension": {
+      "origin": {
+        "allowed": [
+          {"from": "absent", "to": "declared"},
+          {"from": "absent", "to": "fixture"},
+          {"from": "absent", "to": "simulated"},
+          {"from": "absent", "to": "hermetic_observed", "requires_evidence": ["independent_effect_observation"]},
+          {"from": "absent", "to": "live_observed", "requires_evidence": ["live_qualification_receipt"]},
+          {"from": "declared", "to": "hermetic_observed", "requires_evidence": ["independent_effect_observation"]},
+          {"from": "declared", "to": "live_observed", "requires_evidence": ["live_qualification_receipt", "independent_effect_observation"]},
+          {"from": "hermetic_observed", "to": "live_observed", "requires_evidence": ["live_qualification_receipt"]}
+        ],
+        "forbidden": [
+          {"from": "fixture", "to": "live_observed", "negative_rule": "fixture-to-observed"},
+          {"from": "fixture", "to": "hermetic_observed", "negative_rule": "fixture-to-observed"},
+          {"from": "simulated", "to": "live_observed", "negative_rule": "simulated-to-live-observed"},
+          {"from": "simulated", "to": "hermetic_observed", "negative_rule": "simulated-to-live-observed"}
+        ]
+      },
+      "integrity": {
+        "allowed": [
+          {"from": "unchecked", "to": "structurally_valid"},
+          {"from": "unchecked", "to": "digest_valid", "requires_evidence": ["canonical_digest_match"]},
+          {"from": "unchecked", "to": "signature_valid", "requires_evidence": ["canonical_digest_match", "authentic_signature"]},
+          {"from": "structurally_valid", "to": "digest_valid", "requires_evidence": ["canonical_digest_match"]},
+          {"from": "structurally_valid", "to": "signature_valid", "requires_evidence": ["canonical_digest_match", "authentic_signature"]},
+          {"from": "digest_valid", "to": "signature_valid", "requires_evidence": ["authentic_signature"]}
+        ],
+        "forbidden": [
+          {"from": "digest_valid", "to": "proof.verified", "negative_rule": "digest-to-truth", "cross_dimension": true}
+        ]
+      },
+      "authority": {
+        "allowed": [
+          {"from": "unchecked", "to": "absent"},
+          {"from": "unchecked", "to": "valid", "requires_evidence": ["argument_bound_delegation", "non_revoked_ucan"]},
+          {"from": "unchecked", "to": "expired"},
+          {"from": "unchecked", "to": "revoked"},
+          {"from": "unchecked", "to": "denied"},
+          {"from": "absent", "to": "valid", "requires_evidence": ["argument_bound_delegation", "non_revoked_ucan"]},
+          {"from": "valid", "to": "expired"},
+          {"from": "valid", "to": "revoked"},
+          {"from": "valid", "to": "denied"}
+        ],
+        "forbidden": [
+          {"from": "payment_or_confirmation", "to": "valid", "negative_rule": "payment-to-authority", "claim_token_transition": true},
+          {"from": "expired", "to": "valid", "requires_evidence_never_sufficient_by_relabel": true},
+          {"from": "revoked", "to": "valid", "requires_evidence_never_sufficient_by_relabel": true},
+          {"from": "denied", "to": "valid", "requires_evidence_never_sufficient_by_relabel": true}
+        ]
+      },
+      "policy": {
+        "allowed": [
+          {"from": "unchecked", "to": "allowed", "requires_evidence": ["authenticated_host_policy_decision"]},
+          {"from": "unchecked", "to": "denied"},
+          {"from": "unchecked", "to": "allowed_with_obligations", "requires_evidence": ["authenticated_host_policy_decision"]},
+          {"from": "unchecked", "to": "indeterminate"},
+          {"from": "indeterminate", "to": "allowed", "requires_evidence": ["authenticated_host_policy_decision"]},
+          {"from": "indeterminate", "to": "denied"},
+          {"from": "allowed_with_obligations", "to": "allowed", "requires_evidence": ["obligations_discharged"]},
+          {"from": "allowed_with_obligations", "to": "denied"}
+        ],
+        "forbidden": [
+          {"from": "browser_policy_consent_allow", "to": "allowed", "negative_rule": "browser-policy-to-host-policy", "claim_token_transition": true},
+          {"from": "denied", "to": "allowed", "requires_evidence_never_sufficient_by_relabel": true}
+        ]
+      },
+      "proof": {
+        "allowed": [
+          {"from": "none", "to": "candidate"},
+          {"from": "none", "to": "unknown"},
+          {"from": "none", "to": "verifier_unavailable"},
+          {"from": "candidate", "to": "verified", "requires_evidence": ["named_current_verifier", "verifier_admission_closure"]},
+          {"from": "candidate", "to": "refuted"},
+          {"from": "candidate", "to": "unknown"},
+          {"from": "candidate", "to": "verifier_unavailable"},
+          {"from": "unknown", "to": "verified", "requires_evidence": ["named_current_verifier", "verifier_admission_closure"]},
+          {"from": "unknown", "to": "refuted"},
+          {"from": "verifier_unavailable", "to": "verified", "requires_evidence": ["named_current_verifier", "verifier_admission_closure"]},
+          {"from": "verified", "to": "refuted"},
+          {"from": "verified", "to": "unknown"}
+        ],
+        "forbidden": [
+          {"from": "candidate", "to": "verified", "negative_rule": "candidate-to-verified", "when_missing_evidence": ["named_current_verifier", "verifier_admission_closure"]},
+          {"from": "digest_valid", "to": "verified", "negative_rule": "digest-to-truth", "claim_token_transition": true}
+        ]
+      },
+      "freshness": {
+        "allowed": [
+          {"from": "current", "to": "stale"},
+          {"from": "current", "to": "superseded"},
+          {"from": "current", "to": "withdrawn"},
+          {"from": "stale", "to": "superseded"},
+          {"from": "stale", "to": "withdrawn"},
+          {"from": "superseded", "to": "withdrawn"}
+        ],
+        "forbidden": [
+          {"from": "stale", "to": "current", "negative_rule": "stale-to-current"},
+          {"from": "superseded", "to": "current", "negative_rule": "stale-to-current"},
+          {"from": "withdrawn", "to": "current", "negative_rule": "stale-to-current"},
+          {"from": "withdrawn", "to": "stale", "negative_rule": "stale-to-current"}
+        ]
+      },
+      "effect": {
+        "allowed": [
+          {"from": "not_started", "to": "reserved"},
+          {"from": "not_started", "to": "started"},
+          {"from": "reserved", "to": "started"},
+          {"from": "started", "to": "externally_unknown"},
+          {"from": "started", "to": "observed", "requires_evidence": ["independent_effect_observation"]},
+          {"from": "started", "to": "failed"},
+          {"from": "externally_unknown", "to": "observed", "requires_evidence": ["independent_effect_observation"]},
+          {"from": "externally_unknown", "to": "failed"},
+          {"from": "externally_unknown", "to": "compensated"},
+          {"from": "observed", "to": "compensated"},
+          {"from": "failed", "to": "compensated"}
+        ],
+        "forbidden": [
+          {"from": "not_started", "to": "observed", "negative_rule": "declared-to-observed"},
+          {"from": "externally_unknown", "to": "observed", "negative_rule": "externally-unknown-to-observed", "when_missing_evidence": ["independent_effect_observation"]},
+          {"from": "fixture", "to": "observed", "negative_rule": "fixture-to-observed", "claim_token_transition": true}
+        ]
+      },
+      "environment": {
+        "allowed": [
+          {"from": "hermetic", "to": "conditional"},
+          {"from": "conditional", "to": "live", "requires_evidence": ["live_qualification_receipt", "current_capability_admission"]}
+        ],
+        "forbidden": [
+          {"from": "hermetic", "to": "live", "negative_rule": "hermetic-to-live"},
+          {"from": "conditional", "to": "live", "negative_rule": "inventory-to-live-qualification", "when_missing_evidence": ["live_qualification_receipt", "current_capability_admission"]}
+        ]
+      },
+      "review": {
+        "allowed": [
+          {"from": "unreviewed", "to": "machine_reviewed"},
+          {"from": "unreviewed", "to": "human_reviewed"},
+          {"from": "machine_reviewed", "to": "human_reviewed"}
+        ],
+        "forbidden": [
+          {"from": "human_reviewed", "to": "authority.valid", "negative_rule": "review-fills-missing-evidence", "cross_dimension": true},
+          {"from": "machine_reviewed", "to": "effect.observed", "negative_rule": "review-fills-missing-evidence", "cross_dimension": true}
+        ]
+      }
+    }
+  },
+  "compatibility_rules": {
+    "legacy_total_ladder_rank_alone_never_satisfies_predicates": true,
+    "unsafe_promotion_default": false,
+    "conservative_legacy_mappings": true,
+    "discovery_is_not_completion": true,
+    "forbidden_generic_fields": [
+      "success",
+      "available",
+      "supported",
+      "verified",
+      "proven"
+    ],
+    "mappings": [
+      {
+        "id": "legacy-success-boolean",
+        "legacy_field": "success",
+        "may_inform_dimensions": ["effect"],
+        "max_effect": "started",
+        "forbidden_outcomes": ["Observed", "Verified"],
+        "satisfies_predicates": [],
+        "unsafe_promotion": false
+      },
+      {
+        "id": "legacy-available-boolean",
+        "legacy_field": "available",
+        "may_inform_dimensions": [],
+        "claim_tokens": ["discovery", "inventory_presence"],
+        "forbidden_predicates": ["production_supported"],
+        "satisfies_predicates": [],
+        "unsafe_promotion": false
+      },
+      {
+        "id": "legacy-supported-boolean",
+        "legacy_field": "supported",
+        "may_inform_dimensions": [],
+        "claim_tokens": ["inventory_or_configuration_support"],
+        "forbidden_predicates": ["production_supported"],
+        "satisfies_predicates": [],
+        "unsafe_promotion": false
+      },
+      {
+        "id": "legacy-verified-boolean",
+        "legacy_field": "verified",
+        "may_inform_dimensions": ["proof"],
+        "max_proof": "candidate",
+        "forbidden_proof": ["verified"],
+        "satisfies_predicates": [],
+        "unsafe_promotion": false
+      },
+      {
+        "id": "legacy-proven-boolean",
+        "legacy_field": "proven",
+        "may_inform_dimensions": ["proof"],
+        "max_proof": "candidate",
+        "forbidden_proof": ["verified"],
+        "satisfies_predicates": [],
+        "unsafe_promotion": false
+      },
+      {
+        "id": "legacy-total-assurance-ladder",
+        "legacy_field": "assurance_level_rank",
+        "may_inform_dimensions": ["proof"],
+        "claim_tokens": ["legacy_total_ladder_rank", "single_dimension_value"],
+        "satisfies_predicates": [],
+        "unsafe_promotion": false
+      },
+      {
+        "id": "legacy-backend-support-tier",
+        "legacy_field": "backend_support_tier",
+        "may_inform_dimensions": [],
+        "claim_tokens": ["backend_support_tier", "inventory_or_configuration_support"],
+        "forbidden_predicates": ["production_supported"],
+        "satisfies_predicates": [],
+        "unsafe_promotion": false
+      }
+    ]
+  },
+  "evaluation": {
+    "envelope_fields": [
+      "origin",
+      "integrity",
+      "authority",
+      "policy",
+      "proof",
+      "freshness",
+      "effect",
+      "environment",
+      "review"
+    ],
+    "evidence_bag_field": "evidence",
+    "claim_tokens_field": "claim_tokens",
+    "predicate_requires_all_necessary_dimensions": true,
+    "predicate_requires_all_necessary_evidence": true,
+    "negative_rules_are_fail_closed": true,
+    "legacy_mapping_cannot_satisfy_predicates_alone": true
+  }
+}
