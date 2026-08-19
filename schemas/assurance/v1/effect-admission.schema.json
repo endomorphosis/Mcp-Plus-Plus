@@ -1,0 +1,353 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcp-plus-plus.dev/schemas/assurance/v1/effect-admission.schema.json",
+  "title": "EffectAdmission@1",
+  "description": "Closed Effect Admission Kernel contract instance (facp/effect-admission@1). Binds operation classification, admission typestate, mechanically derived token obligations, and kernel-only handler unlock. Unknown fields, unknown enum spellings, free-form authority/outcome strings, non-kernel token issuers, and floats fail closed.",
+  "x-facp": {
+    "schema": "facp/effect-admission@1",
+    "schema_version": 1,
+    "task_id": "FACP-038",
+    "goal_id": "FACP-G320",
+    "bundle": "facp/admission/spec",
+    "release": "formal-claim-algebra-v1",
+    "operation_spec_schema": "facp/operation-spec@1",
+    "admission_token_schema": "facp/admission-token@1",
+    "effect_receipt_schema": "facp/effect-receipt@1",
+    "vocabulary_schema": "facp/effect-admission-vocab@1",
+    "fail_closed": true,
+    "floats_forbidden": true,
+    "unknown_fields_forbidden": true,
+    "free_form_authority_forbidden": true,
+    "free_form_outcome_forbidden": true,
+    "boolean_success_forbidden": true,
+    "kernel_only_token_issuer": true,
+    "unknown_explicit": true,
+    "compensation_required_explicit": true,
+    "field_order": [
+      "schema",
+      "schema_version",
+      "operation_id",
+      "effect_class",
+      "idempotency_class",
+      "reversibility_class",
+      "authority_obligation",
+      "policy_obligation",
+      "confirmation_obligation",
+      "lease_obligation",
+      "observation_obligation",
+      "typestate",
+      "derived_token_obligations",
+      "admission_token_issuer",
+      "handler_unlocked",
+      "terminal"
+    ],
+    "typestate_happy_path": [
+      "Proposed",
+      "ContractResolved",
+      "ActorAuthenticated",
+      "CapabilityVerified",
+      "PolicyEvaluated",
+      "ObligationsSatisfied",
+      "ConfirmationSatisfied",
+      "LeaseHeld",
+      "Reserved",
+      "Started",
+      "Observed",
+      "ReceiptSealed"
+    ],
+    "typestate_exceptional": [
+      "Rejected",
+      "Unavailable",
+      "Failed",
+      "Unknown",
+      "CompensationRequired",
+      "Compensated",
+      "Aborted"
+    ],
+    "handler_unlock_typestates": ["Reserved", "Started"],
+    "admission_token_issuer": ["effect_admission_kernel"],
+    "stable_error_codes": [
+      "UNKNOWN_FIELD",
+      "MISSING_FIELD",
+      "UNKNOWN_ENUM",
+      "INVALID_TYPE",
+      "FORBIDDEN_FLOAT",
+      "UNBOUNDED_STRING",
+      "UNBOUNDED_ARRAY",
+      "FREE_FORM_AUTHORITY",
+      "FREE_FORM_OUTCOME",
+      "FORBIDDEN_SUCCESS_BOOLEAN",
+      "ILLEGAL_TYPESTATE_TRANSITION",
+      "TOKEN_OBLIGATION_MISMATCH",
+      "HANDLER_NOT_UNLOCKED",
+      "NON_KERNEL_TOKEN_ISSUER",
+      "BLIND_UNKNOWN_REPLAY",
+      "COMPENSATION_REQUIRED_EXPLICIT",
+      "PURE_TOKEN_FORBIDDEN",
+      "DUPLICATE_TOKEN_OBLIGATION"
+    ]
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "required": [
+    "schema",
+    "schema_version",
+    "operation_id",
+    "effect_class",
+    "idempotency_class",
+    "reversibility_class",
+    "authority_obligation",
+    "policy_obligation",
+    "confirmation_obligation",
+    "lease_obligation",
+    "observation_obligation",
+    "typestate",
+    "derived_token_obligations",
+    "admission_token_issuer",
+    "handler_unlocked",
+    "terminal"
+  ],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "facp/effect-admission@1",
+      "maxLength": 64
+    },
+    "schema_version": {
+      "type": "integer",
+      "const": 1,
+      "minimum": 1,
+      "maximum": 1
+    },
+    "operation_id": { "$ref": "#/$defs/operation_id" },
+    "effect_class": { "$ref": "#/$defs/effect_class" },
+    "idempotency_class": { "$ref": "#/$defs/idempotency_class" },
+    "reversibility_class": { "$ref": "#/$defs/reversibility_class" },
+    "authority_obligation": { "$ref": "#/$defs/authority_obligation" },
+    "policy_obligation": { "$ref": "#/$defs/policy_obligation" },
+    "confirmation_obligation": { "$ref": "#/$defs/confirmation_obligation" },
+    "lease_obligation": { "$ref": "#/$defs/lease_obligation" },
+    "observation_obligation": { "$ref": "#/$defs/observation_obligation" },
+    "typestate": { "$ref": "#/$defs/typestate" },
+    "derived_token_obligations": {
+      "type": "array",
+      "description": "Mechanically derived AdmissionToken obligations. Empty only for pure effect_class. Free-form obligation strings are forbidden.",
+      "minItems": 0,
+      "maxItems": 16,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/token_obligation" }
+    },
+    "admission_token_issuer": {
+      "description": "Token issuer. Only effect_admission_kernel is admitted; null means no token (pure or pre-Reserved).",
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/admission_token_issuer" }
+      ]
+    },
+    "handler_unlocked": {
+      "type": "boolean",
+      "description": "True only when an effectful handler may run under the kernel unlock rule."
+    },
+    "terminal": {
+      "description": "Exceptional/terminal typestate marker when distinct from the happy-path cursor, else null.",
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/typestate_exceptional" }
+      ]
+    }
+  },
+  "$defs": {
+    "operation_id": {
+      "type": "string",
+      "description": "Stable dotted operation identity (namespace-qualified).",
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*){1,7}$",
+      "minLength": 3,
+      "maxLength": 128
+    },
+    "effect_class": {
+      "type": "string",
+      "description": "Closed effect class assigned to every migrated operation.",
+      "enum": [
+        "pure",
+        "read",
+        "write",
+        "process",
+        "credential",
+        "install",
+        "repository",
+        "publish",
+        "payment",
+        "private",
+        "legal",
+        "irreversible"
+      ],
+      "maxLength": 32
+    },
+    "idempotency_class": {
+      "type": "string",
+      "enum": [
+        "pure_idempotent",
+        "idempotent",
+        "at_most_once",
+        "non_idempotent"
+      ],
+      "maxLength": 32
+    },
+    "reversibility_class": {
+      "type": "string",
+      "enum": [
+        "reversible",
+        "compensatable",
+        "irreversible"
+      ],
+      "maxLength": 32
+    },
+    "authority_obligation": {
+      "type": "string",
+      "description": "Closed authority obligation. Free-form authority strings and browser-authored grants are forbidden.",
+      "enum": [
+        "none",
+        "actor_authenticated",
+        "capability_verified"
+      ],
+      "maxLength": 32
+    },
+    "policy_obligation": {
+      "type": "string",
+      "description": "Closed host-policy obligation. Browser allow/consent/dry_run fields are not policy.",
+      "enum": [
+        "none",
+        "host_policy_required",
+        "host_policy_with_obligations"
+      ],
+      "maxLength": 32
+    },
+    "confirmation_obligation": {
+      "type": "string",
+      "enum": [
+        "none",
+        "one_use_confirmation_required"
+      ],
+      "maxLength": 32
+    },
+    "lease_obligation": {
+      "type": "string",
+      "enum": [
+        "none",
+        "lease_required"
+      ],
+      "maxLength": 32
+    },
+    "observation_obligation": {
+      "type": "string",
+      "enum": [
+        "none",
+        "independent_observation_required",
+        "delegated_observation_allowed"
+      ],
+      "maxLength": 32
+    },
+    "typestate_happy_path": {
+      "type": "string",
+      "enum": [
+        "Proposed",
+        "ContractResolved",
+        "ActorAuthenticated",
+        "CapabilityVerified",
+        "PolicyEvaluated",
+        "ObligationsSatisfied",
+        "ConfirmationSatisfied",
+        "LeaseHeld",
+        "Reserved",
+        "Started",
+        "Observed",
+        "ReceiptSealed"
+      ],
+      "maxLength": 32
+    },
+    "typestate_exceptional": {
+      "type": "string",
+      "description": "Exceptional/terminal typestates. Unknown and CompensationRequired are explicit constructors.",
+      "enum": [
+        "Rejected",
+        "Unavailable",
+        "Failed",
+        "Unknown",
+        "CompensationRequired",
+        "Compensated",
+        "Aborted"
+      ],
+      "maxLength": 32
+    },
+    "typestate": {
+      "type": "string",
+      "description": "Current admission typestate (happy-path or exceptional).",
+      "enum": [
+        "Proposed",
+        "ContractResolved",
+        "ActorAuthenticated",
+        "CapabilityVerified",
+        "PolicyEvaluated",
+        "ObligationsSatisfied",
+        "ConfirmationSatisfied",
+        "LeaseHeld",
+        "Reserved",
+        "Started",
+        "Observed",
+        "ReceiptSealed",
+        "Rejected",
+        "Unavailable",
+        "Failed",
+        "Unknown",
+        "CompensationRequired",
+        "Compensated",
+        "Aborted"
+      ],
+      "maxLength": 32
+    },
+    "token_obligation": {
+      "type": "string",
+      "description": "Closed mechanically derived AdmissionToken obligation constructor.",
+      "enum": [
+        "kernel_issued",
+        "operation_bound",
+        "effect_class_bound",
+        "argument_bound",
+        "nonce_bound",
+        "expiry_bound",
+        "actor_bound",
+        "capability_bound",
+        "delegation_bound",
+        "policy_bound",
+        "policy_obligations_bound",
+        "confirmation_bound",
+        "lease_bound",
+        "observation_bound"
+      ],
+      "maxLength": 32
+    },
+    "admission_token_issuer": {
+      "type": "string",
+      "description": "Only the host Effect Admission Kernel may issue unlock tokens.",
+      "enum": ["effect_admission_kernel"],
+      "maxLength": 32
+    },
+    "closed_outcome": {
+      "type": "string",
+      "description": "Formal Claim Algebra closed outcome algebra value.",
+      "enum": [
+        "Unavailable",
+        "Rejected",
+        "Simulated",
+        "Attempted",
+        "Unknown",
+        "Observed",
+        "Verified",
+        "Failed",
+        "Compensated"
+      ],
+      "maxLength": 32
+    }
+  }
+}
