@@ -1,0 +1,9 @@
+# FACP-011: hermetic Formal Claim Algebra Lean package.
+# Toolchain: Lean 4.33.0 / Lake from host TCB (tool:lean4). No package requires.
+name = "FormalClaimAlgebra"
+version = "0.1.0"
+defaultTargets = ["FormalClaimAlgebra"]
+
+[[lean_lib]]
+name = "FormalClaimAlgebra"
+roots = ["FormalClaimAlgebra.Basic"]
