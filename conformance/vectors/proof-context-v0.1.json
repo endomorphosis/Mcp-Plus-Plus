@@ -1,0 +1,294 @@
+{
+  "schema": "mcp++/conformance/proof-context-v0.1-vectors@1",
+  "algorithm": "mcpp-jcs-v1",
+  "cid_behavior": "CIDv1 raw sha2-256 base32; pseudo-CIDs rejected",
+  "positives": [
+    {
+      "name": "repository-state",
+      "expect": "accept",
+      "cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4",
+      "canonical_utf8": "{\"commit\":\"b3669171b9bf34dac7e8f178bd0c2cc5936e57ae\",\"remote\":\"https://github.com/endomorphosis/ipfs_datasets_py.git\",\"repository\":\"endomorphosis/ipfs_datasets_py\",\"schema\":\"pcce/proof-context/v0.1/repository-state\",\"tree\":\"16ef68abe8a35a3033dfaf1ed4e8d6132600df8f\"}",
+      "instance": {
+        "schema": "pcce/proof-context/v0.1/repository-state",
+        "repository": "endomorphosis/ipfs_datasets_py",
+        "remote": "https://github.com/endomorphosis/ipfs_datasets_py.git",
+        "commit": "b3669171b9bf34dac7e8f178bd0c2cc5936e57ae",
+        "tree": "16ef68abe8a35a3033dfaf1ed4e8d6132600df8f"
+      }
+    },
+    {
+      "name": "task-specification",
+      "expect": "accept",
+      "cid": "bafkreieevumqabpcl646fq7wmkp3vk2u5l725bmmx45tcmttivl53wqplu",
+      "canonical_utf8": "{\"declared_files\":[\"conformance/vectors/proof-context-v0.1.json\"],\"objective_id\":\"PCCE-G100\",\"owned_paths\":[\"conformance/vectors/proof-context-v0.1.json\"],\"provenance\":\"live\",\"repository_state_cid\":\"bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4\",\"schema\":\"pcce/proof-context/v0.1/task-specification\",\"task_id\":\"PCCE-007\"}",
+      "instance": {
+        "schema": "pcce/proof-context/v0.1/task-specification",
+        "task_id": "PCCE-007",
+        "objective_id": "PCCE-G100",
+        "repository_state_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4",
+        "owned_paths": [
+          "conformance/vectors/proof-context-v0.1.json"
+        ],
+        "declared_files": [
+          "conformance/vectors/proof-context-v0.1.json"
+        ],
+        "provenance": "live"
+      }
+    },
+    {
+      "name": "coding-agent-invocation",
+      "expect": "accept",
+      "cid": "bafkreidnaj7ty7frakfkwb6tfaw7yfjt6l6jnakd2mn7ntb2tdncw2dlde",
+      "canonical_utf8": "{\"cached_token_count\":3,\"cost_micros\":0,\"invocation_cid\":\"bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4\",\"latency_ms\":40,\"model\":\"grok-4.6\",\"provenance\":\"live\",\"provider\":\"grok\",\"repository_state_cid\":\"bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4\",\"response_artifact_cid\":\"bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4\",\"revision\":\"5a4b14439245a9c54804b3eb1d7f198e3e25e7de\",\"route_cid\":\"bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4\",\"schema\":\"pcce/proof-context/v0.1/coding-agent-invocation\",\"task_id\":\"PCCE-007\",\"tier\":\"implementation\",\"token_count\":12}",
+      "instance": {
+        "schema": "pcce/proof-context/v0.1/coding-agent-invocation",
+        "invocation_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4",
+        "task_id": "PCCE-007",
+        "repository_state_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4",
+        "route_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4",
+        "provider": "grok",
+        "model": "grok-4.6",
+        "revision": "5a4b14439245a9c54804b3eb1d7f198e3e25e7de",
+        "tier": "implementation",
+        "token_count": 12,
+        "cached_token_count": 3,
+        "latency_ms": 40,
+        "cost_micros": 0,
+        "response_artifact_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4",
+        "provenance": "live"
+      }
+    },
+    {
+      "name": "patch-proposal",
+      "expect": "accept",
+      "cid": "bafkreiajkljke3so4qwjxl33t3k5shfmcn2kclplxovddhpvzcurxiille",
+      "canonical_utf8": "{\"declared_files\":[\"conformance/vectors/proof-context-v0.1.json\"],\"invocation_cid\":\"bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4\",\"patch_cid\":\"bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4\",\"proposal_cid\":\"bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4\",\"provenance\":\"live\",\"repository_state_cid\":\"bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4\",\"schema\":\"pcce/proof-context/v0.1/patch-proposal\",\"task_id\":\"PCCE-007\"}",
+      "instance": {
+        "schema": "pcce/proof-context/v0.1/patch-proposal",
+        "proposal_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4",
+        "task_id": "PCCE-007",
+        "repository_state_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4",
+        "invocation_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4",
+        "patch_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4",
+        "declared_files": [
+          "conformance/vectors/proof-context-v0.1.json"
+        ],
+        "provenance": "live"
+      }
+    },
+    {
+      "name": "execution-receipt-live-succeeded",
+      "expect": "accept",
+      "cid": "bafkreihafpkeg7ta3ptgjq7xrngc27zfh7wipqjmvlte5kbaulj4zkdvpu",
+      "canonical_utf8": "{\"cached_token_count\":3,\"cost_micros\":0,\"finished_at\":\"2026-08-21T15:30:01Z\",\"invocation_cid\":\"bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4\",\"latency_ms\":40,\"proposal_cid\":\"bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4\",\"provenance\":\"live\",\"receipt_cid\":\"bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4\",\"repository_state_cid\":\"bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4\",\"response_artifact_cid\":\"bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4\",\"schema\":\"pcce/proof-context/v0.1/execution-receipt\",\"started_at\":\"2026-08-21T15:30:00Z\",\"status\":\"succeeded\",\"task_id\":\"PCCE-007\",\"token_count\":12}",
+      "instance": {
+        "schema": "pcce/proof-context/v0.1/execution-receipt",
+        "receipt_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4",
+        "task_id": "PCCE-007",
+        "repository_state_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4",
+        "invocation_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4",
+        "proposal_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4",
+        "status": "succeeded",
+        "provenance": "live",
+        "started_at": "2026-08-21T15:30:00Z",
+        "finished_at": "2026-08-21T15:30:01Z",
+        "token_count": 12,
+        "cached_token_count": 3,
+        "latency_ms": 40,
+        "cost_micros": 0,
+        "response_artifact_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4"
+      }
+    },
+    {
+      "name": "execution-receipt-simulated-labeled",
+      "expect": "accept",
+      "cid": "bafkreidl67ee2ut6b6rx7hevugpuxzsh72i52m2xktcmuzsltrvuhtvwna",
+      "canonical_utf8": "{\"cached_token_count\":3,\"cost_micros\":0,\"finished_at\":\"2026-08-21T15:30:01Z\",\"invocation_cid\":\"bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4\",\"latency_ms\":40,\"proposal_cid\":\"bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4\",\"provenance\":\"simulated\",\"receipt_cid\":\"bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4\",\"repository_state_cid\":\"bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4\",\"response_artifact_cid\":\"bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4\",\"schema\":\"pcce/proof-context/v0.1/execution-receipt\",\"started_at\":\"2026-08-21T15:30:00Z\",\"status\":\"simulated\",\"task_id\":\"PCCE-007\",\"token_count\":12}",
+      "instance": {
+        "schema": "pcce/proof-context/v0.1/execution-receipt",
+        "receipt_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4",
+        "task_id": "PCCE-007",
+        "repository_state_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4",
+        "invocation_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4",
+        "proposal_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4",
+        "status": "simulated",
+        "provenance": "simulated",
+        "started_at": "2026-08-21T15:30:00Z",
+        "finished_at": "2026-08-21T15:30:01Z",
+        "token_count": 12,
+        "cached_token_count": 3,
+        "latency_ms": 40,
+        "cost_micros": 0,
+        "response_artifact_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4"
+      }
+    }
+  ],
+  "negatives": [
+    {
+      "name": "unknown-field",
+      "expect": "reject",
+      "reason": "unknown_field",
+      "instance": {
+        "schema": "pcce/proof-context/v0.1/task-specification",
+        "task_id": "PCCE-007",
+        "objective_id": "PCCE-G100",
+        "repository_state_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4",
+        "owned_paths": [
+          "conformance/vectors/proof-context-v0.1.json"
+        ],
+        "declared_files": [
+          "conformance/vectors/proof-context-v0.1.json"
+        ],
+        "provenance": "live",
+        "extra": true
+      }
+    },
+    {
+      "name": "unknown-status",
+      "expect": "reject",
+      "reason": "unknown_status",
+      "instance": {
+        "schema": "pcce/proof-context/v0.1/execution-receipt",
+        "receipt_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4",
+        "task_id": "PCCE-007",
+        "repository_state_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4",
+        "invocation_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4",
+        "proposal_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4",
+        "status": "failed",
+        "provenance": "live",
+        "started_at": "2026-08-21T15:30:00Z",
+        "finished_at": "2026-08-21T15:30:01Z",
+        "token_count": 12,
+        "cached_token_count": 3,
+        "latency_ms": 40,
+        "cost_micros": 0,
+        "response_artifact_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4"
+      }
+    },
+    {
+      "name": "pseudo-cid",
+      "expect": "reject",
+      "reason": "pseudo_cid",
+      "instance": {
+        "schema": "pcce/proof-context/v0.1/task-specification",
+        "task_id": "PCCE-007",
+        "objective_id": "PCCE-G100",
+        "repository_state_cid": "sha256:deadbeef",
+        "owned_paths": [
+          "conformance/vectors/proof-context-v0.1.json"
+        ],
+        "declared_files": [
+          "conformance/vectors/proof-context-v0.1.json"
+        ],
+        "provenance": "live"
+      }
+    },
+    {
+      "name": "malformed-cid",
+      "expect": "reject",
+      "reason": "malformed_cid",
+      "instance": {
+        "schema": "pcce/proof-context/v0.1/task-specification",
+        "task_id": "PCCE-007",
+        "objective_id": "PCCE-G100",
+        "repository_state_cid": "not-a-cid",
+        "owned_paths": [
+          "conformance/vectors/proof-context-v0.1.json"
+        ],
+        "declared_files": [
+          "conformance/vectors/proof-context-v0.1.json"
+        ],
+        "provenance": "live"
+      }
+    },
+    {
+      "name": "qm-new-mint",
+      "expect": "reject",
+      "reason": "qm_new_mint",
+      "instance": {
+        "schema": "pcce/proof-context/v0.1/task-specification",
+        "task_id": "PCCE-007",
+        "objective_id": "PCCE-G100",
+        "repository_state_cid": "QmYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY",
+        "owned_paths": [
+          "conformance/vectors/proof-context-v0.1.json"
+        ],
+        "declared_files": [
+          "conformance/vectors/proof-context-v0.1.json"
+        ],
+        "provenance": "live"
+      }
+    },
+    {
+      "name": "wrong-parent-schema",
+      "expect": "reject",
+      "reason": "schema_mismatch",
+      "instance": {
+        "schema": "pcce/proof-context/v0.1/v9/task-specification",
+        "task_id": "PCCE-007",
+        "objective_id": "PCCE-G100",
+        "repository_state_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4",
+        "owned_paths": [
+          "conformance/vectors/proof-context-v0.1.json"
+        ],
+        "declared_files": [
+          "conformance/vectors/proof-context-v0.1.json"
+        ],
+        "provenance": "live"
+      }
+    },
+    {
+      "name": "stale-status-unlabeled-live",
+      "expect": "reject",
+      "reason": "accept_status_but_not_success",
+      "instance": {
+        "schema": "pcce/proof-context/v0.1/execution-receipt",
+        "receipt_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4",
+        "task_id": "PCCE-007",
+        "repository_state_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4",
+        "invocation_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4",
+        "proposal_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4",
+        "status": "stale",
+        "provenance": "live",
+        "started_at": "2026-08-21T15:30:00Z",
+        "finished_at": "2026-08-21T15:30:01Z",
+        "token_count": 12,
+        "cached_token_count": 3,
+        "latency_ms": 40,
+        "cost_micros": 0,
+        "response_artifact_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4"
+      }
+    },
+    {
+      "name": "simulated-as-live",
+      "expect": "reject",
+      "reason": "simulated_promoted",
+      "instance": {
+        "schema": "pcce/proof-context/v0.1/execution-receipt",
+        "receipt_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4",
+        "task_id": "PCCE-007",
+        "repository_state_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4",
+        "invocation_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4",
+        "proposal_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4",
+        "status": "succeeded",
+        "provenance": "simulated",
+        "started_at": "2026-08-21T15:30:00Z",
+        "finished_at": "2026-08-21T15:30:01Z",
+        "token_count": 12,
+        "cached_token_count": 3,
+        "latency_ms": 40,
+        "cost_micros": 0,
+        "response_artifact_cid": "bafkreihvpywecvs34hmp62sqwjskw334ewdbyfmxmjvhbmziwjzh3iggv4"
+      }
+    },
+    {
+      "name": "missing-required",
+      "expect": "reject",
+      "reason": "malformed",
+      "instance": {
+        "schema": "pcce/proof-context/v0.1/task-specification",
+        "task_id": "PCCE-007"
+      }
+    }
+  ]
+}
