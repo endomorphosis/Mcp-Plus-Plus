@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcp-plus-plus.dev/schemas/proof-context/v0.1/error-taxonomy.schema.json",
+  "title": "PCCE proof-context v0.1 error taxonomy",
+  "description": "Closed error vocabulary. Unknown values are rejected.",
+  "type": "string",
+  "enum": [
+    "unknown_field",
+    "malformed",
+    "identity_inconsistent",
+    "stale_root",
+    "simulated_promoted",
+    "pseudo_cid",
+    "schema_mismatch",
+    "boundary_violation",
+    "unavailable_capability",
+    "timeout",
+    "cancelled",
+    "verification_failed",
+    "proof_failed",
+    "assurance_failed",
+    "context_insufficient",
+    "infrastructure_failure",
+    "partial_effect",
+    "repair_required",
+    "human_review_required"
+  ]
+}

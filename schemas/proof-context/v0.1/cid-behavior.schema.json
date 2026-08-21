@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcp-plus-plus.dev/schemas/proof-context/v0.1/cid-behavior.schema.json",
+  "title": "PCCE proof-context v0.1 CID behavior",
+  "description": "New v0.1 mints MUST be CIDv1 base32 of RFC 8785 JCS bytes with sha2-256. Pseudo-CIDs are rejected. MCP++ does not recompute CIDs.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "algorithm",
+    "codec",
+    "multihash",
+    "cid_version",
+    "allow_pseudo_cid",
+    "allow_qm_new_mints"
+  ],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "pcce/proof-context/v0.1/cid-behavior"
+    },
+    "algorithm": {
+      "type": "string",
+      "const": "mcpp-jcs-v1"
+    },
+    "codec": {
+      "type": "string",
+      "const": "raw"
+    },
+    "multihash": {
+      "type": "string",
+      "const": "sha2-256"
+    },
+    "cid_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "allow_pseudo_cid": {
+      "type": "boolean",
+      "const": false
+    },
+    "allow_qm_new_mints": {
+      "type": "boolean",
+      "const": false
+    },
+    "pattern": {
+      "type": "string",
+      "const": "^b[a-z2-7]{58,}$"
+    }
+  }
+}

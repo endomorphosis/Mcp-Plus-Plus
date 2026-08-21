@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcp-plus-plus.dev/schemas/proof-context/v0.1/status-taxonomy.schema.json",
+  "title": "PCCE proof-context v0.1 status taxonomy",
+  "description": "Closed status vocabulary. Unknown values are rejected.",
+  "type": "string",
+  "enum": [
+    "succeeded",
+    "rejected",
+    "verification_failed",
+    "proof_failed",
+    "assurance_failed",
+    "context_insufficient",
+    "model_escalation_required",
+    "human_review_required",
+    "unavailable",
+    "timeout",
+    "cancelled",
+    "invalid",
+    "stale",
+    "simulated",
+    "infrastructure_failure",
+    "partial_effect",
+    "repair_required"
+  ]
+}

@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcp-plus-plus.dev/schemas/proof-context/v0.1/invalidation-plan.schema.json",
+  "title": "PCCE InvalidationPlan@0.1",
+  "description": "Datasets-owned invalidation plan wire form. MCP++ owns the wire contract only; canonical producer semantics remain with datasets, kit, or accelerator. additionalProperties is false.",
+  "$comment": "PCCE-006. Version 0.1 is immutable after admission; incompatible changes require a new version.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "plan_cid",
+    "repository_state_cid",
+    "reason",
+    "affected_paths"
+  ],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "pcce/proof-context/v0.1/invalidation-plan",
+      "description": "Closed v0.1 schema marker. Unknown or other versions are rejected."
+    },
+    "plan_cid": {
+      "$ref": "#/$defs/cid"
+    },
+    "repository_state_cid": {
+      "$ref": "#/$defs/cid"
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "affected_paths": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4096,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 1024
+      }
+    },
+    "capsule_cids": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {
+        "$ref": "#/$defs/cid"
+      }
+    }
+  },
+  "$defs": {
+    "cid": {
+      "type": "string",
+      "description": "CIDv1 base32. Pseudo-CIDs (sha256:, urn: without codec, hex digests, Qm placeholders) are rejected.",
+      "pattern": "^b[a-z2-7]{58,}$",
+      "minLength": 59,
+      "maxLength": 128
+    },
+    "gitOid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$|^[0-9a-f]{64}$",
+      "description": "Git object id (sha1 or sha256 hex)."
+    },
+    "iso8601": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 64,
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "succeeded",
+        "rejected",
+        "verification_failed",
+        "proof_failed",
+        "assurance_failed",
+        "context_insufficient",
+        "model_escalation_required",
+        "human_review_required",
+        "unavailable",
+        "timeout",
+        "cancelled",
+        "invalid",
+        "stale",
+        "simulated",
+        "infrastructure_failure",
+        "partial_effect",
+        "repair_required"
+      ]
+    },
+    "errorCode": {
+      "type": "string",
+      "enum": [
+        "unknown_field",
+        "malformed",
+        "identity_inconsistent",
+        "stale_root",
+        "simulated_promoted",
+        "pseudo_cid",
+        "schema_mismatch",
+        "boundary_violation",
+        "unavailable_capability",
+        "timeout",
+        "cancelled",
+        "verification_failed",
+        "proof_failed",
+        "assurance_failed",
+        "context_insufficient",
+        "infrastructure_failure",
+        "partial_effect",
+        "repair_required",
+        "human_review_required"
+      ]
+    },
+    "provenance": {
+      "type": "string",
+      "enum": [
+        "live",
+        "replayed",
+        "simulated"
+      ]
+    }
+  }
+}

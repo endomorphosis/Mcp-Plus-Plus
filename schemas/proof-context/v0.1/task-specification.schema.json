@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcp-plus-plus.dev/schemas/proof-context/v0.1/task-specification.schema.json",
+  "title": "PCCE TaskSpecification@0.1",
+  "description": "Task specification binding repository, task, and route identities. MCP++ owns the wire contract only; canonical producer semantics remain with datasets, kit, or accelerator. additionalProperties is false.",
+  "$comment": "PCCE-006. Version 0.1 is immutable after admission; incompatible changes require a new version.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "task_id",
+    "repository_state_cid",
+    "objective_id",
+    "owned_paths",
+    "provenance"
+  ],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "pcce/proof-context/v0.1/task-specification",
+      "description": "Closed v0.1 schema marker. Unknown or other versions are rejected."
+    },
+    "task_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "objective_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "repository_state_cid": {
+      "$ref": "#/$defs/cid"
+    },
+    "route_cid": {
+      "$ref": "#/$defs/cid"
+    },
+    "owned_paths": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1024,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 1024
+      }
+    },
+    "declared_files": {
+      "type": "array",
+      "maxItems": 1024,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 1024
+      }
+    },
+    "provenance": {
+      "$ref": "#/$defs/provenance"
+    }
+  },
+  "$defs": {
+    "cid": {
+      "type": "string",
+      "description": "CIDv1 base32. Pseudo-CIDs (sha256:, urn: without codec, hex digests, Qm placeholders) are rejected.",
+      "pattern": "^b[a-z2-7]{58,}$",
+      "minLength": 59,
+      "maxLength": 128
+    },
+    "gitOid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$|^[0-9a-f]{64}$",
+      "description": "Git object id (sha1 or sha256 hex)."
+    },
+    "iso8601": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 64,
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "succeeded",
+        "rejected",
+        "verification_failed",
+        "proof_failed",
+        "assurance_failed",
+        "context_insufficient",
+        "model_escalation_required",
+        "human_review_required",
+        "unavailable",
+        "timeout",
+        "cancelled",
+        "invalid",
+        "stale",
+        "simulated",
+        "infrastructure_failure",
+        "partial_effect",
+        "repair_required"
+      ]
+    },
+    "errorCode": {
+      "type": "string",
+      "enum": [
+        "unknown_field",
+        "malformed",
+        "identity_inconsistent",
+        "stale_root",
+        "simulated_promoted",
+        "pseudo_cid",
+        "schema_mismatch",
+        "boundary_violation",
+        "unavailable_capability",
+        "timeout",
+        "cancelled",
+        "verification_failed",
+        "proof_failed",
+        "assurance_failed",
+        "context_insufficient",
+        "infrastructure_failure",
+        "partial_effect",
+        "repair_required",
+        "human_review_required"
+      ]
+    },
+    "provenance": {
+      "type": "string",
+      "enum": [
+        "live",
+        "replayed",
+        "simulated"
+      ]
+    }
+  }
+}
