@@ -2,12 +2,14 @@
 
 from datetime import datetime, timezone
 
-from mcp_pp_system_one.combiner import PolicyConformanceChain
+from mcp_pp_system_one.combiner import POLICY_IMPLEMENTATION_ID, PolicyConformanceChain
 from mcp_pp_system_one.config import SystemOneConfig
 from mcp_pp_system_one.exact_policy import Policy, Temporal, clause_document
-from mcp_pp_system_one.jev_client import JevClient
+from mcp_pp_system_one.hazard import hazard_questions
+from mcp_pp_system_one.jev_client import Abstain, JevClient
 from mcp_pp_system_one.project_runtime_clause import project_runtime_clause
-from mcp_pp_system_one.witness import policy_document_cid, policy_preimage
+from mcp_pp_system_one.residual import compile_residual
+from mcp_pp_system_one.witness import policy_document_cid, policy_preimage, question_set_hash
 from tests.fakes import ScriptedCaller
 
 NOW = datetime(2026, 9, 29, tzinfo=timezone.utc)
@@ -84,6 +86,19 @@ def _chain(steps, **config):
     return PolicyConformanceChain(cfg, client), caller
 
 
+def _assert_stamped(witness, questions, model):
+    assert POLICY_IMPLEMENTATION_ID == "system-one-policy/v1"
+    assert witness["implementation_id"] == POLICY_IMPLEMENTATION_ID
+    assert witness["model_id"] == model
+    assert witness["question_set_hash"] == question_set_hash(questions)
+
+
+def _assert_unstamped(witness):
+    assert witness["implementation_id"] is None
+    assert witness["model_id"] is None
+    assert witness["question_set_hash"] is None
+
+
 def test_exact_deny_is_not_flipped_by_a_residual_permission():
     chain, caller = _chain(
         [
@@ -115,8 +130,10 @@ def test_exact_deny_is_not_flipped_by_a_residual_permission():
     )
     admission = chain.admit(_request(clauses=clauses))
     assert admission.authorizing.decision == "deny"
+    assert admission.authorizing.allowed is False
     assert admission.authorizing.witness["cause"] == "exact_deny"
     assert caller.calls == []
+    _assert_unstamped(admission.authorizing.witness)
 
 
 def test_exact_allow_plus_jailbreak_stays_allow_and_hides():
@@ -233,7 +250,9 @@ def test_exception_before_a_decision_denies():
     chain = PolicyConformanceChain(SystemOneConfig(), exact=Boom())
     admission = chain.admit(_request())
     assert admission.authorizing.decision == "deny"
+    assert admission.authorizing.allowed is False
     assert admission.show is False
+    _assert_unstamped(admission.authorizing.witness)
 
 
 def test_secret_output_denies_without_a_call():
@@ -554,13 +573,24 @@ def test_cached_noul_changes_the_verdict_without_a_second_call(tmp_path):
     request = _request(clauses=(_prohibition(semantic="outside the topics"),))
     first = chain.admit(request)
     assert len(caller.calls) == 1
+    assert first.authorizing.decision == "deny"
+    assert first.authorizing.allowed is False
     assert first.authorizing.witness["disposition"] == "review"
     assert first.authorizing.witness["cause"] == "policy"
+    built = compile_residual([_prohibition(semantic="outside the topics")])
+    _assert_stamped(first.authorizing.witness, built, chain.config.model)
     object.__setattr__(chain.config, "prohibition_deny", 0.30)
     second = chain.admit(request)
     assert len(caller.calls) == 1
+    assert second.authorizing.decision == "deny"
+    assert second.authorizing.allowed is False
     assert second.authorizing.witness["cause"] == "prohibition_deny"
     assert second.display_cause == "prohibition_deny"
+    _assert_stamped(second.authorizing.witness, built, chain.config.model)
+    assert (
+        second.authorizing.witness["question_set_hash"]
+        == first.authorizing.witness["question_set_hash"]
+    )
 
 
 def _uncached_content_cid(tmp_path, **request_fields):
@@ -617,6 +647,193 @@ def test_missing_output_cid_is_not_cached(tmp_path):
 
 def test_whitespace_output_cid_is_not_cached(tmp_path):
     _uncached_content_cid(tmp_path, gate="output", output_cid="  ")
+
+
+def test_exact_deny_with_master_off_leaves_witness_fields_null():
+    chain, caller = _chain([], enabled=False)
+    ban = Policy(
+        policy_type="prohibition",
+        action="dataset.read",
+        subject="did:key:worker",
+        clause_id="ban",
+    )
+    admission = chain.admit(_request(clauses=(ban, _permission())))
+    assert caller.calls == []
+    assert admission.authorizing.decision == "deny"
+    assert admission.authorizing.allowed is False
+    assert admission.authorizing.witness["cause"] == "exact_deny"
+    _assert_unstamped(admission.authorizing.witness)
+
+
+def test_master_off_residual_leaves_witness_fields_null():
+    chain, caller = _chain([], enabled=False)
+    admission = chain.admit(
+        _request(clauses=(_prohibition(semantic="outside the topics"),))
+    )
+    assert caller.calls == []
+    assert admission.authorizing.decision == "deny"
+    assert admission.authorizing.allowed is False
+    assert admission.authorizing.witness["cause"] == "unresolved"
+    _assert_unstamped(admission.authorizing.witness)
+
+
+def test_neither_fuzzy_gate_leaves_witness_fields_null():
+    chain, caller = _chain([], hazard=False, policy_residual=False)
+    admission = chain.admit(
+        _request(clauses=(_prohibition(semantic="outside the topics"),))
+    )
+    assert caller.calls == []
+    assert admission.authorizing.decision == "deny"
+    assert admission.authorizing.allowed is False
+    assert admission.authorizing.witness["cause"] == "unresolved"
+    _assert_unstamped(admission.authorizing.witness)
+    allowed, _quiet_caller = _chain([], hazard=False, policy_residual=False)
+    granted = allowed.admit(_request(clauses=(_permission(),)))
+    assert granted.authorizing.decision == "allow"
+    assert granted.authorizing.allowed is True
+    assert _quiet_caller.calls == []
+    _assert_unstamped(granted.authorizing.witness)
+
+
+def test_deadline_deny_leaves_witness_fields_null():
+    chain, caller = _chain([])
+    chain.started_at = 0.0
+    chain.clock = lambda: 1.0
+    admission = chain.admit(
+        _request(clauses=(_prohibition(semantic="outside the topics"),))
+    )
+    assert caller.calls == []
+    assert admission.display_cause == "deadline"
+    assert admission.authorizing.decision == "deny"
+    assert admission.authorizing.allowed is False
+    _assert_unstamped(admission.authorizing.witness)
+
+
+def test_hazard_only_stamps_the_policy_witness():
+    pin = "jev-request-pin"
+    chain, caller = _chain(
+        [
+            {
+                "model": pin,
+                "answers": {
+                    "jailbreak": {"noul": 0.0},
+                    "harm_or_crime": {"noul": 0.0},
+                    "secret_request": {"noul": 0.0},
+                    "severity": {"score": 0.0},
+                },
+            }
+        ],
+        policy_residual=False,
+        model=pin,
+    )
+    admission = chain.admit(_request(clauses=(_permission(),)))
+    assert len(caller.calls) == 1
+    assert admission.authorizing.decision == "allow"
+    assert admission.authorizing.allowed is True
+    assert admission.show is True
+    _assert_stamped(
+        admission.authorizing.witness,
+        hazard_questions("input"),
+        pin,
+    )
+    assert admission.authorizing.witness["model_id"] != "jev-1.13.0"
+
+
+def test_residual_and_hazard_stamp_the_merged_question_map():
+    pin = "jev-request-pin"
+    chain, caller = _chain(
+        [
+            {
+                "model": pin,
+                "answers": {
+                    "c0": {"noul": 0.40},
+                    "severity": {"score": 0.0},
+                    "jailbreak": {"noul": 0.0},
+                    "harm_or_crime": {"noul": 0.0},
+                    "secret_request": {"noul": 0.0},
+                },
+            }
+        ],
+        model=pin,
+    )
+    clause = _prohibition(semantic="outside the topics")
+    admission = chain.admit(_request(clauses=(clause,)))
+    questions = compile_residual([clause])
+    questions.update(hazard_questions("input"))
+    assert len(caller.calls) == 1
+    assert admission.authorizing.decision == "deny"
+    assert admission.authorizing.allowed is False
+    assert admission.authorizing.witness["disposition"] == "review"
+    assert admission.authorizing.witness["cause"] == "policy"
+    _assert_stamped(admission.authorizing.witness, questions, pin)
+
+
+def test_abstain_stamps_without_flipping_an_exact_clause():
+    pin = "jev-request-pin"
+    permission = _permission()
+    prohibition = _prohibition(semantic="outside the topics")
+    built = compile_residual([prohibition])
+    steps = (
+        Abstain("vendor"),
+        {"model": pin, "answers": None},
+        {
+            "model": "jev-response-model",
+            "answers": {"c0": {"noul": 0.0}, "severity": {"score": 0.0}},
+        },
+    )
+    for step in steps:
+        chain, caller = _chain([step], hazard=False, model=pin)
+        admission = chain.admit(_request(clauses=(permission, prohibition)))
+        witness = admission.authorizing.witness
+        assert admission.authorizing.decision == "deny"
+        assert admission.authorizing.allowed is False
+        assert witness["cause"] == "unresolved"
+        rows = {row["clause_id"]: row for row in witness["clauses"]}
+        assert rows["p0"]["disposition"] == "grant"
+        assert rows["c0"]["disposition"] == "unresolved"
+        _assert_stamped(witness, built, pin)
+        assert len(caller.calls) == 1
+
+
+def test_exception_after_flags_stamps_even_if_the_map_raises(monkeypatch):
+    pin = "jev-request-pin"
+    chain, caller = _chain([], hazard=False, model=pin)
+
+    def boom(_clauses):
+        raise RuntimeError("map failed")
+
+    monkeypatch.setattr("mcp_pp_system_one.combiner.compile_residual", boom)
+    admission = chain.admit(
+        _request(clauses=(_prohibition(semantic="outside the topics"),))
+    )
+    assert caller.calls == []
+    assert admission.show is False
+    assert admission.display_cause == "admit_exception"
+    assert admission.authorizing.decision == "deny"
+    assert admission.authorizing.allowed is False
+    _assert_stamped(admission.authorizing.witness, {}, pin)
+
+
+def test_exception_after_the_question_map_stamps_the_deny():
+    pin = "jev-request-pin"
+    chain, _caller = _chain([], hazard=False, model=pin)
+    clause = _prohibition(semantic="outside the topics")
+
+    def boom(**_kwargs):
+        raise RuntimeError("after map")
+
+    chain.client.system_one = boom
+    admission = chain.admit(_request(clauses=(clause,)))
+    assert admission.show is False
+    assert admission.display_cause == "admit_exception"
+    assert admission.authorizing.decision == "deny"
+    assert admission.authorizing.allowed is False
+    assert admission.authorizing.witness["cause"] == "unresolved"
+    _assert_stamped(
+        admission.authorizing.witness,
+        compile_residual([clause]),
+        pin,
+    )
 
 
 def test_huge_severity_does_not_flip_an_allow():

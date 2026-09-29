@@ -17,9 +17,15 @@ from mcp_pp_system_one.jev_client import Abstain, JevClient
 from mcp_pp_system_one.metrics import Metrics
 from mcp_pp_system_one.redact import redact_serialized
 from mcp_pp_system_one.residual import compile_residual, residual_state
-from mcp_pp_system_one.witness import canonical_json_bytes, decision_preimage, seal_decision_witness
+from mcp_pp_system_one.witness import (
+    canonical_json_bytes,
+    decision_preimage,
+    question_set_hash,
+    seal_decision_witness,
+)
 
 PRECEDENCE = ("exact_deny", "unresolved", "prohibition_deny", "severity", "review")
+POLICY_IMPLEMENTATION_ID = "system-one-policy/v1"
 
 
 @dataclass
@@ -54,6 +60,15 @@ def _thresholds(cfg: SystemOneConfig) -> dict[str, float]:
     }
 
 
+def _policy_stamp(cfg: SystemOneConfig, questions: dict[str, Any]) -> dict[str, str]:
+    # config.model is the request pin. The response model is not a witness field.
+    return {
+        "implementation_id": POLICY_IMPLEMENTATION_ID,
+        "model_id": cfg.model,
+        "question_set_hash": question_set_hash(questions),
+    }
+
+
 def _seal(exact: ExactReport, cfg: SystemOneConfig, **fields: Any) -> dict[str, Any]:
     preimage = decision_preimage(
         decision=fields["decision"],
@@ -69,6 +84,9 @@ def _seal(exact: ExactReport, cfg: SystemOneConfig, **fields: Any) -> dict[str, 
         clauses=exact.clauses,
         input_cid=exact.input_cid,
         output_cid=exact.output_cid,
+        implementation_id=fields.get("implementation_id"),
+        model_id=fields.get("model_id"),
+        question_set_hash=fields.get("question_set_hash"),
         severity=fields.get("severity"),
         disposition=fields.get("disposition"),
         cause=fields.get("cause"),
@@ -76,7 +94,14 @@ def _seal(exact: ExactReport, cfg: SystemOneConfig, **fields: Any) -> dict[str, 
     return seal_decision_witness(preimage)
 
 
-def deny_for(kind: str, exact: ExactReport, cfg: SystemOneConfig, severity: float | None = None) -> PolicyDecision:
+def deny_for(
+    kind: str,
+    exact: ExactReport,
+    cfg: SystemOneConfig,
+    severity: float | None = None,
+    *,
+    stamp: dict[str, str] | None = None,
+) -> PolicyDecision:
     disposition = "review" if kind == "review" else "deny"
     cause = "policy" if kind == "review" else kind
     witness = _seal(
@@ -88,6 +113,7 @@ def deny_for(kind: str, exact: ExactReport, cfg: SystemOneConfig, severity: floa
         disposition=disposition,
         cause=cause,
         severity=severity,
+        **(stamp or {}),
     )
     return PolicyDecision(
         decision="deny",
@@ -99,7 +125,12 @@ def deny_for(kind: str, exact: ExactReport, cfg: SystemOneConfig, severity: floa
     )
 
 
-def allow(exact: ExactReport, cfg: SystemOneConfig) -> PolicyDecision:
+def allow(
+    exact: ExactReport,
+    cfg: SystemOneConfig,
+    *,
+    stamp: dict[str, str] | None = None,
+) -> PolicyDecision:
     witness = _seal(
         exact,
         cfg,
@@ -108,6 +139,7 @@ def allow(exact: ExactReport, cfg: SystemOneConfig) -> PolicyDecision:
         obligations=[],
         disposition="allow",
         cause="exact",
+        **(stamp or {}),
     )
     return PolicyDecision(
         decision="allow",
@@ -119,7 +151,12 @@ def allow(exact: ExactReport, cfg: SystemOneConfig) -> PolicyDecision:
     )
 
 
-def allow_with_obligations(exact: ExactReport, cfg: SystemOneConfig) -> PolicyDecision:
+def allow_with_obligations(
+    exact: ExactReport,
+    cfg: SystemOneConfig,
+    *,
+    stamp: dict[str, str] | None = None,
+) -> PolicyDecision:
     witness = _seal(
         exact,
         cfg,
@@ -128,6 +165,7 @@ def allow_with_obligations(exact: ExactReport, cfg: SystemOneConfig) -> PolicyDe
         obligations=list(exact.obligations),
         disposition="allow",
         cause="exact",
+        **(stamp or {}),
     )
     return PolicyDecision(
         decision="allow_with_obligations",
@@ -160,6 +198,7 @@ def combine_policy(
     cfg: SystemOneConfig,
     *,
     residual_enabled: bool,
+    stamp: dict[str, str] | None = None,
 ) -> PolicyDecision:
     signals: list[str] = []
     if _final_exact_deny(exact):
@@ -186,7 +225,7 @@ def combine_policy(
         signals.append("severity")
     for kind in PRECEDENCE:
         if kind in signals:
-            return deny_for(kind, exact, cfg, severity=severity)
+            return deny_for(kind, exact, cfg, severity=severity, stamp=stamp)
     grants = list(exact.grants)
     if residual_enabled and isinstance(fuzzy, FuzzyReport):
         for clause in exact.residual:
@@ -199,10 +238,10 @@ def combine_policy(
             else:
                 _stamp(exact, clause.clause_id, "clear", score)
     if not grants:
-        return deny_for("closed_world", exact, cfg, severity=severity)
+        return deny_for("closed_world", exact, cfg, severity=severity, stamp=stamp)
     if exact.obligations:
-        return allow_with_obligations(exact, cfg)
-    return allow(exact, cfg)
+        return allow_with_obligations(exact, cfg, stamp=stamp)
+    return allow(exact, cfg, stamp=stamp)
 
 
 def reduce_display(
@@ -274,6 +313,11 @@ class PolicyConformanceChain:
 
     def admit(self, request: Any) -> GateAdmission:
         authorizing: PolicyDecision | None = None
+        # False until assigned below. An exception before that leaves the witness null.
+        residual_on = False
+        hazard_on = False
+        questions: dict[str, Any] = {}
+        stamp: dict[str, str] | None = None
         try:
             if self.clock is not None and self.clock() - self.started_at > self.config.policy_deadline_s:
                 self.metrics.inc("system_one_stage_total", stage="policy", result="deny")
@@ -293,13 +337,13 @@ class PolicyConformanceChain:
             if not residual_on and not hazard_on:
                 authorizing = combine_policy(exact, None, self.config, residual_enabled=False)
                 return self.display(authorizing, None, self.config)
-            questions: dict[str, Any] = {}
             state: dict[str, Any] = {"payload": request.payload}
             if residual_on:
                 questions.update(compile_residual(exact.residual))
                 state = residual_state(request.payload, exact.residual)
             if hazard_on:
                 questions.update(hazard_questions(request.gate))
+            stamp = _policy_stamp(self.config, questions)
             content = (
                 getattr(request, "output_cid", None)
                 if getattr(request, "gate", "") == "output"
@@ -326,24 +370,30 @@ class PolicyConformanceChain:
             fuzzy = _fuzzy_from(answers, exact.residual) if residual_on else None
             hazard = hazard_slice(answers, request.gate) if hazard_on else None
             authorizing = combine_policy(
-                exact, fuzzy, self.config, residual_enabled=residual_on
+                exact, fuzzy, self.config, residual_enabled=residual_on, stamp=stamp
             )
             if hazard_on and not isinstance(hazard, HazardReport):
                 return GateAdmission(False, authorizing, "hazard_unresolved")
             return self.display(authorizing, hazard, self.config)
         except Exception:
             if authorizing is None:
-                authorizing = self._deny_unresolved(request)
+                if stamp is None and (residual_on or hazard_on):
+                    stamp = _policy_stamp(self.config, questions)
+                authorizing = self._deny_unresolved(request, stamp=stamp)
             return GateAdmission(False, authorizing, "admit_exception")
 
-    def _deny_unresolved(self, request: Any) -> PolicyDecision:
+    def _deny_unresolved(
+        self,
+        request: Any,
+        stamp: dict[str, str] | None = None,
+    ) -> PolicyDecision:
         exact = ExactReport(
             policy_cid=getattr(request, "policy_cid", None),
             now=getattr(getattr(request, "now", None), "isoformat", lambda: "")(),
             gate=getattr(request, "gate", "input"),
         )
         exact.unknown_policy = True
-        return deny_for("unresolved", exact, self.config)
+        return deny_for("unresolved", exact, self.config, stamp=stamp)
 
 
 def _final_exact_deny(exact: ExactReport) -> bool:
