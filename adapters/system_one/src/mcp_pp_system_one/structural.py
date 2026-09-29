@@ -10,7 +10,6 @@ from typing import Any
 from mcp_pp_system_one.config import SystemOneConfig
 from mcp_pp_system_one.ports import Budget, Prior, SliceReason, ToolSliceRequest, reason
 
-# Case-insensitive substrings on description and method text. A hit only shrinks the pool.
 _LEXICAL_DENYLIST = (
     "ignore previous",
     "ignore all previous",
@@ -23,21 +22,7 @@ _LEXICAL_DENYLIST = (
 
 _TOKEN = re.compile(r"[a-z0-9]+")
 _READ_ABILITIES = frozenset({"read", "read-only", "readonly"})
-_WRITE_SEGMENTS = frozenset(
-    {
-        "write",
-        "create",
-        "update",
-        "patch",
-        "delete",
-        "drop",
-        "rm",
-        "spend",
-        "sign",
-        "admin",
-        "*",
-    }
-)
+_PRICE_KEYS = ("price", "x402_price", "amount", "amount_atomic", "x402")
 
 
 def _get(obj: Any, key: str, default: Any = None) -> Any:
@@ -65,6 +50,15 @@ def _positive_int(value: Any) -> int | None:
     return math.ceil(value)
 
 
+def _positive_number(value: Any) -> int | None:
+    if isinstance(value, str):
+        text = value.strip()
+        if not text or any(ch < "0" or ch > "9" for ch in text):
+            return None
+        value = int(text)
+    return _positive_int(value)
+
+
 def side_effect(desc: Any, *, x402_priced: bool, ucan_write: bool) -> str:
     hint = _hints(desc).get("side_effect")
     if hint == "read" and not x402_priced and not ucan_write:
@@ -83,8 +77,6 @@ def _peer_id(desc: Any) -> str:
     value = _get(desc, "peer_id", "")
     if isinstance(value, str):
         return value
-    if isinstance(value, (bytes, bytearray)):
-        return bytes(value).decode("utf-8", "surrogateescape")
     return ""
 
 
@@ -176,26 +168,16 @@ def _descriptor_priced(desc: Any) -> bool:
     if _get(desc, "x402_priced") is True:
         return True
     hints = _hints(desc)
-    if hints.get("x402_priced") is True or hints.get("x402") is True:
+    if hints.get("x402_priced") is True:
         return True
-    x402 = hints.get("x402")
-    if isinstance(x402, Mapping) and len(x402) > 0:
-        return True
-    for key in ("price", "x402_price", "amount", "amount_atomic"):
-        if _positive_int(hints.get(key)) is not None:
-            return True
-    return False
+    return any(_positive_number(hints.get(key)) is not None for key in _PRICE_KEYS)
 
 
 def _ability_is_read_only(ability: str) -> bool:
     text = ability.strip().lower()
     if not text:
         return False
-    if text in _READ_ABILITIES:
-        return True
     parts = [part for part in re.split(r"[/:.]", text) if part]
-    if any(part in _WRITE_SEGMENTS for part in parts):
-        return False
     return bool(parts) and parts[-1] in _READ_ABILITIES
 
 
@@ -209,14 +191,12 @@ def _ucan_write(cid: str, abilities: Mapping[str, Any]) -> bool:
         values = tuple(raw)
     else:
         return True
-    saw = False
+    if not values:
+        return True
     for value in values:
-        if not isinstance(value, str) or not value.strip():
-            continue
-        saw = True
-        if not _ability_is_read_only(value):
+        if not isinstance(value, str) or not _ability_is_read_only(value):
             return True
-    return not saw
+    return False
 
 
 def _tokens(text: str) -> set[str]:
@@ -257,9 +237,7 @@ def _candidate_keys(descriptors: tuple[Any, ...]) -> tuple[set[str], set[str]]:
 
 @dataclass
 class _Eligible:
-    order: int
     overlap: int
-    cost: int
     cid: str
 
 
@@ -297,16 +275,18 @@ class StructuralSlicer:
         cost: dict[str, int] = {}
 
         def record_class(desc: Any, cid: str | None, methods: list[Any] | None) -> None:
-            if cid is None or cid in side:
+            if cid is None:
                 return
-            # Descriptor price flags and validated abilities only ever widen read to write.
             priced = cid in request.x402_priced or _descriptor_priced(desc)
-            side[cid] = side_effect(
+            effect = side_effect(
                 desc,
                 x402_priced=priced,
                 ucan_write=_ucan_write(cid, request.ucan_abilities),
             )
-            cost[cid] = _interface_cost(desc, methods, cfg.default_card_tokens)
+            if side.get(cid) != "write":
+                side[cid] = effect
+            card = _interface_cost(desc, methods, cfg.default_card_tokens)
+            cost[cid] = max(cost.get(cid, 0), card)
 
         def exclude(cid: str | None, code: str) -> None:
             if cid is not None:
@@ -356,7 +336,6 @@ class StructuralSlicer:
 
         eligible: list[_Eligible] = []
         seen_eligible: set[str] = set()
-        sequence = 0
         for peer_index, peer in enumerate(examined):
             over_cap = peer_index >= cfg.max_peers
             for desc in groups[peer]:
@@ -386,17 +365,16 @@ class StructuralSlicer:
                 seen_eligible.add(cid)
                 eligible.append(
                     _Eligible(
-                        order=sequence,
                         overlap=_overlap(request.task_hint, desc, methods or []),
-                        cost=cost[cid],
                         cid=cid,
                     )
                 )
-                sequence += 1
 
+        # A later copy can exclude a CID already appended. Drop it before the cap sort.
         eligible = [item for item in eligible if item.cid not in excluded]
-        # Overlap is only the truncation key at the descriptor cap. It never admits a tool.
-        ranked = sorted(eligible, key=lambda item: (-item.overlap, item.cost, item.cid))
+        ranked = sorted(
+            eligible, key=lambda item: (-item.overlap, cost[item.cid], item.cid)
+        )
         keep = {item.cid for item in ranked[: cfg.max_descriptors]}
         for item in ranked[cfg.max_descriptors :]:
             exclude(item.cid, "not_examined_descriptor_cap")

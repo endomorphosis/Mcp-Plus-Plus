@@ -31,7 +31,6 @@ class ToolSliceChain:
         self,
         structural: Any = None,
         ranker: Any = None,
-        abstain: AbstainEmpty | None = None,
         config: SystemOneConfig | None = None,
     ) -> None:
         self.config = config or SystemOneConfig()
@@ -39,7 +38,7 @@ class ToolSliceChain:
             structural if structural is not None else StructuralSlicer(self.config)
         )
         self.ranker = ranker
-        self.abstain = abstain if abstain is not None else AbstainEmpty()
+        self.abstain = AbstainEmpty()
 
     def select(self, request: ToolSliceRequest) -> ToolSlice:
         prior = Prior(

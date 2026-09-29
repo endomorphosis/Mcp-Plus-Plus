@@ -72,20 +72,18 @@ class ToolSliceRequest:
         object.__setattr__(
             self,
             "capabilities",
-            frozenset(item for item in self.capabilities if isinstance(item, str)),
+            _string_set("capabilities", self.capabilities),
         )
         if self.ucan_allowlist is not None:
             object.__setattr__(
                 self,
                 "ucan_allowlist",
-                frozenset(
-                    item for item in self.ucan_allowlist if isinstance(item, str)
-                ),
+                _string_set("ucan_allowlist", self.ucan_allowlist),
             )
         object.__setattr__(
             self,
             "x402_priced",
-            frozenset(item for item in self.x402_priced if isinstance(item, str)),
+            _string_set("x402_priced", self.x402_priced),
         )
         object.__setattr__(self, "budget", _coerce_budget(self.budget))
 
@@ -94,28 +92,17 @@ class ToolSlicePort(Protocol):
     def select(self, request: ToolSliceRequest) -> ToolSlice: ...
 
 
-def _coerce_budget(value: Budget | float | Mapping[str, Any] | None) -> Budget:
+def _string_set(name: str, value: Any) -> frozenset[str]:
+    if isinstance(value, (str, bytes, bytearray)):
+        raise TypeError(f"{name} must be a collection of strings, not text")
+    return frozenset(item for item in value if isinstance(item, str))
+
+
+def _coerce_budget(value: Budget | float | None) -> Budget:
     if value is None:
         return Budget()
     if isinstance(value, Budget):
         return value
-    if isinstance(value, bool):
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise TypeError("budget must be a number or Budget")
-    if isinstance(value, (int, float)):
-        return Budget(tokens=float(value))
-    if isinstance(value, Mapping):
-        tokens = value.get("tokens", value.get("budget"))
-        max_bytes = value.get("max_bytes")
-        if isinstance(tokens, bool) or (
-            tokens is not None and not isinstance(tokens, (int, float))
-        ):
-            raise TypeError("budget tokens must be a number")
-        if isinstance(max_bytes, bool) or (
-            max_bytes is not None and not isinstance(max_bytes, int)
-        ):
-            raise TypeError("max_bytes must be an int")
-        return Budget(
-            tokens=None if tokens is None else float(tokens),
-            max_bytes=max_bytes,
-        )
-    raise TypeError("budget must be a number or Budget")
+    return Budget(tokens=float(value))

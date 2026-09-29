@@ -70,6 +70,10 @@ class SystemOneConfig:
     def __post_init__(self) -> None:
         if self.max_exposed > self.rerank_k:
             raise ValueError("max_exposed must be <= rerank_k")
+        if self.max_peers < 0 or self.max_descriptors < 0:
+            raise ValueError("max_peers and max_descriptors must be >= 0")
+        if self.default_card_tokens <= 0:
+            raise ValueError("default_card_tokens must be > 0")
 
     @classmethod
     def from_env(cls, environ: Mapping[str, str] | None = None) -> "SystemOneConfig":
@@ -85,7 +89,7 @@ class SystemOneConfig:
             hazard=_flag(env, "MCPPP_SYSTEM_ONE_HAZARD"),
             api_key=_optional(env, "TYPESAFE_API_KEY"),
             base_url=base_url,
-            model=env.get("MCPPP_SYSTEM_ONE_MODEL", "jev-1.13.0") or "jev-1.13.0",
+            model=(env.get("MCPPP_SYSTEM_ONE_MODEL") or "").strip() or "jev-1.13.0",
             timeout_s=_float(env, "MCPPP_SYSTEM_ONE_TIMEOUT_S", 0.35),
             retry_budget_s=_float(env, "MCPPP_SYSTEM_ONE_RETRY_BUDGET_S", 0.80),
             tool_deadline_s=_float(env, "MCPPP_SYSTEM_ONE_TOOL_DEADLINE_S", 8.0),
