@@ -68,9 +68,7 @@ class ToolSliceChain:
         try:
             if self._past_tool_deadline():
                 self.metrics.inc("system_one_stage_total", stage="tool", result="abstain")
-                return self.abstain.halt(
-                    Prior((), frozenset(), (), {}, {})
-                )
+                return self.abstain.halt(prior)
             prior = self.structural.filter(request)
             if self.ranker is None:
                 return self.abstain.halt(prior)
