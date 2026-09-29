@@ -443,6 +443,61 @@ def test_input_secret_withholds_a_residual_prohibition():
     assert "c0" not in caller.calls[0]["questions"]
 
 
+def test_input_secret_withholds_residual_before_exact_deny():
+    chain, caller = _chain([])
+    exact = Policy(
+        policy_type="prohibition",
+        action="dataset.read",
+        subject="did:key:worker",
+        clause_id="ban",
+    )
+    admission = chain.admit(
+        _request(
+            payload="Bearer sk-test-secret",
+            clauses=(exact, _prohibition(semantic="outside the topics")),
+        )
+    )
+    assert caller.calls == []
+    assert admission.authorizing.decision == "deny"
+    assert admission.authorizing.allowed is False
+    witness = admission.authorizing.witness
+    assert witness["cause"] == "exact_deny"
+    rows = {row["clause_id"]: row for row in witness["clauses"]}
+    assert rows["c0"]["disposition"] == "redaction_withheld_judgement"
+    assert rows["ban"]["disposition"] == "exact_deny"
+    assert [
+        row["clause_id"]
+        for row in witness["clauses"]
+        if row["disposition"] == "redaction_withheld_judgement"
+    ] == ["c0"]
+    _assert_unstamped(witness)
+
+
+def test_exact_prohibition_is_not_withheld_for_an_input_secret():
+    chain, caller = _chain([])
+    exact = Policy(
+        policy_type="prohibition",
+        action="dataset.read",
+        subject="did:key:worker",
+        clause_id="ban",
+    )
+    admission = chain.admit(
+        _request(payload="Bearer sk-test-secret", clauses=(exact,))
+    )
+    assert caller.calls == []
+    assert admission.authorizing.decision == "deny"
+    assert admission.authorizing.allowed is False
+    witness = admission.authorizing.witness
+    assert witness["cause"] == "exact_deny"
+    rows = {row["clause_id"]: row for row in witness["clauses"]}
+    assert rows["ban"]["disposition"] == "exact_deny"
+    assert all(
+        row["disposition"] != "redaction_withheld_judgement"
+        for row in witness["clauses"]
+    )
+    _assert_unstamped(witness)
+
+
 def test_undecodable_policy_cid_denies_with_no_call():
     chain, caller = _chain([])
     admission = chain.admit(
