@@ -1,12 +1,17 @@
 """Policy verdicts. Hazard can hide a result. It cannot change the verdict."""
 
-import math
 from dataclasses import dataclass
 from typing import Any
 
 from mcp_pp_system_one.config import SystemOneConfig
 from mcp_pp_system_one.exact_policy import ExactReport, ExactStage, Policy
-from mcp_pp_system_one.hazard import HazardReport, hazard_questions, hazard_slice
+from mcp_pp_system_one.hazard import (
+    HazardReport,
+    _finite,
+    _unit_interval,
+    hazard_questions,
+    hazard_slice,
+)
 from mcp_pp_system_one.jev_client import Abstain, JevClient
 from mcp_pp_system_one.redact import redact_serialized
 from mcp_pp_system_one.residual import compile_residual, residual_state
@@ -130,23 +135,6 @@ def allow_with_obligations(exact: ExactReport, cfg: SystemOneConfig) -> PolicyDe
         witness=witness,
         decision_cid=witness["decision_cid"],
     )
-
-
-def _unit_interval(value: Any) -> float | None:
-    # bool is an int. float(True) == 1.0 would grant a residual permission.
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        return None
-    if not math.isfinite(value) or value < 0.0 or value > 1.0:
-        return None
-    return float(value)
-
-
-def _finite(value: Any) -> float | None:
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        return None
-    if not math.isfinite(value):
-        return None
-    return float(value)
 
 
 def _stamp(exact: ExactReport, clause_id: str, disposition: str, noul: float | None) -> None:

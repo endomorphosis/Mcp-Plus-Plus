@@ -88,20 +88,37 @@ def _glob(text: Any) -> bool:
     return isinstance(text, str) and "*" in text and text != "*"
 
 
+def _text_or_strings(value: Any) -> bool:
+    if isinstance(value, str):
+        return True
+    return isinstance(value, (list, tuple)) and all(isinstance(item, str) for item in value)
+
+
+def _assigned_id(clause: Policy, index: int) -> str:
+    raw = clause.clause_id
+    if isinstance(raw, str) and raw:
+        return raw
+    return f"c{index}"
+
+
 def _invalid_pattern(action: str, subject: str | None, resource: str | None, conditions: dict | None) -> bool:
-    if _glob(action) or _glob(subject) or _glob(resource):
+    # A missing action is not "*". Subject and resource may be absent.
+    if not isinstance(action, str) or action == "" or _glob(action):
+        return True
+    if _glob(subject) or _glob(resource):
         return True
     if not conditions:
         return False
     if any(key not in STRUCTURAL_KEYS | RESIDUAL_KEYS for key in conditions):
         return True
-    for key in ("method", "interface_cid"):
-        if key not in conditions:
-            continue
-        value = conditions[key]
-        if value is None:
-            continue
-        if not isinstance(value, str) or _glob(value):
+    if "interface_cid" in conditions:
+        interface = conditions["interface_cid"]
+        # Equality only. "*" is a literal id, and null is not a wildcard.
+        if not isinstance(interface, str) or _glob(interface):
+            return True
+    if "method" in conditions:
+        method = conditions["method"]
+        if method is not None and (not isinstance(method, str) or _glob(method)):
             return True
     if "max_bytes" in conditions:
         size = conditions["max_bytes"]
@@ -112,6 +129,9 @@ def _invalid_pattern(action: str, subject: str | None, resource: str | None, con
         if not isinstance(allowlist, (list, tuple)):
             return True
         if any(not isinstance(item, str) or _glob(item) for item in allowlist):
+            return True
+    for key in RESIDUAL_KEYS:
+        if key in conditions and not _text_or_strings(conditions[key]):
             return True
     return False
 
@@ -204,6 +224,8 @@ class ExactStage:
         if not clauses:
             report.empty_policy = True
             return report
+        assigned = [_assigned_id(clause, index) for index, clause in enumerate(clauses)]
+        duplicated = {clause_id for clause_id in assigned if assigned.count(clause_id) > 1}
         document = policy_preimage(
             report.policy_version, [clause_document(clause) for clause in clauses]
         )
@@ -215,9 +237,11 @@ class ExactStage:
         if getattr(request, "secret_in_output", False):
             report.secret_in_output = True
         for index, clause in enumerate(clauses):
-            clause_id = clause.clause_id or f"c{index}"
+            clause_id = assigned[index]
             conditions = clause.conditions or {}
-            if _invalid_pattern(clause.action, clause.subject, clause.resource, conditions):
+            if clause_id in duplicated or _invalid_pattern(
+                clause.action, clause.subject, clause.resource, conditions
+            ):
                 self._invalid(report, clause, clause_id)
                 self._stamp(report, clause_id, "invalid")
                 continue
@@ -315,9 +339,7 @@ class ExactStage:
             report.invalid_prohibitions.append(clause_id)
 
     def _structural(self, conditions: dict[str, Any], request: Any) -> bool:
-        if "interface_cid" in conditions and not _match_token(
-            conditions["interface_cid"], request.interface_cid
-        ):
+        if "interface_cid" in conditions and conditions["interface_cid"] != request.interface_cid:
             return False
         method = conditions.get("method")
         if method not in (None, "*") and method != request.method:

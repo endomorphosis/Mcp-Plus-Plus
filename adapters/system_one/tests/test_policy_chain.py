@@ -434,3 +434,114 @@ def test_non_finite_timestamp_projects_to_none():
         )
         is None
     )
+    assert (
+        project_runtime_clause(
+            {
+                "clause_type": "prohibition",
+                "action": "dataset.read",
+                "valid_from": 10**309,
+            }
+        )
+        is None
+    )
+
+
+def test_star_interface_cid_is_not_a_wildcard():
+    clause = Policy(
+        policy_type="permission",
+        action="dataset.read",
+        conditions={"interface_cid": "*"},
+        clause_id="p0",
+    )
+    chain, caller = _chain([], hazard=False, policy_residual=False)
+    request = _request(clauses=(clause,))
+    request.interface_cid = "bafkreiother"
+    admission = chain.admit(request)
+    assert admission.authorizing.decision == "deny"
+    assert admission.authorizing.witness["cause"] == "closed_world"
+    assert caller.calls == []
+    request.interface_cid = "*"
+    matched = chain.admit(request)
+    assert matched.authorizing.decision == "allow"
+
+
+def test_null_interface_cid_does_not_grant():
+    clause = Policy(
+        policy_type="permission",
+        action="dataset.read",
+        conditions={"interface_cid": None},
+        clause_id="p0",
+    )
+    chain, caller = _chain([], hazard=False, policy_residual=False)
+    admission = chain.admit(_request(clauses=(clause,)))
+    assert admission.authorizing.decision == "deny"
+    assert caller.calls == []
+
+
+def test_missing_action_does_not_grant():
+    clause = Policy(policy_type="permission", action=None, clause_id="p0")
+    chain, caller = _chain([], hazard=False, policy_residual=False)
+    admission = chain.admit(_request(clauses=(clause,)))
+    assert admission.authorizing.decision == "deny"
+    assert admission.authorizing.witness["cause"] == "closed_world"
+    assert caller.calls == []
+
+
+def test_duplicate_clause_id_denies_before_a_call():
+    clauses = (
+        Policy(
+            policy_type="prohibition",
+            action="dataset.read",
+            conditions={"semantic": "one"},
+            clause_id="c1",
+        ),
+        Policy(
+            policy_type="prohibition",
+            action="dataset.read",
+            conditions={"semantic": "two"},
+            clause_id="",
+        ),
+        _permission(),
+    )
+    chain, caller = _chain([])
+    admission = chain.admit(_request(clauses=clauses))
+    assert admission.authorizing.decision == "deny"
+    assert admission.authorizing.witness["cause"] == "exact_deny"
+    assert caller.calls == []
+
+
+def test_non_string_residual_denies_before_http():
+    clauses = (
+        _permission(),
+        Policy(
+            policy_type="prohibition",
+            action="dataset.read",
+            conditions={"semantic": None},
+            clause_id="c0",
+        ),
+    )
+    chain, caller = _chain([])
+    admission = chain.admit(_request(clauses=clauses))
+    assert admission.authorizing.decision == "deny"
+    assert admission.authorizing.witness["cause"] == "exact_deny"
+    assert caller.calls == []
+
+
+def test_huge_severity_does_not_flip_an_allow():
+    chain, caller = _chain(
+        [
+            _response(
+                {
+                    "severity": {"score": 10**309},
+                    "jailbreak": {"noul": 0.0},
+                    "harm_or_crime": {"noul": 0.0},
+                    "secret_request": {"noul": 0.0},
+                }
+            )
+        ]
+    )
+    admission = chain.admit(_request(clauses=(_permission(),)))
+    assert admission.authorizing.decision == "allow"
+    assert admission.show is False
+    assert admission.display_cause == "hazard_unresolved"
+    assert caller.calls

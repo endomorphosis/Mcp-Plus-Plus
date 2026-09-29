@@ -57,11 +57,16 @@ def _unit_interval(value: Any) -> float | None:
 
 
 def _finite(value: Any) -> float | None:
+    # float(10**309) raises OverflowError. A bad severity must withhold, not raise.
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         return None
-    if not math.isfinite(value):
+    try:
+        number = float(value)
+    except OverflowError:
         return None
-    return float(value)
+    if not math.isfinite(number):
+        return None
+    return number
 
 
 def hazard_slice(answers: dict[str, Any] | None, gate: str) -> HazardReport | None:

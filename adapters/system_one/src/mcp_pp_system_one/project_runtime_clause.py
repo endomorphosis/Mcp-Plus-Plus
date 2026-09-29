@@ -14,10 +14,13 @@ def _number(value: Any) -> bool:
 
 
 def _iso(value: Any) -> str | None:
-    if not _number(value) or not math.isfinite(float(value)):
+    if not _number(value):
         return None
     try:
-        return datetime.fromtimestamp(float(value), timezone.utc).isoformat()
+        number = float(value)
+        if not math.isfinite(number):
+            return None
+        return datetime.fromtimestamp(number, timezone.utc).isoformat()
     except (ValueError, OverflowError, OSError):
         return None
 
