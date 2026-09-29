@@ -246,6 +246,16 @@ def test_secret_output_denies_without_a_call():
     assert admission.authorizing.witness["cause"] == "exact_deny"
 
 
+def test_unwalkable_output_denies_without_a_call():
+    chain, caller = _chain([])
+    admission = chain.admit(
+        _request(gate="output", payload={1, 2}, clauses=(_permission(),))
+    )
+    assert caller.calls == []
+    assert admission.authorizing.decision == "deny"
+    assert admission.authorizing.witness["cause"] == "exact_deny"
+
+
 def test_project_runtime_clause_rejects_iso_and_unknown_metadata():
     assert project_runtime_clause(
         {

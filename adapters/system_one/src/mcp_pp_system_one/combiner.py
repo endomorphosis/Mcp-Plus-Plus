@@ -278,7 +278,9 @@ class PolicyConformanceChain:
             if self.clock is not None and self.clock() - self.started_at > self.config.policy_deadline_s:
                 self.metrics.inc("system_one_stage_total", stage="policy", result="deny")
                 return GateAdmission(False, self._deny_unresolved(request), "deadline")
-            if request.gate == "output" and _redaction_removed(request.payload):
+            if request.gate == "output" and _redaction_removed(
+                request.payload, fail_closed=True
+            ):
                 request.secret_in_output = True
             exact = self.exact.classify(request)
             _withhold_redacted_prohibitions(request, exact)
@@ -362,11 +364,12 @@ def _marked(value: Any) -> bool:
     return False
 
 
-def _redaction_removed(payload: Any) -> bool:
+def _redaction_removed(payload: Any, *, fail_closed: bool = False) -> bool:
+    # Input withhold keeps the default: an unreadable body did not remove a secret.
     try:
         return _marked(redact_serialized(payload))
     except (TypeError, ValueError):
-        return False
+        return fail_closed
 
 
 def _withhold_redacted_prohibitions(request: Any, exact: ExactReport) -> None:
