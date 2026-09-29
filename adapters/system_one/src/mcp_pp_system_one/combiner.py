@@ -60,15 +60,6 @@ def _thresholds(cfg: SystemOneConfig) -> dict[str, float]:
     }
 
 
-def _policy_stamp(cfg: SystemOneConfig, questions: dict[str, Any]) -> dict[str, str]:
-    # config.model is the request pin. The response model is not a witness field.
-    return {
-        "implementation_id": POLICY_IMPLEMENTATION_ID,
-        "model_id": cfg.model,
-        "question_set_hash": question_set_hash(questions),
-    }
-
-
 def _seal(exact: ExactReport, cfg: SystemOneConfig, **fields: Any) -> dict[str, Any]:
     preimage = decision_preimage(
         decision=fields["decision"],
@@ -343,7 +334,12 @@ class PolicyConformanceChain:
                 state = residual_state(request.payload, exact.residual)
             if hazard_on:
                 questions.update(hazard_questions(request.gate))
-            stamp = _policy_stamp(self.config, questions)
+            stamp = {
+                "implementation_id": POLICY_IMPLEMENTATION_ID,
+                # config.model is the request pin. The response model is not a witness field.
+                "model_id": self.config.model,
+                "question_set_hash": question_set_hash(questions),
+            }
             content = (
                 getattr(request, "output_cid", None)
                 if getattr(request, "gate", "") == "output"
@@ -378,7 +374,12 @@ class PolicyConformanceChain:
         except Exception:
             if authorizing is None:
                 if stamp is None and (residual_on or hazard_on):
-                    stamp = _policy_stamp(self.config, questions)
+                    stamp = {
+                        "implementation_id": POLICY_IMPLEMENTATION_ID,
+                        # config.model is the request pin. The response model is not a witness field.
+                        "model_id": self.config.model,
+                        "question_set_hash": question_set_hash(questions),
+                    }
                 authorizing = self._deny_unresolved(request, stamp=stamp)
             return GateAdmission(False, authorizing, "admit_exception")
 
