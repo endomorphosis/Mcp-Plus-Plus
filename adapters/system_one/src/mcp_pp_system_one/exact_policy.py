@@ -1,11 +1,19 @@
 """Exact P/F/O decisions. Residual text is not decided here."""
 
+import re
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
+
+from mcp_pp_system_one.witness import is_raw_leaf_cid, policy_document_cid, policy_preimage
 
 STRUCTURAL_KEYS = frozenset({"interface_cid", "method", "max_bytes", "cid_allowlist"})
 RESIDUAL_KEYS = frozenset({"semantic", "nl", "uncompiled"})
+
+_WEEKS = re.compile(r"^P(\d+)W$")
+_DURATION = re.compile(
+    r"^P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$"
+)
 
 
 @dataclass(frozen=True)
@@ -39,6 +47,7 @@ class ExactReport:
     authority_unverified: bool = False
     secret_in_output: bool = False
     policy_cid_mismatch: bool = False
+    redaction_withheld: bool = False
     policy_cid: str | None = None
     policy_version: str = "v1"
     clauses: list[dict[str, Any]] = field(default_factory=list)
@@ -50,19 +59,81 @@ class ExactReport:
     proofs_checked: list[Any] = field(default_factory=list)
 
 
+def clause_document(clause: Policy) -> dict[str, Any]:
+    """Policy-document clause. ``clause_id`` is not part of the CID preimage."""
+    temporal = clause.temporal
+    return {
+        "policy_type": clause.policy_type,
+        "action": clause.action,
+        "subject": clause.subject,
+        "resource": clause.resource,
+        "temporal": None
+        if temporal is None
+        else {
+            "not_before": temporal.not_before,
+            "not_after": temporal.not_after,
+            "duration": temporal.duration,
+        },
+        "conditions": clause.conditions,
+    }
+
+
 def _match_token(pattern: str | None, value: str | None) -> bool:
     if pattern is None or pattern == "*":
         return True
     return pattern == value
 
 
+def _glob(text: Any) -> bool:
+    return isinstance(text, str) and "*" in text and text != "*"
+
+
+def _text_or_strings(value: Any) -> bool:
+    if isinstance(value, str):
+        return True
+    return isinstance(value, (list, tuple)) and all(isinstance(item, str) for item in value)
+
+
+def _assigned_id(clause: Policy, index: int) -> str:
+    raw = clause.clause_id
+    if isinstance(raw, str) and raw:
+        return raw
+    return f"c{index}"
+
+
 def _invalid_pattern(action: str, subject: str | None, resource: str | None, conditions: dict | None) -> bool:
-    for text in (action, subject, resource):
-        if isinstance(text, str) and ("*" in text and text != "*"):
-            return True
+    # A missing action is not "*". Subject and resource may be absent.
+    if not isinstance(action, str) or action == "" or _glob(action):
+        return True
+    if _glob(subject) or _glob(resource):
+        return True
     if not conditions:
         return False
-    return any(key not in STRUCTURAL_KEYS | RESIDUAL_KEYS for key in conditions)
+    if any(key not in STRUCTURAL_KEYS | RESIDUAL_KEYS for key in conditions):
+        return True
+    if "interface_cid" in conditions:
+        interface = conditions["interface_cid"]
+        # Equality only. "*" is a literal id, and null is not a wildcard.
+        if not isinstance(interface, str) or _glob(interface):
+            return True
+    if "method" in conditions:
+        method = conditions["method"]
+        if method is not None and (not isinstance(method, str) or _glob(method)):
+            return True
+    if "max_bytes" in conditions:
+        size = conditions["max_bytes"]
+        if isinstance(size, bool) or not isinstance(size, int):
+            return True
+    allowlist = conditions.get("cid_allowlist")
+    if allowlist is not None:
+        if not isinstance(allowlist, (list, tuple)):
+            return True
+        if any(not isinstance(item, str) or _glob(item) for item in allowlist):
+            return True
+    for key in RESIDUAL_KEYS:
+        if key in conditions and not _text_or_strings(conditions[key]):
+            return True
+    return False
 
 
 def _parse_time(value: str | None) -> datetime | None:
@@ -74,22 +145,64 @@ def _parse_time(value: str | None) -> datetime | None:
     return parsed
 
 
-def _window_holds(temporal: Temporal | None, now: datetime) -> bool | None:
-    """True when the window contains now. None means the temporal fields are invalid."""
+def _parse_duration(text: str) -> tuple[int, int, int, int, int, int, int] | None:
+    """Years, months, weeks, days, hours, minutes, seconds. None if not ISO-8601."""
+    if not isinstance(text, str) or text in {"P", "PT"}:
+        return None
+    weeks = _WEEKS.fullmatch(text)
+    if weeks:
+        return (0, 0, int(weeks.group(1)), 0, 0, 0, 0)
+    match = _DURATION.fullmatch(text)
+    if match is None:
+        return None
+    if "T" in text and not any(match.group(index) for index in (4, 5, 6)):
+        return None
+    years, months, days, hours, minutes, seconds = (
+        int(group) if group else 0 for group in match.groups()
+    )
+    if not any((years, months, days, hours, minutes, seconds)):
+        return None
+    return (years, months, 0, days, hours, minutes, seconds)
+
+
+def _add_duration(start: datetime, parts: tuple[int, int, int, int, int, int, int]) -> datetime:
+    years, months, weeks, days, hours, minutes, seconds = parts
+    month_index = start.month - 1 + months
+    year = start.year + years + month_index // 12
+    month = month_index % 12 + 1
+    if month == 12:
+        next_month = datetime(year + 1, 1, 1, tzinfo=start.tzinfo)
+    else:
+        next_month = datetime(year, month + 1, 1, tzinfo=start.tzinfo)
+    last_day = (next_month - timedelta(days=1)).day
+    anchored = start.replace(year=year, month=month, day=min(start.day, last_day))
+    return anchored + timedelta(
+        weeks=weeks, days=days, hours=hours, minutes=minutes, seconds=seconds
+    )
+
+
+def _resolved_window(temporal: Temporal | None, now: datetime) -> tuple[str, str | None]:
+    """Return ``(status, deadline)``. Status is ``ok``, ``before``, ``after``, or ``invalid``."""
     if temporal is None:
-        return True
+        return "ok", None
     try:
         start = _parse_time(temporal.not_before)
         end = _parse_time(temporal.not_after)
     except ValueError:
-        return None
-    if temporal.duration and start is None:
-        return None
+        return "invalid", None
+    deadline = temporal.not_after
+    if temporal.duration:
+        parts = _parse_duration(temporal.duration)
+        if parts is None or start is None:
+            return "invalid", None
+        if end is None:
+            end = _add_duration(start, parts)
+            deadline = end.isoformat()
     if start is not None and now < start:
-        return False
+        return "before", deadline
     if end is not None and now > end:
-        return False
-    return True
+        return "after", deadline
+    return "ok", deadline
 
 
 class ExactStage:
@@ -104,36 +217,59 @@ class ExactStage:
             output_cid=request.output_cid,
             proofs_checked=list(request.proofs_checked or []),
         )
-        if request.policy_cid is None:
+        if not is_raw_leaf_cid(request.policy_cid):
             report.unknown_policy = True
             return report
         clauses = list(request.clauses)
         if not clauses:
             report.empty_policy = True
             return report
+        assigned = [_assigned_id(clause, index) for index, clause in enumerate(clauses)]
+        duplicated = {clause_id for clause_id in assigned if assigned.count(clause_id) > 1}
+        document = policy_preimage(
+            report.policy_version, [clause_document(clause) for clause in clauses]
+        )
+        if policy_document_cid(document) != request.policy_cid:
+            report.policy_cid_mismatch = True
+            return report
         if request.gate == "output" and request.require_proofs and request.proofs_checked is None:
             report.authority_unverified = True
         if getattr(request, "secret_in_output", False):
             report.secret_in_output = True
         for index, clause in enumerate(clauses):
-            clause_id = clause.clause_id or f"c{index}"
+            clause_id = assigned[index]
             conditions = clause.conditions or {}
-            if _invalid_pattern(clause.action, clause.subject, clause.resource, conditions):
+            if clause_id in duplicated or _invalid_pattern(
+                clause.action, clause.subject, clause.resource, conditions
+            ):
                 self._invalid(report, clause, clause_id)
+                self._stamp(report, clause_id, "invalid")
                 continue
-            window = _window_holds(clause.temporal, request.now)
-            if window is None:
+            status, deadline = _resolved_window(clause.temporal, request.now)
+            if status == "invalid":
                 self._invalid(report, clause, clause_id)
-                continue
-            if not window:
+                self._stamp(report, clause_id, "invalid")
                 continue
             if not _match_token(clause.action, request.action):
+                self._stamp(report, clause_id, "inapplicable")
                 continue
             if not _match_token(clause.subject, request.subject):
+                self._stamp(report, clause_id, "inapplicable")
                 continue
             if not _match_token(clause.resource, request.resource):
+                self._stamp(report, clause_id, "inapplicable")
                 continue
             if not self._structural(conditions, request):
+                self._stamp(report, clause_id, "inapplicable")
+                continue
+            if status == "before":
+                self._stamp(report, clause_id, "inapplicable")
+                continue
+            if clause.policy_type == "obligation":
+                self._obligation(report, clause, clause_id, status, deadline)
+                continue
+            if status == "after":
+                self._stamp(report, clause_id, "inapplicable")
                 continue
             residual_bits = {
                 key: conditions[key] for key in RESIDUAL_KEYS if key in conditions
@@ -150,32 +286,49 @@ class ExactStage:
                         clause_id=clause_id,
                     )
                 )
+                self._stamp(report, clause_id, "residual")
                 continue
             if clause.policy_type == "prohibition":
                 report.denies.append(clause_id)
+                self._stamp(report, clause_id, "exact_deny")
             elif clause.policy_type == "permission":
                 report.grants.append(clause)
-            elif clause.policy_type == "obligation":
-                deadline = clause.temporal.not_after if clause.temporal else None
-                if deadline is None:
-                    report.invalid_obligations.append(clause_id)
-                else:
-                    end = _parse_time(deadline)
-                    if end is not None and request.now > end:
-                        report.denies.append(clause_id)
-                    else:
-                        report.obligations.append(
-                            {
-                                "type": "obligation",
-                                "action": clause.action,
-                                "subject": clause.subject,
-                                "resource": clause.resource,
-                                "deadline": deadline,
-                            }
-                        )
+                self._stamp(report, clause_id, "grant")
             else:
                 self._invalid(report, clause, clause_id)
+                self._stamp(report, clause_id, "invalid")
         return report
+
+    def _obligation(
+        self,
+        report: ExactReport,
+        clause: Policy,
+        clause_id: str,
+        status: str,
+        deadline: str | None,
+    ) -> None:
+        # A matched obligation past its deadline denies. Expiry is not "does not apply".
+        if deadline is None:
+            report.invalid_obligations.append(clause_id)
+            self._stamp(report, clause_id, "invalid")
+            return
+        if status == "after":
+            report.denies.append(clause_id)
+            self._stamp(report, clause_id, "exact_deny")
+            return
+        report.obligations.append(
+            {
+                "type": "obligation",
+                "action": clause.action,
+                "subject": clause.subject,
+                "resource": clause.resource,
+                "deadline": deadline,
+            }
+        )
+        self._stamp(report, clause_id, "obligation")
+
+    def _stamp(self, report: ExactReport, clause_id: str, disposition: str) -> None:
+        report.clauses.append({"clause_id": clause_id, "disposition": disposition, "noul": None})
 
     def _invalid(self, report: ExactReport, clause: Policy, clause_id: str) -> None:
         if clause.policy_type == "permission":
