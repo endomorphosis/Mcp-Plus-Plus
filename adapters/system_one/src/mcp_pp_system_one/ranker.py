@@ -258,7 +258,7 @@ class ToolRanker:
         ids = [str(item.get("id", "")) for item in descriptors if isinstance(item, dict)]
         if not isinstance(hint_cid, str) or hint_cid.strip() == "":
             return self.client.system_one(state=state, questions=questions)
-        material = descriptor_cid_material(hint_cid, ",".join(ids))
+        material = descriptor_cid_material(hint_cid, ",".join(ids), views=descriptors)
         return load_or_store(
             self.config,
             stage=STAGE_TOOL_RANK,

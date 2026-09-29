@@ -9,7 +9,8 @@ from pathlib import Path
 from typing import Any
 
 from mcp_pp_system_one.config import SystemOneConfig
-from mcp_pp_system_one.witness import question_set_hash
+from mcp_pp_system_one.redact import redact_serialized
+from mcp_pp_system_one.witness import canonical_json_bytes, question_set_hash
 
 STAGE_TOOL_RANK = "tool-rank"
 STAGE_POLICY = "policy"
@@ -42,9 +43,17 @@ def cache_key(
     )
 
 
-def descriptor_cid_material(task_hint_cid: str, interface_cid: str) -> str:
-    """``task_hint_cid`` plus ``interface_cid`` for a descriptor judgement."""
-    return f"{task_hint_cid}{_MATERIAL_SEP}{interface_cid}"
+def descriptor_cid_material(
+    task_hint_cid: str, interface_cid: str, *, views: Any = None
+) -> str:
+    """Hint CID, interface ids, and a sha256 of the redacted views when given."""
+    material = f"{task_hint_cid}{_MATERIAL_SEP}{interface_cid}"
+    if views is None:
+        return material
+    # Hash after redaction so a summary secret is not stored in the key.
+    redacted = redact_serialized(views)
+    digest = hashlib.sha256(canonical_json_bytes(redacted)).hexdigest()
+    return f"{material}{_MATERIAL_SEP}{digest}"
 
 
 def policy_cid_material(clause_canonical: bytes, content_cid: str | None) -> str:

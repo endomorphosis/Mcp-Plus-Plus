@@ -309,6 +309,53 @@ def test_cached_tool_chunk_is_not_requested_twice(tmp_path):
     assert second.slice is not None and second.slice.interface_cids == (cid,)
 
 
+def test_changed_summary_is_not_reused_from_the_tool_rank_cache(tmp_path):
+    cid = "bafycache"
+    rewritten = f"summary {cid} rewritten"
+    ranker, _client, caller = _ranker(
+        [
+            _response(cid, {cid: 1.0, "none": 0.0}, 0.95, overrides=(0.0,)),
+            _response(cid, {cid: 1.0, "none": 0.0}, 0.95),
+            _response(cid, {cid: 1.0, "none": 0.0}, 0.95, fits=(0.9,), overrides=(0.0,)),
+            _response(cid, {cid: 1.0, "none": 0.0}, 0.95, overrides=(0.0,)),
+            _response(cid, {cid: 1.0, "none": 0.0}, 0.95),
+            _response(cid, {cid: 1.0, "none": 0.0}, 0.95, fits=(0.9,), overrides=(0.0,)),
+        ],
+        cache_dir=str(tmp_path),
+        trust_domain="local",
+    )
+    prior = _prior((cid,))
+    # No description: the excerpt falls back to the summary, so every stage misses.
+    original = ToolSliceRequest(
+        descriptors=(_desc(cid, summary=f"summary {cid} {BEARER}", description=""),),
+        task_hint="list the files",
+        task_hint_cid="bafyhint",
+    )
+    changed = ToolSliceRequest(
+        descriptors=(_desc(cid, summary=rewritten, description=""),),
+        task_hint="list the files",
+        task_hint_cid="bafyhint",
+    )
+    first = ranker.run(original, prior)
+    second = ranker.run(original, prior)
+    assert len(caller.calls) == 3
+    assert first.slice is not None and first.slice.interface_cids == (cid,)
+    assert second.slice is not None and second.slice.interface_cids == (cid,)
+    third = ranker.run(changed, prior)
+    assert len(caller.calls) == 6
+    assert caller.calls[3]["state"]["descriptors"][0]["id"] == cid
+    assert caller.calls[3]["state"]["descriptors"][0]["summary"] == rewritten
+    assert third.slice is not None and third.slice.interface_cids == (cid,)
+    ranker.run(changed, prior)
+    assert len(caller.calls) == 6
+    stored = "".join(
+        path.read_text(encoding="utf-8") for path in tmp_path.iterdir() if path.is_file()
+    )
+    assert BEARER not in stored
+    assert "sk-test-secret" not in stored
+    assert rewritten not in stored
+
+
 def test_retry_policy_does_not_honor_retry_after():
     client = JevClient(SystemOneConfig(), caller=lambda **_kwargs: {"model": MODEL, "answers": {}})
     assert client.retry_policy["respect_retry_after"] is False
