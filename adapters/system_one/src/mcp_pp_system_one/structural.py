@@ -124,7 +124,7 @@ def _requires(desc: Any) -> list[str] | None:
 
 def _text_blob(desc: Any, methods: list[Any]) -> str:
     parts: list[str] = []
-    for key in ("description", "summary"):
+    for key in ("description", "summary", "name", "namespace"):
         value = _get(desc, key, None)
         if isinstance(value, str):
             parts.append(value)

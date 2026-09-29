@@ -104,6 +104,8 @@ def test_cid_criteria_are_null_and_bearer_is_redacted():
     assert JAILBREAK not in criteria["none"]
     instruction = recorded["questions"]["override[1]"]["instructions"]
     assert "`descriptors[1].summary`" in instruction
+    assert "`descriptors[1].name`" in instruction
+    assert "`descriptors[1].namespace`" in instruction
     assert JAILBREAK not in instruction
     assert BEARER not in str(recorded)
     assert "sk-test-secret" not in str(recorded)
@@ -128,7 +130,42 @@ def test_override_excludes_only_the_jailbreak_index():
     assert bad not in selected.interface_cids
     instruction = caller.calls[0]["questions"]["override[1]"]["instructions"]
     assert "`descriptors[1].summary`" in instruction
+    assert "`descriptors[1].name`" in instruction
+    assert "`descriptors[1].namespace`" in instruction
     assert JAILBREAK not in instruction
+
+
+def test_override_instructions_name_fields_without_copying_peer_text():
+    cid = "bafyname"
+    ranker, _client, caller = _ranker(
+        [
+            _response(cid, {cid: 1.0, "none": 0.0}, 0.95, overrides=(0.0,)),
+            _response(cid, {cid: 1.0, "none": 0.0}, 0.95),
+            _response(cid, {cid: 1.0, "none": 0.0}, 0.95, fits=(0.9,), overrides=(0.0,)),
+        ]
+    )
+    request = ToolSliceRequest(
+        descriptors=(_desc(cid, name=JAILBREAK),),
+        task_hint="list the files",
+    )
+    ranker.run(request, _prior((cid,)))
+    assert caller.calls[0]["state"]["descriptors"][0]["name"] == JAILBREAK
+    pass1_instruction = caller.calls[0]["questions"]["override[0]"]["instructions"]
+    assert "`descriptors[0].summary`" in pass1_instruction
+    assert "`descriptors[0].name`" in pass1_instruction
+    assert "`descriptors[0].namespace`" in pass1_instruction
+    assert JAILBREAK not in pass1_instruction
+    assert "fits[0]" not in caller.calls[0]["questions"]
+    pass2_instruction = caller.calls[2]["questions"]["override[0]"]["instructions"]
+    assert "`descriptors[0].excerpt`" in pass2_instruction
+    assert "`descriptors[0].name`" in pass2_instruction
+    assert "`descriptors[0].namespace`" in pass2_instruction
+    assert JAILBREAK not in pass2_instruction
+    assert caller.calls[2]["state"]["descriptors"][0]["name"] == JAILBREAK
+    fits = caller.calls[2]["questions"]["fits[0]"]["instructions"]
+    assert "`descriptors[0].excerpt`" in fits
+    assert "`descriptors[0].name`" not in fits
+    assert "`descriptors[0].namespace`" not in fits
 
 
 def test_pass2_none_does_not_expose_a_write():

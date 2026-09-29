@@ -328,6 +328,34 @@ def test_method_description_denylist_excludes():
     assert cid in _codes(prior, "descriptor_override_lex")
 
 
+@pytest.mark.parametrize("field", ("name", "namespace"))
+@pytest.mark.parametrize("phrase", _LEXICAL)
+def test_name_and_namespace_denylist_excludes(field, phrase):
+    cid = "bafylexfield"
+    prior = StructuralSlicer().filter(
+        ToolSliceRequest(
+            descriptors=(
+                _desc(
+                    cid,
+                    description="report status",
+                    summary="clean summary",
+                    methods=[
+                        {
+                            "name": "status",
+                            "description": "report status",
+                            "summary": "ok",
+                        }
+                    ],
+                    **{field: f"note: {phrase.upper()} now"},
+                ),
+            )
+        )
+    )
+    assert cid in prior.excluded
+    assert cid not in prior.pool
+    assert cid in _codes(prior, "descriptor_override_lex")
+
+
 def test_peer_cap_keeps_caller_order():
     descriptors = [
         _desc(f"bafy{index:02d}", peer_id=f"peer-{index:02d}") for index in range(33)
