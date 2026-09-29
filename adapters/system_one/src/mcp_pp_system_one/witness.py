@@ -63,6 +63,22 @@ def cid_raw_leaf(document: Any) -> str:
     return "b" + encoded
 
 
+def is_raw_leaf_cid(value: Any) -> bool:
+    """True when ``value`` decodes to the same CIDv1 raw-leaf prefix ``cid_raw_leaf`` writes."""
+    if not isinstance(value, str) or len(value) != 59 or not value.startswith("b"):
+        return False
+    body = value[1:].upper()
+    if any(char not in "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567" for char in body):
+        return False
+    pad = "=" * ((8 - len(body) % 8) % 8)
+    try:
+        raw = base64.b32decode(body + pad, casefold=False)
+    except ValueError:
+        return False
+    prefix = bytes((_CID_VERSION, _CODEC_RAW, _MULTIHASH_SHA256, 32))
+    return len(raw) == 36 and raw[:4] == prefix
+
+
 def question_set_hash(questions: Mapping[str, Any]) -> str:
     """Hash the canonical question map, including ``COMPILER_VERSION``."""
     payload = {"compiler_version": COMPILER_VERSION, "questions": questions}

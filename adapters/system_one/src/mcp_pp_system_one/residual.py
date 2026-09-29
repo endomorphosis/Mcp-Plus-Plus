@@ -4,8 +4,6 @@ from typing import Any
 
 from mcp_pp_system_one.exact_policy import Policy
 
-COMPILER_VERSION = "qset-2026-09-29"
-
 
 def _clause_state(clause: Policy) -> dict[str, Any]:
     temporal = clause.temporal
@@ -25,8 +23,7 @@ def _clause_state(clause: Policy) -> dict[str, Any]:
     }
 
 
-def compile_residual(clauses: list[Policy], *, gate: str) -> dict[str, Any]:
-    del gate
+def compile_residual(clauses: list[Policy]) -> dict[str, Any]:
     questions = {}
     for index, _clause in enumerate(clauses):
         questions[f"c{index}"] = {

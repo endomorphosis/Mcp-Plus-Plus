@@ -1,5 +1,6 @@
 """Display-only hazard questions. They do not authorize."""
 
+import math
 from dataclasses import dataclass
 from typing import Any
 
@@ -46,6 +47,23 @@ def hazard_questions(gate: str) -> dict[str, Any]:
     return questions
 
 
+def _unit_interval(value: Any) -> float | None:
+    # bool is an int. float(True) == 1.0 would hide or pass a score that was never a noul.
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    if not math.isfinite(value) or value < 0.0 or value > 1.0:
+        return None
+    return float(value)
+
+
+def _finite(value: Any) -> float | None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    if not math.isfinite(value):
+        return None
+    return float(value)
+
+
 def hazard_slice(answers: dict[str, Any] | None, gate: str) -> HazardReport | None:
     if not isinstance(answers, dict):
         return None
@@ -55,16 +73,14 @@ def hazard_slice(answers: dict[str, Any] | None, gate: str) -> HazardReport | No
         item = answers.get(name)
         if not isinstance(item, dict) or "noul" not in item:
             return None
-        try:
-            score = float(item["noul"])
-        except (TypeError, ValueError):
+        score = _unit_interval(item["noul"])
+        if score is None:
             return None
         nouls[name] = score
     severity = None
     item = answers.get("severity")
     if isinstance(item, dict) and "score" in item:
-        try:
-            severity = float(item["score"])
-        except (TypeError, ValueError):
-            severity = None
+        severity = _finite(item["score"])
+        if severity is None:
+            return None
     return HazardReport(nouls=nouls, severity=severity)

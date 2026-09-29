@@ -1,21 +1,12 @@
 """Project an accelerate-shaped clause. Unknown keys and ISO timestamps return None."""
 
+import math
 from datetime import datetime, timezone
 from typing import Any
 
-from mcp_pp_system_one.exact_policy import Policy, Temporal
+from mcp_pp_system_one.exact_policy import RESIDUAL_KEYS, STRUCTURAL_KEYS, Policy, Temporal
 
-_METADATA = frozenset(
-    {
-        "interface_cid",
-        "method",
-        "max_bytes",
-        "cid_allowlist",
-        "semantic",
-        "nl",
-        "uncompiled",
-    }
-)
+_METADATA = STRUCTURAL_KEYS | RESIDUAL_KEYS
 
 
 def _number(value: Any) -> bool:
@@ -23,9 +14,12 @@ def _number(value: Any) -> bool:
 
 
 def _iso(value: Any) -> str | None:
-    if not _number(value):
+    if not _number(value) or not math.isfinite(float(value)):
         return None
-    return datetime.fromtimestamp(float(value), timezone.utc).isoformat()
+    try:
+        return datetime.fromtimestamp(float(value), timezone.utc).isoformat()
+    except (ValueError, OverflowError, OSError):
+        return None
 
 
 def project_runtime_clause(raw: dict[str, Any]) -> Policy | None:
