@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=77.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mcp-pp-system-one"
+version = "0.1.0"
+description = "Local System One approximator for MCP++ tool slicing"
+requires-python = ">=3.10"
+license = "AGPL-3.0-or-later"
+dependencies = []
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
