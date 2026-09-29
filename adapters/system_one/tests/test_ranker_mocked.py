@@ -213,6 +213,21 @@ def test_build_tool_list_uses_only_the_slice():
     assert selected.interface_cids == ()
 
 
+def test_nonfinite_fits_does_not_expose_a_write():
+    cid = "bafynan"
+    for bad in ("nan", "inf"):
+        ranker, _client, _caller = _ranker(
+            [
+                _response(cid, {cid: 1.0, "none": 0.0}, 0.95, overrides=(0.0,)),
+                _response(cid, {cid: 1.0, "none": 0.0}, 0.95),
+                _response(cid, {cid: 1.0, "none": 0.0}, 0.95, fits=(bad,), overrides=(0.0,)),
+            ]
+        )
+        request = ToolSliceRequest(descriptors=(_desc(cid),), task_hint="delete the branch")
+        selected = ToolSliceChain(ranker=ranker).select(request)
+        assert selected.interface_cids == ()
+
+
 def test_oversized_descriptor_is_not_sent():
     cid = "bafyhuge"
     ranker, _client, caller = _ranker(

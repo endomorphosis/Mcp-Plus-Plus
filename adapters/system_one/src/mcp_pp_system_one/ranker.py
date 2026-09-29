@@ -1,5 +1,6 @@
 """Two-pass tool rank. A Choice of none exposes nothing."""
 
+import math
 from typing import Any
 
 from mcp_pp_system_one.config import SystemOneConfig
@@ -61,14 +62,21 @@ def _view(desc: Any, prior: Prior, *, excerpt: bool) -> dict[str, Any]:
     }
 
 
+def _unit(value: Any) -> float | None:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if not math.isfinite(number) or number < 0.0 or number > 1.0:
+        return None
+    return number
+
+
 def _noul(answers: dict[str, Any], key: str) -> float | None:
     item = answers.get(key)
     if not isinstance(item, dict) or "noul" not in item:
         return None
-    try:
-        return float(item["noul"])
-    except (TypeError, ValueError):
-        return None
+    return _unit(item["noul"])
 
 
 def chunk_gate(answers: dict[str, Any]) -> float | None:
@@ -83,10 +91,7 @@ def chunk_gate(answers: dict[str, Any]) -> float | None:
 def confidence_for(which: dict[str, Any]) -> float | None:
     if which.get("choice") == "none":
         return None
-    try:
-        return float(which["confidence"])
-    except (KeyError, TypeError, ValueError):
-        return None
+    return _unit(which.get("confidence"))
 
 
 class ToolRanker:
