@@ -29,14 +29,22 @@ _PAYMENT = re.compile(
     r"(?i)\b(?:PAYMENT-SIGNATURE|PAYMENT-REQUIRED|PAYMENT-RESPONSE|"
     r"X-PAYMENT(?:-RESPONSE)?)\s*[:=]\s*[A-Za-z0-9+/=_-]{8,}"
 )
-# A colon or equals binds the phrase even with no space. A bare run of prose does not.
-_SEED_FUNCTION_WORDS = frozenset(
-    {"the", "that", "this", "with", "from", "have", "were", "been"}
+# A colon or equals binds the phrase even with no space.
+# A bare run fails inside the pattern when a word is short or a function word,
+# so the search can resume at a later label instead of consuming the span.
+_SEED_CONTENT_WORD = (
+    r"(?!(?i:the|that|this|with|from|have|were|been)\b)[A-Za-z]{3,}"
 )
 _SEED_PHRASE = re.compile(
     r"(?i:\b(?:wallet\s+seed|seed(?:\s+phrase)?|mnemonic)\b)"
-    r"(?P<sep>\s*[:=]\s*|\s+)"
-    r"(?P<words>[A-Za-z]+(?:\s+[A-Za-z]+){11,23})"
+    r"(?:"
+    r"\s*[:=]\s*[A-Za-z]+(?:\s+[A-Za-z]+){11,23}"
+    r"|\s+"
+    + _SEED_CONTENT_WORD
+    + r"(?:\s+"
+    + _SEED_CONTENT_WORD
+    + r"){11,23}"
+    r")"
 )
 _BEARER = re.compile(r"(?i)\bBearer\s+[A-Za-z0-9\-._~+/=]+")
 _SK = re.compile(r"\bsk-[A-Za-z0-9_\-.]{4,}\b")
@@ -117,17 +125,6 @@ def _redact_card(match: re.Match[str]) -> str:
     return _token(text)
 
 
-def _redact_seed(match: re.Match[str]) -> str:
-    separator = match.group("sep")
-    words = match.group("words").split()
-    if ":" not in separator and "=" not in separator:
-        for word in words:
-            folded = word.casefold()
-            if len(folded) < 3 or folded in _SEED_FUNCTION_WORDS:
-                return match.group(0)
-    return _token(match.group(0))
-
-
 def _redact_sk(match: re.Match[str]) -> str:
     span = match.group(0)
     tail = _SK_CID_TAIL.search(span)
@@ -167,7 +164,7 @@ def _redact_text(text: str, api_key: str | None) -> str:
         return _token(text)
     text = _PEM.sub(lambda match: _token(match.group(0)), text)
     text = _PAYMENT.sub(lambda match: _token(match.group(0)), text)
-    text = _SEED_PHRASE.sub(_redact_seed, text)
+    text = _SEED_PHRASE.sub(lambda match: _token(match.group(0)), text)
     text = _BEARER.sub(lambda match: _token(match.group(0)), text)
     text = _JWT_CANDIDATE.sub(_redact_jwt, text)
     text = _UCAN_ARCHIVE.sub(lambda match: _token(match.group(0)), text)

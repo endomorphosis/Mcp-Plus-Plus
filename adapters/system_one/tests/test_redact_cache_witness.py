@@ -581,6 +581,15 @@ def test_seed_phrase_without_colon_stops_at_punctuation():
         redact_serialized({"summary": f"mnemonic {function_words}"})["summary"]
         == f"mnemonic {function_words}"
     )
+    later = "seed of backup mnemonic " + words
+    later_redacted = redact_serialized({"summary": later})["summary"]
+    assert later_redacted.startswith("seed of backup ")
+    assert "abandon" not in later_redacted
+    assert "mnemonic" not in later_redacted
+    stored = "store the seed of your backup mnemonic " + words
+    stored_redacted = redact_serialized({"summary": stored})["summary"]
+    assert stored_redacted.startswith("store the seed of your backup ")
+    assert "abandon" not in stored_redacted
 
 
 def test_sk_token_keeps_a_trailing_cid():
