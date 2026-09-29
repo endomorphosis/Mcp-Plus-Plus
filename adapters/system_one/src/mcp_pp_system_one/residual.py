@@ -2,31 +2,10 @@
 
 from typing import Any
 
-from mcp_pp_system_one.exact_policy import Policy
-
-COMPILER_VERSION = "qset-2026-09-29"
+from mcp_pp_system_one.exact_policy import Policy, clause_document
 
 
-def _clause_state(clause: Policy) -> dict[str, Any]:
-    temporal = clause.temporal
-    return {
-        "policy_type": clause.policy_type,
-        "action": clause.action,
-        "subject": clause.subject,
-        "resource": clause.resource,
-        "temporal": None
-        if temporal is None
-        else {
-            "not_before": temporal.not_before,
-            "not_after": temporal.not_after,
-            "duration": temporal.duration,
-        },
-        "conditions": clause.conditions,
-    }
-
-
-def compile_residual(clauses: list[Policy], *, gate: str) -> dict[str, Any]:
-    del gate
+def compile_residual(clauses: list[Policy]) -> dict[str, Any]:
     questions = {}
     for index, _clause in enumerate(clauses):
         questions[f"c{index}"] = {
@@ -50,4 +29,4 @@ def compile_residual(clauses: list[Policy], *, gate: str) -> dict[str, Any]:
 
 
 def residual_state(payload: Any, clauses: list[Policy]) -> dict[str, Any]:
-    return {"payload": payload, "clauses": [_clause_state(clause) for clause in clauses]}
+    return {"payload": payload, "clauses": [clause_document(clause) for clause in clauses]}

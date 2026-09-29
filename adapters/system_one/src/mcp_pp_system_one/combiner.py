@@ -5,8 +5,15 @@ from typing import Any
 
 from mcp_pp_system_one.config import SystemOneConfig
 from mcp_pp_system_one.exact_policy import ExactReport, ExactStage, Policy
-from mcp_pp_system_one.hazard import HazardReport, hazard_questions, hazard_slice
+from mcp_pp_system_one.hazard import (
+    HazardReport,
+    _finite,
+    _unit_interval,
+    hazard_questions,
+    hazard_slice,
+)
 from mcp_pp_system_one.jev_client import Abstain, JevClient
+from mcp_pp_system_one.metrics import Metrics
 from mcp_pp_system_one.redact import redact_serialized
 from mcp_pp_system_one.residual import compile_residual, residual_state
 from mcp_pp_system_one.witness import decision_preimage, seal_decision_witness
@@ -131,15 +138,19 @@ def allow_with_obligations(exact: ExactReport, cfg: SystemOneConfig) -> PolicyDe
     )
 
 
+def _stamp(exact: ExactReport, clause_id: str, disposition: str, noul: float | None) -> None:
+    for record in exact.clauses:
+        if record.get("clause_id") == clause_id:
+            record["disposition"] = disposition
+            record["noul"] = noul
+            return
+    exact.clauses.append({"clause_id": clause_id, "disposition": disposition, "noul": noul})
+
+
 def noul_of(fuzzy: FuzzyReport | Abstain | None, clause_id: str) -> float | None:
     if not isinstance(fuzzy, FuzzyReport):
         return None
-    value = fuzzy.nouls.get(clause_id)
-    if value is None:
-        return None
-    if not isinstance(value, float) or value < 0.0 or value > 1.0:
-        return None
-    return value
+    return _unit_interval(fuzzy.nouls.get(clause_id))
 
 
 def combine_policy(
@@ -150,28 +161,26 @@ def combine_policy(
     residual_enabled: bool,
 ) -> PolicyDecision:
     signals: list[str] = []
-    if (
-        exact.denies
-        or exact.invalid_prohibitions
-        or exact.invalid_obligations
-        or exact.unknown_policy
-        or exact.empty_policy
-        or exact.authority_unverified
-        or exact.secret_in_output
-        or exact.policy_cid_mismatch
-    ):
+    if _final_exact_deny(exact):
         signals.append("exact_deny")
+    if exact.redaction_withheld:
+        signals.append("unresolved")
     for clause in exact.residual:
         if clause.policy_type != "prohibition":
             continue
         score = noul_of(fuzzy, clause.clause_id) if residual_enabled else None
         if score is None:
             signals.append("unresolved")
+            _stamp(exact, clause.clause_id, "unresolved", None)
         elif score >= cfg.prohibition_deny:
             signals.append("prohibition_deny")
+            _stamp(exact, clause.clause_id, "prohibition_deny", score)
         elif score >= cfg.prohibition_review:
             signals.append("review")
-    severity = fuzzy.severity if isinstance(fuzzy, FuzzyReport) else None
+            _stamp(exact, clause.clause_id, "review", score)
+        else:
+            _stamp(exact, clause.clause_id, "clear", score)
+    severity = _finite(fuzzy.severity) if isinstance(fuzzy, FuzzyReport) else None
     if "review" in signals and severity is not None and severity >= cfg.severity_block:
         signals.append("severity")
     for kind in PRECEDENCE:
@@ -180,9 +189,14 @@ def combine_policy(
     grants = list(exact.grants)
     if residual_enabled and isinstance(fuzzy, FuzzyReport):
         for clause in exact.residual:
+            if clause.policy_type != "permission":
+                continue
             score = noul_of(fuzzy, clause.clause_id)
-            if clause.policy_type == "permission" and score is not None and score >= cfg.permission_allow:
+            if score is not None and score >= cfg.permission_allow:
                 grants.append(clause)
+                _stamp(exact, clause.clause_id, "grant", score)
+            else:
+                _stamp(exact, clause.clause_id, "clear", score)
     if not grants:
         return deny_for("closed_world", exact, cfg, severity=severity)
     if exact.obligations:
@@ -224,17 +238,14 @@ def _fuzzy_from(answers: dict[str, Any] | None, residual: list[Policy]) -> Fuzzy
         item = answers.get(f"c{index}")
         if not isinstance(item, dict) or "noul" not in item:
             continue
-        try:
-            nouls[clause.clause_id] = float(item["noul"])
-        except (TypeError, ValueError):
+        score = _unit_interval(item["noul"])
+        if score is None:
             continue
+        nouls[clause.clause_id] = score
     severity = None
     item = answers.get("severity")
     if isinstance(item, dict) and "score" in item:
-        try:
-            severity = float(item["score"])
-        except (TypeError, ValueError):
-            severity = None
+        severity = _finite(item["score"])
     return FuzzyReport(nouls=nouls, severity=severity)
 
 
@@ -250,7 +261,7 @@ class PolicyConformanceChain:
         self.client = client
         self.exact = exact or ExactStage()
         self.display = display or reduce_display
-        self.metrics = None
+        self.metrics = Metrics()
         self.clock = None
         self.started_at = 0.0
 
@@ -264,10 +275,12 @@ class PolicyConformanceChain:
         authorizing: PolicyDecision | None = None
         try:
             if self.clock is not None and self.clock() - self.started_at > self.config.policy_deadline_s:
+                self.metrics.inc("system_one_stage_total", stage="policy", result="deny")
                 return GateAdmission(False, self._deny_unresolved(request), "deadline")
-            if request.gate == "output" and _changed_by_redaction(request.payload):
+            if request.gate == "output" and _redaction_removed(request.payload):
                 request.secret_in_output = True
             exact = self.exact.classify(request)
+            _withhold_redacted_prohibitions(request, exact)
             if _final_exact_deny(exact):
                 authorizing = combine_policy(exact, None, self.config, residual_enabled=False)
                 return self.display(authorizing, None, self.config)
@@ -281,7 +294,7 @@ class PolicyConformanceChain:
             questions: dict[str, Any] = {}
             state: dict[str, Any] = {"payload": request.payload}
             if residual_on:
-                questions.update(compile_residual(exact.residual, gate=request.gate))
+                questions.update(compile_residual(exact.residual))
                 state = residual_state(request.payload, exact.residual)
             if hazard_on:
                 questions.update(hazard_questions(request.gate))
@@ -322,8 +335,36 @@ def _final_exact_deny(exact: ExactReport) -> bool:
     )
 
 
-def _changed_by_redaction(payload: Any) -> bool:
+def _marked(value: Any) -> bool:
+    if isinstance(value, str):
+        return "[REDACTED:" in value
+    if isinstance(value, dict):
+        return any(_marked(key) or _marked(item) for key, item in value.items())
+    if isinstance(value, (list, tuple)):
+        return any(_marked(item) for item in value)
+    return False
+
+
+def _redaction_removed(payload: Any) -> bool:
     try:
-        return redact_serialized(payload) != payload
-    except TypeError:
+        return _marked(redact_serialized(payload))
+    except (TypeError, ValueError):
         return False
+
+
+def _withhold_redacted_prohibitions(request: Any, exact: ExactReport) -> None:
+    if getattr(request, "gate", "input") == "output":
+        return
+    if not _redaction_removed(getattr(request, "payload", None)):
+        return
+    kept: list[Policy] = []
+    withheld = False
+    for clause in exact.residual:
+        if clause.policy_type == "prohibition":
+            withheld = True
+            _stamp(exact, clause.clause_id, "redaction_withheld_judgement", None)
+        else:
+            kept.append(clause)
+    if withheld:
+        exact.redaction_withheld = True
+        exact.residual = kept
