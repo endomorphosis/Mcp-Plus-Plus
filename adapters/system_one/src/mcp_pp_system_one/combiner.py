@@ -250,6 +250,9 @@ class PolicyConformanceChain:
         self.client = client
         self.exact = exact or ExactStage()
         self.display = display or reduce_display
+        self.metrics = None
+        self.clock = None
+        self.started_at = 0.0
 
     def evaluate(self, request: Any) -> PolicyDecision:
         try:
@@ -260,6 +263,8 @@ class PolicyConformanceChain:
     def admit(self, request: Any) -> GateAdmission:
         authorizing: PolicyDecision | None = None
         try:
+            if self.clock is not None and self.clock() - self.started_at > self.config.policy_deadline_s:
+                return GateAdmission(False, self._deny_unresolved(request), "deadline")
             if request.gate == "output" and _changed_by_redaction(request.payload):
                 request.secret_in_output = True
             exact = self.exact.classify(request)

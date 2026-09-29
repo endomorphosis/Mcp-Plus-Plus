@@ -12,6 +12,7 @@ from mcp_pp_system_one.ports import (
     ToolSlice,
     ToolSliceRequest,
 )
+from mcp_pp_system_one.metrics import Metrics
 from mcp_pp_system_one.structural import StructuralSlicer
 
 
@@ -39,8 +40,31 @@ class ToolSliceChain:
         )
         self.ranker = ranker
         self.abstain = AbstainEmpty()
+        self.metrics = Metrics()
+        self.clock = None
+        self.started_at = 0.0
+
+    def disable_jev(self) -> None:
+        self.ranker = None
+        self.config = replace(
+            self.config,
+            enabled=False,
+            tool_rank=False,
+            policy_residual=False,
+            hazard=False,
+        )
+
+    def _past_tool_deadline(self) -> bool:
+        if self.clock is None:
+            return False
+        return self.clock() - self.started_at > self.config.tool_deadline_s
 
     def select(self, request: ToolSliceRequest) -> ToolSlice:
+        if self._past_tool_deadline():
+            self.metrics.inc("system_one_stage_total", stage="tool", result="abstain")
+            return self.abstain.halt(
+                Prior((), frozenset(), (), {}, {})
+            )
         prior = Prior(
             pool=(),
             excluded=frozenset(),
