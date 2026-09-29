@@ -1,0 +1,324 @@
+"""Policy verdicts. Hazard can hide a result. It cannot change the verdict."""
+
+from dataclasses import dataclass
+from typing import Any
+
+from mcp_pp_system_one.config import SystemOneConfig
+from mcp_pp_system_one.exact_policy import ExactReport, ExactStage, Policy
+from mcp_pp_system_one.hazard import HazardReport, hazard_questions, hazard_slice
+from mcp_pp_system_one.jev_client import Abstain, JevClient
+from mcp_pp_system_one.redact import redact_serialized
+from mcp_pp_system_one.residual import compile_residual, residual_state
+from mcp_pp_system_one.witness import decision_preimage, seal_decision_witness
+
+PRECEDENCE = ("exact_deny", "unresolved", "prohibition_deny", "severity", "review")
+
+
+@dataclass
+class PolicyDecision:
+    decision: str
+    allowed: bool
+    obligations: list[Any]
+    policy_cid: str | None
+    witness: dict[str, Any]
+    decision_cid: str | None = None
+
+
+@dataclass(frozen=True)
+class GateAdmission:
+    show: bool
+    authorizing: PolicyDecision
+    display_cause: str
+
+
+@dataclass
+class FuzzyReport:
+    nouls: dict[str, float]
+    severity: float | None
+
+
+def _thresholds(cfg: SystemOneConfig) -> dict[str, float]:
+    return {
+        "prohibition_review": cfg.prohibition_review,
+        "prohibition_deny": cfg.prohibition_deny,
+        "permission_allow": cfg.permission_allow,
+        "severity_block": cfg.severity_block,
+    }
+
+
+def _seal(exact: ExactReport, cfg: SystemOneConfig, **fields: Any) -> dict[str, Any]:
+    preimage = decision_preimage(
+        decision=fields["decision"],
+        allowed=fields["allowed"],
+        obligations=fields.get("obligations") or [],
+        policy_cid=exact.policy_cid or "",
+        policy_version=exact.policy_version,
+        intent_cid=exact.intent_cid,
+        proofs_checked=exact.proofs_checked,
+        gate=exact.gate,
+        now=exact.now,
+        thresholds=_thresholds(cfg),
+        clauses=exact.clauses,
+        input_cid=exact.input_cid,
+        output_cid=exact.output_cid,
+        severity=fields.get("severity"),
+        disposition=fields.get("disposition"),
+        cause=fields.get("cause"),
+    )
+    return seal_decision_witness(preimage)
+
+
+def deny_for(kind: str, exact: ExactReport, cfg: SystemOneConfig, severity: float | None = None) -> PolicyDecision:
+    disposition = "review" if kind == "review" else "deny"
+    cause = "policy" if kind == "review" else kind
+    witness = _seal(
+        exact,
+        cfg,
+        decision="deny",
+        allowed=False,
+        obligations=[],
+        disposition=disposition,
+        cause=cause,
+        severity=severity,
+    )
+    return PolicyDecision(
+        decision="deny",
+        allowed=False,
+        obligations=[],
+        policy_cid=exact.policy_cid,
+        witness=witness,
+        decision_cid=witness["decision_cid"],
+    )
+
+
+def allow(exact: ExactReport, cfg: SystemOneConfig) -> PolicyDecision:
+    witness = _seal(
+        exact,
+        cfg,
+        decision="allow",
+        allowed=True,
+        obligations=[],
+        disposition="allow",
+        cause="exact",
+    )
+    return PolicyDecision(
+        decision="allow",
+        allowed=True,
+        obligations=[],
+        policy_cid=exact.policy_cid,
+        witness=witness,
+        decision_cid=witness["decision_cid"],
+    )
+
+
+def allow_with_obligations(exact: ExactReport, cfg: SystemOneConfig) -> PolicyDecision:
+    witness = _seal(
+        exact,
+        cfg,
+        decision="allow_with_obligations",
+        allowed=True,
+        obligations=list(exact.obligations),
+        disposition="allow",
+        cause="exact",
+    )
+    return PolicyDecision(
+        decision="allow_with_obligations",
+        allowed=True,
+        obligations=list(exact.obligations),
+        policy_cid=exact.policy_cid,
+        witness=witness,
+        decision_cid=witness["decision_cid"],
+    )
+
+
+def noul_of(fuzzy: FuzzyReport | Abstain | None, clause_id: str) -> float | None:
+    if not isinstance(fuzzy, FuzzyReport):
+        return None
+    value = fuzzy.nouls.get(clause_id)
+    if value is None:
+        return None
+    if not isinstance(value, float) or value < 0.0 or value > 1.0:
+        return None
+    return value
+
+
+def combine_policy(
+    exact: ExactReport,
+    fuzzy: FuzzyReport | Abstain | None,
+    cfg: SystemOneConfig,
+    *,
+    residual_enabled: bool,
+) -> PolicyDecision:
+    signals: list[str] = []
+    if (
+        exact.denies
+        or exact.invalid_prohibitions
+        or exact.invalid_obligations
+        or exact.unknown_policy
+        or exact.empty_policy
+        or exact.authority_unverified
+        or exact.secret_in_output
+        or exact.policy_cid_mismatch
+    ):
+        signals.append("exact_deny")
+    for clause in exact.residual:
+        if clause.policy_type != "prohibition":
+            continue
+        score = noul_of(fuzzy, clause.clause_id) if residual_enabled else None
+        if score is None:
+            signals.append("unresolved")
+        elif score >= cfg.prohibition_deny:
+            signals.append("prohibition_deny")
+        elif score >= cfg.prohibition_review:
+            signals.append("review")
+    severity = fuzzy.severity if isinstance(fuzzy, FuzzyReport) else None
+    if "review" in signals and severity is not None and severity >= cfg.severity_block:
+        signals.append("severity")
+    for kind in PRECEDENCE:
+        if kind in signals:
+            return deny_for(kind, exact, cfg, severity=severity)
+    grants = list(exact.grants)
+    if residual_enabled and isinstance(fuzzy, FuzzyReport):
+        for clause in exact.residual:
+            score = noul_of(fuzzy, clause.clause_id)
+            if clause.policy_type == "permission" and score is not None and score >= cfg.permission_allow:
+                grants.append(clause)
+    if not grants:
+        return deny_for("closed_world", exact, cfg, severity=severity)
+    if exact.obligations:
+        return allow_with_obligations(exact, cfg)
+    return allow(exact, cfg)
+
+
+def reduce_display(
+    authorizing: PolicyDecision,
+    hazard: HazardReport | Abstain | None,
+    cfg: SystemOneConfig,
+) -> GateAdmission:
+    witness = authorizing.witness
+    if authorizing.decision == "deny" and witness.get("disposition") != "review":
+        return GateAdmission(False, authorizing, str(witness["cause"]))
+    if isinstance(hazard, HazardReport) and any(
+        score >= cfg.hazard_action for score in hazard.nouls.values()
+    ):
+        return GateAdmission(False, authorizing, "hazard")
+    if (
+        isinstance(hazard, HazardReport)
+        and hazard.severity is not None
+        and hazard.severity >= cfg.severity_block
+        and any(score >= cfg.prohibition_review for score in hazard.nouls.values())
+    ):
+        return GateAdmission(False, authorizing, "severity")
+    if witness.get("disposition") == "review":
+        return GateAdmission(False, authorizing, "review")
+    if authorizing.decision in ("allow", "allow_with_obligations"):
+        return GateAdmission(True, authorizing, "allow")
+    return GateAdmission(False, authorizing, "deny")
+
+
+def _fuzzy_from(answers: dict[str, Any] | None, residual: list[Policy]) -> FuzzyReport | Abstain:
+    if not isinstance(answers, dict):
+        return Abstain("malformed")
+    nouls: dict[str, float] = {}
+    for index, clause in enumerate(residual):
+        item = answers.get(f"c{index}")
+        if not isinstance(item, dict) or "noul" not in item:
+            continue
+        try:
+            nouls[clause.clause_id] = float(item["noul"])
+        except (TypeError, ValueError):
+            continue
+    severity = None
+    item = answers.get("severity")
+    if isinstance(item, dict) and "score" in item:
+        try:
+            severity = float(item["score"])
+        except (TypeError, ValueError):
+            severity = None
+    return FuzzyReport(nouls=nouls, severity=severity)
+
+
+class PolicyConformanceChain:
+    def __init__(
+        self,
+        config: SystemOneConfig | None = None,
+        client: JevClient | None = None,
+        exact: ExactStage | None = None,
+        display: Any = None,
+    ) -> None:
+        self.config = config or SystemOneConfig()
+        self.client = client
+        self.exact = exact or ExactStage()
+        self.display = display or reduce_display
+
+    def evaluate(self, request: Any) -> PolicyDecision:
+        try:
+            return self.admit(request).authorizing
+        except Exception:
+            return self._deny_unresolved(request)
+
+    def admit(self, request: Any) -> GateAdmission:
+        authorizing: PolicyDecision | None = None
+        try:
+            if request.gate == "output" and _changed_by_redaction(request.payload):
+                request.secret_in_output = True
+            exact = self.exact.classify(request)
+            if _final_exact_deny(exact):
+                authorizing = combine_policy(exact, None, self.config, residual_enabled=False)
+                return self.display(authorizing, None, self.config)
+            residual_on = bool(
+                self.config.policy_residual and exact.residual and self.client is not None
+            )
+            hazard_on = bool(self.config.hazard and self.client is not None)
+            if not residual_on and not hazard_on:
+                authorizing = combine_policy(exact, None, self.config, residual_enabled=False)
+                return self.display(authorizing, None, self.config)
+            questions: dict[str, Any] = {}
+            state: dict[str, Any] = {"payload": request.payload}
+            if residual_on:
+                questions.update(compile_residual(exact.residual, gate=request.gate))
+                state = residual_state(request.payload, exact.residual)
+            if hazard_on:
+                questions.update(hazard_questions(request.gate))
+            answers = self.client.system_one(state=state, questions=questions)
+            fuzzy = _fuzzy_from(answers, exact.residual) if residual_on else None
+            hazard = hazard_slice(answers, request.gate) if hazard_on else None
+            authorizing = combine_policy(
+                exact, fuzzy, self.config, residual_enabled=residual_on
+            )
+            if hazard_on and not isinstance(hazard, HazardReport):
+                return GateAdmission(False, authorizing, "hazard_unresolved")
+            return self.display(authorizing, hazard, self.config)
+        except Exception:
+            if authorizing is None:
+                authorizing = self._deny_unresolved(request)
+            return GateAdmission(False, authorizing, "admit_exception")
+
+    def _deny_unresolved(self, request: Any) -> PolicyDecision:
+        exact = ExactReport(
+            policy_cid=getattr(request, "policy_cid", None),
+            now=getattr(getattr(request, "now", None), "isoformat", lambda: "")(),
+            gate=getattr(request, "gate", "input"),
+        )
+        exact.unknown_policy = True
+        return deny_for("unresolved", exact, self.config)
+
+
+def _final_exact_deny(exact: ExactReport) -> bool:
+    return bool(
+        exact.denies
+        or exact.invalid_prohibitions
+        or exact.invalid_obligations
+        or exact.unknown_policy
+        or exact.empty_policy
+        or exact.authority_unverified
+        or exact.secret_in_output
+        or exact.policy_cid_mismatch
+    )
+
+
+def _changed_by_redaction(payload: Any) -> bool:
+    try:
+        return redact_serialized(payload) != payload
+    except TypeError:
+        return False
