@@ -1,5 +1,6 @@
 """Redact secrets in a JSON body before it leaves the process."""
 
+import base64
 import hashlib
 import json
 import os
@@ -7,33 +8,47 @@ import re
 from collections.abc import Mapping, Sequence
 from typing import Any
 
+# Normalized key names. ``token`` stays unanchored so ``access_token`` matches.
 _SENSITIVE_KEY = re.compile(
-    r"(?i)(secret|password|passwd|token|credential|authorization|cookie|"
-    r"private_key|seed|mnemonic|api_key|payment_signature)"
+    r"(x_payment_response|x_payment|payment_context_payload|payment_signature|"
+    r"payment_required|payment_response|private_key|api_key|secret|password|"
+    r"passwd|token|credential|authorization|cookie|seed|mnemonic)"
 )
+_CAMEL_BOUNDARY = re.compile(r"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])")
 _SIGNATURE_KEY = re.compile(r"(?i)^(signatures?|sigs?)$")
-_CID = re.compile(r"^(?:Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58,})$")
+# CIDv1 base32 is exactly 59 characters. A longer blob is not an address.
+_CID = re.compile(r"^(?:Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58})$")
 _PEM = re.compile(
     r"-----BEGIN [A-Z0-9][A-Z0-9 ]{0,60}-----"
     r".*?"
     r"-----END [A-Z0-9][A-Z0-9 ]{0,60}-----",
     re.DOTALL,
 )
+# Inline v1 X-PAYMENT blobs are not object keys, so the key check does not see them.
 _PAYMENT = re.compile(
     r"(?i)\b(?:PAYMENT-SIGNATURE|PAYMENT-REQUIRED|PAYMENT-RESPONSE|"
     r"X-PAYMENT(?:-RESPONSE)?)\s*[:=]\s*[A-Za-z0-9+/=_-]{8,}"
 )
 _SEED_PHRASE = re.compile(
-    r"(?i)\b(?:seed(?:\s+phrase)?|mnemonic|wallet\s+seed)\s*[:=]\s*"
-    r"(?:[a-z]+(?:\s+[a-z]+){11,23})"
+    r"(?i:\b(?:wallet\s+seed|seed(?:\s+phrase)?|mnemonic)\b)"
+    r"\s*[:=]?\s+"
+    r"[a-z]+(?:\s+[a-z]+){11,23}"
 )
 _BEARER = re.compile(r"(?i)\bBearer\s+[A-Za-z0-9\-._~+/=]+")
-_SK = re.compile(r"\bsk-[A-Za-z0-9_\-]{4,}\b")
-_JWT = re.compile(r"\b[A-Za-z0-9_-]{8,}(?:\.[A-Za-z0-9_-]{8,}){2}\b")
+_SK = re.compile(r"\bsk-[A-Za-z0-9_\-.]{4,}\b")
+# Header must start like base64url of ``{"``. Short or empty payload and signature are allowed.
+_JWT_CANDIDATE = re.compile(r"eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*")
 _UCAN_ARCHIVE = re.compile(r"(?i)\bucan(?::|/)[A-Za-z0-9+/=_.-]{16,}")
-_CARD = re.compile(r"(?<!\d)(?:\d[ -]?){12,18}\d(?!\d)")
+# A continuous PAN, or four groups of four. Not a run of unrelated short numbers.
+_CARD = re.compile(
+    r"(?<!\d)(?<![\d][ -])(?:"
+    r"\d{13,19}"
+    r"|\d{4}(?:-\d{4}){3}"
+    r"|\d{4}(?: \d{4}){3}"
+    r")(?!\d)(?![ -]\d)"
+)
 _DETACHED_SIG = re.compile(r"^[A-Za-z0-9+/=_-]{24,}$")
-# A one- or two-character TYPESAFE_API_KEY would be stripped out of unrelated words.
+# Below 8 characters, substring replacement of TYPESAFE_API_KEY hits unrelated text.
 _MIN_SUBSTRING_SECRET = 8
 
 
@@ -57,9 +72,20 @@ def _material(value: Any) -> str:
         return type(value).__name__
 
 
-def _sensitive_key(key: str) -> bool:
+def _normalize_key(key: str) -> str:
     folded = key.replace("-", "_")
-    return _SENSITIVE_KEY.search(key) is not None or _SENSITIVE_KEY.search(folded) is not None
+    folded = _CAMEL_BOUNDARY.sub("_", folded)
+    return folded.lower().replace(".", "_")
+
+
+def _sensitive_key(key: str, parent_key: str | None) -> bool:
+    normalized = _normalize_key(key)
+    if _SENSITIVE_KEY.search(normalized):
+        return True
+    if parent_key is None:
+        return False
+    # ``payment_context.payload`` is the payment blob even when the parent is not a secret key.
+    return _normalize_key(parent_key) == "payment_context" and normalized == "payload"
 
 
 def _luhn_ok(digits: str) -> bool:
@@ -84,6 +110,24 @@ def _redact_card(match: re.Match[str]) -> str:
     return _token(text)
 
 
+def _jwt_header_has_alg(segment: str) -> bool:
+    padding = "=" * (-len(segment) % 4)
+    try:
+        raw = base64.urlsafe_b64decode(segment + padding)
+        header = json.loads(raw.decode("utf-8"))
+    except (ValueError, UnicodeError, json.JSONDecodeError):
+        return False
+    return isinstance(header, dict) and "alg" in header
+
+
+def _redact_jwt(match: re.Match[str]) -> str:
+    span = match.group(0)
+    header = span.split(".", 2)[0]
+    if not _jwt_header_has_alg(header):
+        return span
+    return _token(span)
+
+
 def _api_key() -> str | None:
     raw = os.environ.get("TYPESAFE_API_KEY")
     if raw is None or raw == "":
@@ -98,7 +142,7 @@ def _redact_text(text: str, api_key: str | None) -> str:
     text = _PAYMENT.sub(lambda match: _token(match.group(0)), text)
     text = _SEED_PHRASE.sub(lambda match: _token(match.group(0)), text)
     text = _BEARER.sub(lambda match: _token(match.group(0)), text)
-    text = _JWT.sub(lambda match: _token(match.group(0)), text)
+    text = _JWT_CANDIDATE.sub(_redact_jwt, text)
     text = _UCAN_ARCHIVE.sub(lambda match: _token(match.group(0)), text)
     text = _SK.sub(lambda match: _token(match.group(0)), text)
     text = _CARD.sub(_redact_card, text)
@@ -115,23 +159,39 @@ def _redact_string(text: str, parent_key: str | None, api_key: str | None) -> st
             return text
         if _DETACHED_SIG.fullmatch(text):
             return _token(text)
+    stripped = text.lstrip()
+    if stripped.startswith("{") or stripped.startswith("["):
+        try:
+            parsed = json.loads(text)
+        except json.JSONDecodeError:
+            return _redact_text(text, api_key)
+        if isinstance(parsed, (dict, list)):
+            return json.dumps(
+                _walk(parsed, parent_key, api_key),
+                separators=(",", ":"),
+                ensure_ascii=False,
+            )
     return _redact_text(text, api_key)
 
 
 def _walk(value: Any, parent_key: str | None, api_key: str | None) -> Any:
-    if parent_key is not None and _sensitive_key(parent_key):
-        if value is None:
-            return None
-        return _token(_material(value))
     if isinstance(value, str):
         return _redact_string(value, parent_key, api_key)
     if value is None or isinstance(value, (bool, int, float)):
         return value
     if isinstance(value, Mapping):
-        return {
-            key: _walk(item, key if isinstance(key, str) else None, api_key)
-            for key, item in value.items()
-        }
+        redacted: dict[Any, Any] = {}
+        for key, item in value.items():
+            if not isinstance(key, str):
+                redacted[key] = _walk(item, None, api_key)
+                continue
+            # Sensitivity uses the original key. The stored key is still span-scanned.
+            if _sensitive_key(key, parent_key):
+                stored: Any = None if item is None else _token(_material(item))
+            else:
+                stored = _walk(item, key, api_key)
+            redacted[_redact_text(key, api_key)] = stored
+        return redacted
     if isinstance(value, Sequence) and not isinstance(value, (bytes, bytearray)):
         walked = [_walk(item, parent_key, api_key) for item in value]
         if isinstance(value, tuple):
@@ -143,22 +203,11 @@ def _walk(value: Any, parent_key: str | None, api_key: str | None) -> Any:
 def redact_serialized(body: Any) -> Any:
     """Return a copy of ``body`` with secrets replaced.
 
-    A ``str`` that is a JSON object or array is parsed, walked, and
-    re-serialized compactly. Every other string is scanned in place,
-    including nested instructions and criteria.
+    A string that is a JSON object or array is parsed, walked, and
+    re-serialized. Every other string is scanned in place, including
+    nested instructions, criteria, and object keys.
     """
     api_key = _api_key()
     if isinstance(body, str):
-        stripped = body.lstrip()
-        if stripped.startswith("{") or stripped.startswith("["):
-            try:
-                parsed = json.loads(body)
-            except json.JSONDecodeError:
-                return _redact_text(body, api_key)
-            return json.dumps(
-                _walk(parsed, None, api_key),
-                separators=(",", ":"),
-                ensure_ascii=False,
-            )
-        return _redact_text(body, api_key)
+        return _redact_string(body, None, api_key)
     return _walk(body, None, api_key)

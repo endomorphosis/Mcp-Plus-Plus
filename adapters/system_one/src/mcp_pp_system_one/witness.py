@@ -3,8 +3,12 @@
 import base64
 import hashlib
 import json
+import math
 from collections.abc import Mapping
 from typing import Any
+
+# Same bound RFC 8785 uses for integers that fit in an IEEE-754 binary64.
+_SAFE_INTEGER = 9007199254740991
 
 POLICY_SCHEMA = "mcp++-adapter/policy-document/v1"
 DECISION_SCHEMA = "mcp++-adapter/policy-decision/v1"
@@ -12,14 +16,38 @@ COMPILER_VERSION = "qset-2026-09-29"
 
 _CID_VERSION = 0x01
 _MULTIHASH_SHA256 = 0x12
-_MULTIHASH_LEN = 0x20
 _CODEC_RAW = 0x55
 
 
+def _whole_numbers(value: Any) -> Any:
+    """Encode whole-number floats as integers so ``2.0`` and ``2`` share a CID.
+
+    The validator ``mcpp-jcs-v1`` helper is not on this package's import path.
+    """
+    if isinstance(value, bool) or value is None or isinstance(value, str):
+        return value
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        if math.isnan(value) or math.isinf(value):
+            raise ValueError("NaN and Infinity are not JSON numbers")
+        if value == 0.0:
+            return 0
+        as_int = int(value)
+        if as_int == value and abs(as_int) <= _SAFE_INTEGER:
+            return as_int
+        return value
+    if isinstance(value, Mapping):
+        return {key: _whole_numbers(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_whole_numbers(item) for item in value]
+    raise TypeError(f"unsupported canonical value: {type(value).__name__}")
+
+
 def canonical_json_bytes(document: Any) -> bytes:
-    """Compact UTF-8 JSON with recursively sorted object keys."""
+    """Compact UTF-8 JSON, keys sorted. Whole-number floats encode as integers."""
     return json.dumps(
-        document,
+        _whole_numbers(document),
         sort_keys=True,
         separators=(",", ":"),
         ensure_ascii=False,
@@ -27,25 +55,12 @@ def canonical_json_bytes(document: Any) -> bytes:
     ).encode("utf-8")
 
 
-def content_cid(document: Any, codec: int) -> str:
-    """CIDv1 multibase base32 of the canonical JSON bytes.
-
-    ``codec`` is one multicodec byte. ``0x55`` is raw (``bafkrei…``).
-    ``0x70`` is only the dag-pb prefix over the same bytes, not a policy address.
-    """
-    if not isinstance(codec, int) or isinstance(codec, bool) or not 0 <= codec <= 0x7F:
-        raise ValueError("codec must be a single-byte multicodec")
-    digest = hashlib.sha256(canonical_json_bytes(document)).digest()
-    if len(digest) != _MULTIHASH_LEN:
-        raise RuntimeError("sha256 digest must be 32 bytes")
-    raw = bytes((_CID_VERSION, codec, _MULTIHASH_SHA256, _MULTIHASH_LEN)) + digest
-    encoded = base64.b32encode(raw).decode("ascii").lower().rstrip("=")
-    return "b" + encoded
-
-
 def cid_raw_leaf(document: Any) -> str:
     """CIDv1 raw leaf: ``0x01 0x55 0x12 0x20`` plus sha256, base32 ``bafkrei…``."""
-    return content_cid(document, _CODEC_RAW)
+    digest = hashlib.sha256(canonical_json_bytes(document)).digest()
+    raw = bytes((_CID_VERSION, _CODEC_RAW, _MULTIHASH_SHA256, len(digest))) + digest
+    encoded = base64.b32encode(raw).decode("ascii").lower().rstrip("=")
+    return "b" + encoded
 
 
 def question_set_hash(questions: Mapping[str, Any]) -> str:

@@ -13,17 +13,12 @@ from mcp_pp_system_one.config import SystemOneConfig
 STAGE_TOOL_RANK = "tool-rank"
 STAGE_POLICY = "policy"
 
-_KEY_SEP = "\x1f"
 _MATERIAL_SEP = "\x1e"
 
 
-def _write_all(fd: int, payload: bytes) -> None:
-    view = memoryview(payload)
-    while view:
-        written = os.write(fd, view)
-        if written <= 0:
-            raise OSError("cache write made no progress")
-        view = view[written:]
+def _prefix(value: str) -> str:
+    encoded = value.encode("utf-8")
+    return f"{len(encoded)}:{value}"
 
 
 def cache_key(
@@ -34,14 +29,15 @@ def cache_key(
     stage: str,
     cid_material: str,
 ) -> str:
-    """Join the cache identity. Thresholds are not part of the key."""
+    """Length-prefix each component. Thresholds are not part of the key."""
     if not isinstance(trust_domain, str) or trust_domain.strip() == "":
         raise ValueError("trust_domain is required when the cache is enabled")
     if not isinstance(stage, str) or stage.strip() == "":
         raise ValueError("stage is required")
     model = "" if model_id is None else model_id
-    return _KEY_SEP.join(
-        (trust_domain, model, question_set_hash, stage, cid_material)
+    return "".join(
+        _prefix(part)
+        for part in (trust_domain, model, question_set_hash, stage, cid_material)
     )
 
 
@@ -79,11 +75,11 @@ class AnswerCache:
         return self._directory() is not None
 
     def ttl_s(self, stage: str) -> int:
-        if stage == STAGE_POLICY or stage.startswith("policy"):
+        if stage == STAGE_POLICY:
             return int(self.config.policy_cache_ttl_s)
         return int(self.config.cache_ttl_s)
 
-    def get(self, key: str) -> Any | None:
+    def get(self, key: str, *, stage: str) -> Any | None:
         if not self.enabled:
             return None
         path = self._path(key)
@@ -92,7 +88,7 @@ class AnswerCache:
         try:
             row = json.loads(path.read_text(encoding="utf-8"))
             stored_at = float(row["stored_at"])
-            stage = row["stage"]
+            stored_stage = row["stage"]
             answers = row["answers"]
         except (
             OSError,
@@ -105,10 +101,7 @@ class AnswerCache:
             # A corrupt entry is a miss. The caller still has to recompute.
             self._unlink(path)
             return None
-        if row.get("key") != key:
-            return None
-        parts = key.split(_KEY_SEP)
-        if len(parts) == 5 and stage != parts[3]:
+        if row.get("key") != key or stored_stage != stage:
             return None
         if self._now() - stored_at >= self.ttl_s(stage):
             self._unlink(path)
@@ -174,8 +167,7 @@ class AnswerCache:
         temporary = directory / f".{path.name}.{os.getpid()}.{time.time_ns()}.tmp"
         fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
         try:
-            _write_all(fd, payload)
-            os.fsync(fd)
+            os.write(fd, payload)
         except Exception:
             os.close(fd)
             self._unlink(temporary)

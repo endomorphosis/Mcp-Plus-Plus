@@ -23,7 +23,6 @@ from mcp_pp_system_one.witness import (
     COMPILER_VERSION,
     canonical_json_bytes,
     cid_raw_leaf,
-    content_cid,
     decision_preimage,
     policy_document_cid,
     policy_preimage,
@@ -230,7 +229,7 @@ def test_cache_disabled_when_directory_unset(tmp_path, monkeypatch):
         cid_material="clauses",
     )
     assert cache.put(key, {"c0": 0.40}, stage=STAGE_POLICY) is False
-    assert cache.get(key) is None
+    assert cache.get(key, stage=STAGE_POLICY) is None
     assert list(tmp_path.rglob("*")) == []
     with pytest.raises(ValueError):
         cache_key(
@@ -295,6 +294,21 @@ def test_cached_noul_relabeled_without_http(tmp_path, monkeypatch):
             cid_material=material,
         )
         assert key != other_domain
+        glued = cache_key(
+            trust_domain="a\x1fb",
+            model_id="",
+            question_set_hash="sha256:deadbeef",
+            stage=STAGE_POLICY,
+            cid_material=material,
+        )
+        split = cache_key(
+            trust_domain="a",
+            model_id="b",
+            question_set_hash="sha256:deadbeef",
+            stage=STAGE_POLICY,
+            cid_material=material,
+        )
+        assert glued != split
         assert "0.70" not in key
         assert "0.30" not in key
         assert "prohibition_deny" not in key
@@ -312,18 +326,19 @@ def test_cached_noul_relabeled_without_http(tmp_path, monkeypatch):
         assert "0.70" not in files[0].read_text(encoding="utf-8")
         assert "0.30" not in files[0].read_text(encoding="utf-8")
 
-        first = cache.get(key)
+        first = cache.get(key, stage=STAGE_POLICY)
         assert first == {"c0": 0.40}
         assert _label_cached_noul(first["c0"], prohibition_deny=0.70) == "review"
-        second = cache.get(key)
+        second = cache.get(key, stage=STAGE_POLICY)
         assert second == {"c0": 0.40}
         assert _label_cached_noul(second["c0"], prohibition_deny=0.30) == "deny"
-        assert cache.get(other_domain) is None
+        assert cache.get(key, stage=STAGE_TOOL_RANK) is None
+        assert cache.get(other_domain, stage=STAGE_POLICY) is None
         again = AnswerCache(
             SystemOneConfig(cache_dir=str(directory)),
             now=lambda: clock["t"],
         )
-        assert again.get(key) == {"c0": 0.40}
+        assert again.get(key, stage=STAGE_POLICY) == {"c0": 0.40}
     finally:
         os.umask(previous)
 
@@ -336,6 +351,7 @@ def test_tool_rank_and_policy_ttls(tmp_path):
     )
     assert cache.ttl_s(STAGE_TOOL_RANK) == 3600
     assert cache.ttl_s(STAGE_POLICY) == 300
+    assert cache.ttl_s("policy-extra") == 3600
     tool_key = cache_key(
         trust_domain="local",
         model_id="jev-1.13.0",
@@ -354,15 +370,15 @@ def test_tool_rank_and_policy_ttls(tmp_path):
     assert cache.put(policy_key, {"c0": 0.40}, stage=STAGE_POLICY) is True
 
     clock["t"] = 299.0
-    assert cache.get(policy_key) == {"c0": 0.40}
-    assert cache.get(tool_key) == {"rank": 1}
+    assert cache.get(policy_key, stage=STAGE_POLICY) == {"c0": 0.40}
+    assert cache.get(tool_key, stage=STAGE_TOOL_RANK) == {"rank": 1}
     clock["t"] = 300.0
-    assert cache.get(policy_key) is None
-    assert cache.get(tool_key) == {"rank": 1}
+    assert cache.get(policy_key, stage=STAGE_POLICY) is None
+    assert cache.get(tool_key, stage=STAGE_TOOL_RANK) == {"rank": 1}
     clock["t"] = 3599.0
-    assert cache.get(tool_key) == {"rank": 1}
+    assert cache.get(tool_key, stage=STAGE_TOOL_RANK) == {"rank": 1}
     clock["t"] = 3600.0
-    assert cache.get(tool_key) is None
+    assert cache.get(tool_key, stage=STAGE_TOOL_RANK) is None
 
 
 def test_policy_preimage_omits_policy_cid_and_matches_known_digest():
@@ -373,8 +389,9 @@ def test_policy_preimage_omits_policy_cid_and_matches_known_digest():
     assert _cid_from_bytes(payload, 0x55) == _FIXED_CID
     assert _cid_from_bytes(_FIXED_CANONICAL.encode("utf-8"), 0x70) == _FIXED_DAG_PB
     assert cid_raw_leaf(preimage) == _FIXED_CID
-    assert content_cid(preimage, 0x70) == _FIXED_DAG_PB
-    assert cid_raw_leaf(preimage) != content_cid(preimage, 0x70)
+    assert _cid_from_bytes(payload, 0x70) == _FIXED_DAG_PB
+    assert cid_raw_leaf(preimage) != _FIXED_DAG_PB
+    assert cid_raw_leaf(preimage) != _cid_from_bytes(payload, 0x70)
     assert _FIXED_CID != _FIXED_DAG_PB
     assert _FIXED_CID.startswith("bafkrei")
     assert len(_FIXED_CID) == 59
@@ -479,6 +496,111 @@ def test_question_set_hash_includes_compiler_version():
         )
     ).hexdigest()
     assert question_set_hash({"c0": {"type": "choice"}}) != hashed
+
+
+def test_ordinary_dotted_words_and_ports_stay():
+    dotted = "see foo.bar.baz and service.local.domain now"
+    ports = "ports 443 8443 22 80 8080 3000 5000 9000 are open"
+    assert redact_serialized({"summary": dotted})["summary"] == dotted
+    assert redact_serialized({"summary": ports})["summary"] == ports
+
+
+def test_compact_jwt_with_short_payload_is_redacted():
+    header = _b64url(b'{"alg":"none"}')
+    token = f"{header}.e30."
+    redacted = redact_serialized({"summary": f"token {token} tail"})["summary"]
+    assert token not in redacted
+    assert "e30" not in redacted
+    assert redacted.endswith(" tail")
+    assert redacted.startswith("token [REDACTED:")
+
+
+def test_secret_keys_and_payment_fields_are_redacted():
+    body = {
+        "sk-live-abcdef": "ok",
+        "Bearer sk-live-abcdef": "ok",
+        "apiKey": "hunter2-value",
+        "paymentSignature": "pay-blob",
+        "privateKey": "pem-looking",
+        "PAYMENT-REQUIRED": "required-blob",
+        "paymentRequired": "also-blob",
+        "payment_context.payload": "dotted-blob",
+        "payment_context": {"payload": "signed-blob", "scheme": "exact"},
+        "summary": "X-PAYMENT: " + ("B" * 24),
+    }
+    redacted = redact_serialized(body)
+    serialized = json.dumps(redacted)
+    for secret in (
+        "sk-live-abcdef",
+        "hunter2-value",
+        "pay-blob",
+        "pem-looking",
+        "required-blob",
+        "also-blob",
+        "dotted-blob",
+        "signed-blob",
+        "B" * 24,
+    ):
+        assert secret not in serialized
+    assert "ok" in serialized
+    assert redacted["payment_context"]["scheme"] == "exact"
+    dotted_key = "sk-proj.abcdef1234"
+    assert dotted_key not in redact_serialized({"summary": f"key {dotted_key} end"})["summary"]
+
+
+def test_seed_phrase_without_colon_stops_at_punctuation():
+    words = " ".join(["abandon"] * 12)
+    text = f"mnemonic {words}. Next stays"
+    redacted = redact_serialized({"summary": text})["summary"]
+    assert "abandon" not in redacted
+    assert "Next stays" in redacted
+    phrase = "seed phrase " + words
+    assert "abandon" not in redact_serialized({"summary": phrase})["summary"]
+    short = "mnemonic " + " ".join(["abandon"] * 11)
+    assert redact_serialized({"summary": short})["summary"] == short
+
+
+def test_nested_json_string_redacts_api_key():
+    body = {"payload": json.dumps({"api_key": "hunter2-value"})}
+    redacted = redact_serialized(body)
+    assert "hunter2-value" not in redacted["payload"]
+    assert "hunter2-value" not in json.dumps(redacted)
+    assert "[REDACTED:" in redacted["payload"]
+
+
+def test_whole_number_float_and_int_share_decision_cid():
+    common = dict(
+        decision="deny",
+        allowed=False,
+        obligations=[],
+        policy_cid=_FIXED_CID,
+        policy_version="v1",
+        intent_cid=None,
+        proofs_checked=[],
+        gate="output",
+        now="2026-09-29T00:00:00+00:00",
+        clauses=[{"clause_id": "c0", "disposition": "unresolved", "noul": 0.40}],
+    )
+    floated = decision_preimage(**common, thresholds={"severity_block": 2.0})
+    integral = decision_preimage(**common, thresholds={"severity_block": 2})
+    assert cid_raw_leaf(floated) == cid_raw_leaf(integral)
+    assert (
+        seal_decision_witness(floated)["decision_cid"]
+        == seal_decision_witness(integral)["decision_cid"]
+    )
+    encoded = canonical_json_bytes(floated)
+    assert b'"severity_block":2' in encoded
+    assert b"2.0" not in encoded
+    fractional = decision_preimage(**common, thresholds={"severity_block": 2.5})
+    assert cid_raw_leaf(fractional) != cid_raw_leaf(integral)
+
+
+def test_longer_base32_signature_is_not_a_cid():
+    longer = "b" + ("a" * 60)
+    redacted = redact_serialized({"signature": longer})
+    assert longer not in json.dumps(redacted)
+    assert redacted["signature"].startswith("[REDACTED:")
+    assert redact_serialized({"signature": _CID})["signature"] == _CID
 
 
 def test_modules_do_not_import_vendor_sdk():
