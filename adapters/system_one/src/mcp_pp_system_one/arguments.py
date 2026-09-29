@@ -101,6 +101,17 @@ def _array_enum(prop: Any) -> list[Any] | None:
     return enum
 
 
+def _choice_lookup(enum: list[Any]) -> dict[str, Any] | None:
+    """Criterion key to the original item. None when two unequal items share one key."""
+    lookup: dict[str, Any] = {}
+    for item in enum:
+        key = str(item)
+        if key in lookup and lookup[key] != item:
+            return None
+        lookup[key] = item
+    return lookup
+
+
 def _copied(value: Any) -> Any:
     if isinstance(value, list):
         return list(value)
@@ -115,11 +126,12 @@ def questions_for(schema: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(prop, dict):
             continue
         enum = _string_enum(prop)
-        if enum is not None:
+        lookup = _choice_lookup(enum) if enum is not None else None
+        if lookup is not None:
             questions[name] = {
                 "type": "choice",
                 "instructions": f"Which value of `arguments.{name}` was stated?",
-                "criteria": {str(option): None for option in enum},
+                "criteria": {key: None for key in lookup},
             }
             questions[f"{name}?"] = {
                 "type": "noul",
@@ -188,7 +200,14 @@ def fill(
                 # A default fills the gap but is not a model answer, so it cannot call.
                 result.arguments[name] = _copied(prop["default"])
             continue
+        lookup = _choice_lookup(enum) if enum is not None else None
         if enum is not None:
+            # Two unequal items that share one string are not a choice.
+            if lookup is None:
+                if name in required:
+                    result.reason = "closed_argument_unstated"
+                    return result
+                continue
             stated = _noul(answers.get(f"{name}?"))
             if stated is None or stated < STATED:
                 if "default" in prop:
@@ -199,20 +218,19 @@ def fill(
                 continue
             choice = answers.get(name)
             picked = choice.get("choice") if isinstance(choice, dict) else None
-            options = {str(item) for item in enum}
             # A non-string choice is unstated. Membership on a list would raise.
             if (
                 not isinstance(choice, dict)
                 or choice.get("type") != "choice"
                 or not isinstance(picked, str)
-                or picked not in options
+                or picked not in lookup
                 or _unit(choice.get("confidence")) is None
             ):
                 if name in required:
                     result.reason = "closed_argument_unstated"
                     return result
                 continue
-            result.arguments[name] = picked
+            result.arguments[name] = lookup[picked]
             # Stated noul only opens the gate. Confidence is what must clear the floor.
             contributed.append(answers[name])
         elif kind == "boolean":

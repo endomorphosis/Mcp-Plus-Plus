@@ -673,3 +673,50 @@ def test_list_and_object_defaults_are_copied():
     result.arguments["meta"]["a"] = 2
     assert array_prop["default"] == ["z"]
     assert object_prop["default"] == {"a": 1}
+
+
+def test_choice_stores_the_original_enum_item():
+    numeric = {"type": "object", "required": ["n"], "properties": {"n": {"enum": [1, 2]}}}
+    number = fill(
+        numeric,
+        {"n?": {"type": "noul", "noul": 0.95}, "n": _choice(choice="1")},
+        side_effect="write",
+    )
+    assert number.called is True
+    assert number.arguments["n"] == 1
+    assert isinstance(number.arguments["n"], int)
+    nullable = {
+        "type": "object",
+        "required": ["symbol"],
+        "properties": {"symbol": {"type": ["string", "null"], "enum": ["NVDA", None]}},
+    }
+    missing = fill(
+        nullable,
+        {"symbol?": {"type": "noul", "noul": 0.95}, "symbol": _choice(choice="None")},
+        side_effect="write",
+    )
+    assert missing.called is True
+    assert missing.arguments["symbol"] is None
+    flagged = fill(
+        {"type": "object", "required": ["flag"], "properties": {"flag": {"enum": [True, False]}}},
+        {"flag?": {"type": "noul", "noul": 0.95}, "flag": _choice(choice="False")},
+        side_effect="write",
+    )
+    assert flagged.called is True
+    assert flagged.arguments["flag"] is False
+
+
+def test_ambiguous_enum_strings_do_not_call():
+    schema = {"type": "object", "required": ["n"], "properties": {"n": {"enum": [1, "1"]}}}
+    assert "n" not in questions_for(schema)
+    result = fill(
+        schema,
+        {"n?": {"type": "noul", "noul": 0.95}, "n": _choice(choice="1")},
+        side_effect="write",
+        ucan_budget=3,
+        x402_amount=10,
+    )
+    assert result.called is False
+    assert result.reason == "closed_argument_unstated"
+    assert result.ucan_budget == 3
+    assert result.x402_amount == 10
