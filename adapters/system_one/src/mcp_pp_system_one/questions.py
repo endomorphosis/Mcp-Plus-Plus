@@ -21,9 +21,8 @@ def estimate_tokens(state: Any, questions: Any) -> int:
         {"state": state, "questions": questions},
         separators=(",", ":"),
         sort_keys=True,
-        default=str,
     )
-    return len(raw) // 4
+    return len(raw.encode()) // 4
 
 
 def _which(ids: list[str]) -> dict[str, Any]:

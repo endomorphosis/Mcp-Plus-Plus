@@ -175,32 +175,32 @@ class ToolRanker:
         fits_scores = [
             _noul(answers, f"fits[{index}]") for index in range(len(pass2_views))
         ]
-        known = [score for score in fits_scores if score is not None]
-        if not known or max(known) < self.config.fits:
-            return self._empty(excluded, reasons)
         confidence = confidence_for(which)
         choice = str(which.get("choice"))
-        packed: list[str] = []
-        probs = which.get("probabilities") or {}
-        order = sorted(
-            (view["id"] for view in pass2_views if view["id"] not in excluded),
-            key=lambda cid: -float(probs.get(cid, 0.0)),
+        winner_index = next(
+            (index for index, view in enumerate(pass2_views) if view["id"] == choice),
+            None,
         )
-        if choice in order:
-            order = [choice] + [cid for cid in order if cid != choice]
-        for cid in order:
-            if len(packed) >= self.config.max_exposed:
-                break
-            if cid != choice:
-                continue
+        winner_fits = (
+            0.0
+            if winner_index is None or fits_scores[winner_index] is None
+            else fits_scores[winner_index]
+        )
+        if winner_fits < self.config.fits:
+            return self._empty(excluded, reasons)
+        packed: list[str] = []
+        if (
+            winner_index is not None
+            and choice not in excluded
+            and self.config.max_exposed >= 1
+        ):
             floor = (
                 self.config.read_confidence
-                if prior.side_effect.get(cid) == "read"
+                if prior.side_effect.get(choice) == "read"
                 else self.config.write_confidence
             )
-            if confidence is None or confidence < floor:
-                continue
-            packed.append(cid)
+            if confidence is not None and confidence >= floor:
+                packed.append(choice)
         used = float(sum(prior.cost_tokens.get(cid, 0) for cid in packed))
         tool_slice = ToolSlice(
             interface_cids=tuple(packed),
@@ -224,19 +224,17 @@ class ToolRanker:
         too_large: list[str] = []
         for desc in descriptors:
             view = _view(desc, prior, excerpt=False)
+            alone_state, alone_questions = pass1(task, [view])
+            if estimate_tokens(alone_state, alone_questions) > TOKEN_ESTIMATE_LIMIT:
+                too_large.append(view["id"])
+                continue
             trial = current + [view]
             state, questions = pass1(task, trial)
             over_count = len(trial) > self.config.chunk
             over_tokens = estimate_tokens(state, questions) > TOKEN_ESTIMATE_LIMIT
-            if over_count or (over_tokens and current):
-                if current:
-                    chunks.append(current)
-                alone_state, alone_questions = pass1(task, [view])
-                if estimate_tokens(alone_state, alone_questions) > TOKEN_ESTIMATE_LIMIT:
-                    too_large.append(view["id"])
-                    current = []
-                else:
-                    current = [view]
+            if current and (over_count or over_tokens):
+                chunks.append(current)
+                current = [view]
             else:
                 current = trial
         if current:

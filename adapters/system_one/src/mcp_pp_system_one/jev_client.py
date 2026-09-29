@@ -17,7 +17,6 @@ class JevClient:
     def __init__(self, config: SystemOneConfig, caller: Any = None) -> None:
         self.config = config
         self._caller = caller
-        self.calls: list[dict[str, Any]] = []
         self.retry_policy = {
             "http_statuses": {429, 529},
             "respect_retry_after": False,
@@ -35,7 +34,6 @@ class JevClient:
                     "model": self.config.model,
                 }
             )
-            self.calls.append(body)
             if self._caller is not None:
                 response = self._caller(
                     state=body["state"],
@@ -65,6 +63,10 @@ class JevClient:
             api_timeout_error=False,
             api_connection_error=False,
             timeout=self.config.retry_budget_s,
+            max_retries=1,
+            backoff_initial=0.05,
+            backoff_max=0.10,
+            backoff_jitter=0.0,
         )
         client = TypeSafeClient(
             api_key=self.config.api_key,
@@ -79,10 +81,24 @@ class JevClient:
         )
         model = getattr(result, "model", None)
         answers = getattr(result, "answers", None)
-        return {"model": model, "answers": _plain_answers(answers)}
+        plain = _plain_answers(answers)
+        if plain is None:
+            return Abstain("malformed")
+        return {"model": model, "answers": plain}
 
 
-def _plain_answers(answers: Any) -> Any:
-    if isinstance(answers, dict):
-        return answers
-    return {}
+def _plain_answers(answers: Any) -> dict[str, Any] | None:
+    if not isinstance(answers, dict):
+        return None
+    plain: dict[str, Any] = {}
+    for key, value in answers.items():
+        if hasattr(value, "model_dump"):
+            dumped = value.model_dump()
+        elif isinstance(value, dict):
+            dumped = value
+        else:
+            return None
+        if not isinstance(dumped, dict):
+            return None
+        plain[str(key)] = dumped
+    return plain

@@ -180,12 +180,11 @@ def test_vendor_errors_return_an_empty_slice():
         VendorError(429, retry_after="30"),
         VendorError(529),
     ):
-        ranker, client, caller = _ranker([failure])
+        ranker, _client, caller = _ranker([failure])
         chain = ToolSliceChain(ranker=ranker)
         selected = chain.select(request)
         assert selected.interface_cids == ()
         assert len(caller.calls) == 1
-        assert len(client.calls) == 1
 
     class Exploding:
         def run(self, request, prior):
@@ -212,6 +211,61 @@ def test_build_tool_list_uses_only_the_slice():
     tools = build_tool_list(explicit, {kept: _desc(kept), dropped: _desc(dropped)})
     assert [item["name"] for item in tools] == [f"tool.{kept}"]
     assert selected.interface_cids == ()
+
+
+def test_oversized_descriptor_is_not_sent():
+    cid = "bafyhuge"
+    ranker, _client, caller = _ranker(
+        [_response(cid, {cid: 1.0, "none": 0.0}, 0.99, overrides=(0.0,))]
+    )
+    request = ToolSliceRequest(
+        descriptors=(_desc(cid, name="n" * 200_000),),
+        task_hint="list the files",
+    )
+    outcome = ranker.run(request, _prior((cid,)))
+    assert caller.calls == []
+    assert outcome.slice is not None
+    assert outcome.slice.interface_cids == ()
+    assert cid in outcome.excluded
+
+
+def test_winner_fits_is_not_borrowed_from_a_sibling():
+    weak = "bafyweak"
+    strong = "bafystrong"
+    ranker, _client, _caller = _ranker(
+        [
+            _response(weak, {weak: 0.6, strong: 0.4, "none": 0.0}, 0.95, overrides=(0.0, 0.0)),
+            _response(weak, {weak: 0.7, strong: 0.3, "none": 0.0}, 0.95),
+            _response(
+                weak,
+                {weak: 0.8, strong: 0.2, "none": 0.0},
+                0.95,
+                fits=(0.10, 0.90),
+                overrides=(0.0, 0.0),
+            ),
+        ]
+    )
+    request = ToolSliceRequest(
+        descriptors=(_desc(weak), _desc(strong)),
+        task_hint="delete the branch",
+    )
+    outcome = ranker.run(request, _prior((weak, strong), side="write"))
+    assert outcome.slice is not None
+    assert outcome.slice.interface_cids == ()
+
+
+def test_tool_list_redacts_and_truncates_the_judged_excerpt():
+    from mcp_pp_system_one.ports import ToolSlice
+
+    cid = "bafykept"
+    secret = "lists files Bearer sk-test-secret " + ("x" * 800)
+    tools = build_tool_list(
+        ToolSlice((cid,), (), "test", 0, False),
+        {cid: _desc(cid, description=secret, name="sk-test-secret-name")},
+    )
+    rendered = str(tools)
+    assert "sk-test-secret" not in rendered
+    assert len(tools[0]["description"]) <= 700
 
 
 def test_retry_policy_does_not_honor_retry_after():
