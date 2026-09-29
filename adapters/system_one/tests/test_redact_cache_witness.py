@@ -559,6 +559,53 @@ def test_seed_phrase_without_colon_stops_at_punctuation():
     short = "mnemonic " + " ".join(["abandon"] * 11)
     assert redact_serialized({"summary": short})["summary"] == short
 
+    glued = f"mnemonic:{words}"
+    seeded = f"SEED={words}"
+    assert "abandon" not in redact_serialized({"summary": glued})["summary"]
+    assert "abandon" not in redact_serialized({"summary": seeded})["summary"]
+    titled = "Mnemonic " + " ".join(["Abandon"] * 12)
+    assert "Abandon" not in redact_serialized({"summary": titled})["summary"]
+
+    prose = (
+        "A mnemonic is a device that helps a person remember a long list of "
+        "unrelated words without writing them down."
+    )
+    design = (
+        "The seed of this design is a local cache that stores raw answers so a "
+        "later threshold change can relabel one cached noul."
+    )
+    assert redact_serialized({"summary": prose})["summary"] == prose
+    assert redact_serialized({"summary": design})["summary"] == design
+    function_words = " ".join(["abandon"] * 5 + ["the"] + ["abandon"] * 6)
+    assert (
+        redact_serialized({"summary": f"mnemonic {function_words}"})["summary"]
+        == f"mnemonic {function_words}"
+    )
+
+
+def test_sk_token_keeps_a_trailing_cid():
+    text = f"key sk-proj.{_CID} end"
+    redacted = redact_serialized({"summary": text})["summary"]
+    assert "sk-proj" not in redacted
+    assert f".{_CID}" in redacted
+    assert redacted.startswith("key ")
+    assert redacted.endswith(" end")
+    plain = "key sk-proj.abcdef1234 end"
+    assert "sk-proj.abcdef1234" not in redact_serialized({"summary": plain})["summary"]
+    assert _CID in redact_serialized({"summary": f"cid {_CID} only"})["summary"]
+
+
+def test_amex_grouping_is_redacted_and_ports_stay():
+    spaced = "3782 822463 10005"
+    dashed = "3782-822463-10005"
+    for card in (spaced, dashed, "4242 4242 4242 4242"):
+        redacted = redact_serialized({"summary": f"card {card} ok"})["summary"]
+        assert card not in redacted
+        assert "378282246310005" not in redacted
+        assert "[REDACTED:" in redacted
+    ports = "ports 443 8443 22 80 8080 3000 5000 9000 are open"
+    assert redact_serialized({"summary": ports})["summary"] == ports
+
 
 def test_nested_json_string_redacts_api_key():
     body = {"payload": json.dumps({"api_key": "hunter2-value"})}

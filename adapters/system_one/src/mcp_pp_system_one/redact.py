@@ -29,22 +29,29 @@ _PAYMENT = re.compile(
     r"(?i)\b(?:PAYMENT-SIGNATURE|PAYMENT-REQUIRED|PAYMENT-RESPONSE|"
     r"X-PAYMENT(?:-RESPONSE)?)\s*[:=]\s*[A-Za-z0-9+/=_-]{8,}"
 )
+# A colon or equals binds the phrase even with no space. A bare run of prose does not.
+_SEED_FUNCTION_WORDS = frozenset(
+    {"the", "that", "this", "with", "from", "have", "were", "been"}
+)
 _SEED_PHRASE = re.compile(
     r"(?i:\b(?:wallet\s+seed|seed(?:\s+phrase)?|mnemonic)\b)"
-    r"\s*[:=]?\s+"
-    r"[a-z]+(?:\s+[a-z]+){11,23}"
+    r"(?P<sep>\s*[:=]\s*|\s+)"
+    r"(?P<words>[A-Za-z]+(?:\s+[A-Za-z]+){11,23})"
 )
 _BEARER = re.compile(r"(?i)\bBearer\s+[A-Za-z0-9\-._~+/=]+")
 _SK = re.compile(r"\bsk-[A-Za-z0-9_\-.]{4,}\b")
+_SK_CID_TAIL = re.compile(r"\.?(b[a-z2-7]{58})$")
 # Header must start like base64url of ``{"``. Short or empty payload and signature are allowed.
 _JWT_CANDIDATE = re.compile(r"eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*")
 _UCAN_ARCHIVE = re.compile(r"(?i)\bucan(?::|/)[A-Za-z0-9+/=_.-]{16,}")
-# A continuous PAN, or four groups of four. Not a run of unrelated short numbers.
+# Continuous PAN, 4-4-4-4, or Amex 4-6-5. Not a separator between every digit.
 _CARD = re.compile(
     r"(?<!\d)(?<![\d][ -])(?:"
     r"\d{13,19}"
     r"|\d{4}(?:-\d{4}){3}"
     r"|\d{4}(?: \d{4}){3}"
+    r"|\d{4}-\d{6}-\d{5}"
+    r"|\d{4} \d{6} \d{5}"
     r")(?!\d)(?![ -]\d)"
 )
 _DETACHED_SIG = re.compile(r"^[A-Za-z0-9+/=_-]{24,}$")
@@ -110,6 +117,26 @@ def _redact_card(match: re.Match[str]) -> str:
     return _token(text)
 
 
+def _redact_seed(match: re.Match[str]) -> str:
+    separator = match.group("sep")
+    words = match.group("words").split()
+    if ":" not in separator and "=" not in separator:
+        for word in words:
+            folded = word.casefold()
+            if len(folded) < 3 or folded in _SEED_FUNCTION_WORDS:
+                return match.group(0)
+    return _token(match.group(0))
+
+
+def _redact_sk(match: re.Match[str]) -> str:
+    span = match.group(0)
+    tail = _SK_CID_TAIL.search(span)
+    # A trailing CID is an address. Keep it and the dot that introduces it.
+    if tail is not None and tail.start() > 0:
+        return _token(span[: tail.start()]) + tail.group(0)
+    return _token(span)
+
+
 def _jwt_header_has_alg(segment: str) -> bool:
     padding = "=" * (-len(segment) % 4)
     try:
@@ -140,11 +167,11 @@ def _redact_text(text: str, api_key: str | None) -> str:
         return _token(text)
     text = _PEM.sub(lambda match: _token(match.group(0)), text)
     text = _PAYMENT.sub(lambda match: _token(match.group(0)), text)
-    text = _SEED_PHRASE.sub(lambda match: _token(match.group(0)), text)
+    text = _SEED_PHRASE.sub(_redact_seed, text)
     text = _BEARER.sub(lambda match: _token(match.group(0)), text)
     text = _JWT_CANDIDATE.sub(_redact_jwt, text)
     text = _UCAN_ARCHIVE.sub(lambda match: _token(match.group(0)), text)
-    text = _SK.sub(lambda match: _token(match.group(0)), text)
+    text = _SK.sub(_redact_sk, text)
     text = _CARD.sub(_redact_card, text)
     # Shaped tokens are already gone. This catches a key that matches none of them.
     if api_key is not None and len(api_key) >= _MIN_SUBSTRING_SECRET and api_key in text:
