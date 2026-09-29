@@ -63,7 +63,7 @@ _CARD = re.compile(
     r")(?!\d)(?![ -]\d)"
 )
 _DETACHED_SIG = re.compile(r"^[A-Za-z0-9+/=_-]{24,}$")
-# Below 8 characters, substring replacement of TYPESAFE_API_KEY hits unrelated text.
+# Below 8 characters, substring replacement of an API key hits unrelated text.
 _MIN_SUBSTRING_SECRET = 8
 
 
@@ -152,16 +152,21 @@ def _redact_jwt(match: re.Match[str]) -> str:
     return _token(span)
 
 
-def _api_key() -> str | None:
-    raw = os.environ.get("TYPESAFE_API_KEY")
-    if raw is None or raw == "":
-        return None
-    return raw
+def _api_keys(configured: str | None = None) -> tuple[str, ...]:
+    found: list[str] = []
+    for raw in (os.environ.get("TYPESAFE_API_KEY"), configured):
+        if raw is None or raw == "" or raw in found:
+            continue
+        found.append(raw)
+    # Longer first so a shorter key cannot split a longer one.
+    found.sort(key=len, reverse=True)
+    return tuple(found)
 
 
-def _redact_text(text: str, api_key: str | None) -> str:
-    if api_key is not None and text == api_key:
-        return _token(text)
+def _redact_text(text: str, api_keys: tuple[str, ...]) -> str:
+    for api_key in api_keys:
+        if text == api_key:
+            return _token(text)
     text = _PEM.sub(lambda match: _token(match.group(0)), text)
     text = _PAYMENT.sub(lambda match: _token(match.group(0)), text)
     text = _SEED_PHRASE.sub(lambda match: _token(match.group(0)), text)
@@ -171,12 +176,13 @@ def _redact_text(text: str, api_key: str | None) -> str:
     text = _SK.sub(_redact_sk, text)
     text = _CARD.sub(_redact_card, text)
     # Shaped tokens are already gone. This catches a key that matches none of them.
-    if api_key is not None and len(api_key) >= _MIN_SUBSTRING_SECRET and api_key in text:
-        text = text.replace(api_key, _token(api_key))
+    for api_key in api_keys:
+        if len(api_key) >= _MIN_SUBSTRING_SECRET and api_key in text:
+            text = text.replace(api_key, _token(api_key))
     return text
 
 
-def _redact_string(text: str, parent_key: str | None, api_key: str | None) -> str:
+def _redact_string(text: str, parent_key: str | None, api_keys: tuple[str, ...]) -> str:
     # CID strings are addresses, not UCAN signature material.
     if parent_key is not None and _SIGNATURE_KEY.fullmatch(parent_key):
         if _CID.fullmatch(text):
@@ -188,50 +194,51 @@ def _redact_string(text: str, parent_key: str | None, api_key: str | None) -> st
         try:
             parsed = json.loads(text)
         except json.JSONDecodeError:
-            return _redact_text(text, api_key)
+            return _redact_text(text, api_keys)
         if isinstance(parsed, (dict, list)):
             return json.dumps(
-                _walk(parsed, parent_key, api_key),
+                _walk(parsed, parent_key, api_keys),
                 separators=(",", ":"),
                 ensure_ascii=False,
             )
-    return _redact_text(text, api_key)
+    return _redact_text(text, api_keys)
 
 
-def _walk(value: Any, parent_key: str | None, api_key: str | None) -> Any:
+def _walk(value: Any, parent_key: str | None, api_keys: tuple[str, ...]) -> Any:
     if isinstance(value, str):
-        return _redact_string(value, parent_key, api_key)
+        return _redact_string(value, parent_key, api_keys)
     if value is None or isinstance(value, (bool, int, float)):
         return value
     if isinstance(value, Mapping):
         redacted: dict[Any, Any] = {}
         for key, item in value.items():
             if not isinstance(key, str):
-                redacted[key] = _walk(item, None, api_key)
+                redacted[key] = _walk(item, None, api_keys)
                 continue
             # Sensitivity uses the original key. The stored key is still span-scanned.
             if _sensitive_key(key, parent_key):
                 stored: Any = None if item is None else _token(_material(item))
             else:
-                stored = _walk(item, key, api_key)
-            redacted[_redact_text(key, api_key)] = stored
+                stored = _walk(item, key, api_keys)
+            redacted[_redact_text(key, api_keys)] = stored
         return redacted
     if isinstance(value, Sequence) and not isinstance(value, (bytes, bytearray)):
-        walked = [_walk(item, parent_key, api_key) for item in value]
+        walked = [_walk(item, parent_key, api_keys) for item in value]
         if isinstance(value, tuple):
             return tuple(walked)
         return walked
     raise TypeError(f"unsupported body value: {type(value).__name__}")
 
 
-def redact_serialized(body: Any) -> Any:
+def redact_serialized(body: Any, *, api_key: str | None = None) -> Any:
     """Return a copy of ``body`` with secrets replaced.
 
     A string that is a JSON object or array is parsed, walked, and
     re-serialized. Every other string is scanned in place, including
-    nested instructions, criteria, and object keys.
+    nested instructions, criteria, and object keys. ``api_key`` is
+    scrubbed along with ``TYPESAFE_API_KEY`` when both are set.
     """
-    api_key = _api_key()
+    api_keys = _api_keys(api_key)
     if isinstance(body, str):
-        return _redact_string(body, None, api_key)
-    return _walk(body, None, api_key)
+        return _redact_string(body, None, api_keys)
+    return _walk(body, None, api_keys)

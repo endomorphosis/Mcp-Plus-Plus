@@ -39,7 +39,8 @@ class JevClient:
                     "state": state,
                     "questions": questions,
                     "model": self.config.model,
-                }
+                },
+                api_key=self.config.api_key,
             )
             if self._caller is not None:
                 response = self._caller(

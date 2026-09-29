@@ -18,6 +18,7 @@ from mcp_pp_system_one.cache import (
     policy_cid_material,
 )
 from mcp_pp_system_one.config import SystemOneConfig
+from mcp_pp_system_one.jev_client import JevClient
 from mcp_pp_system_one.redact import redact_serialized
 from mcp_pp_system_one.witness import (
     COMPILER_VERSION,
@@ -204,6 +205,45 @@ def test_typesafe_api_key_literal_is_removed(monkeypatch):
     monkeypatch.setenv("TYPESAFE_API_KEY", "ab")
     assert redact_serialized({"summary": "abacus"})["summary"] == "abacus"
     assert redact_serialized({"summary": "ab"})["summary"].startswith("[REDACTED:")
+
+
+def test_configured_api_key_is_absent_from_the_caller_body(monkeypatch):
+    env_key = "env-live-secret-value"
+    configured = "configured-live-secret"
+    monkeypatch.setenv("TYPESAFE_API_KEY", env_key)
+    seen = []
+
+    def caller(*, state, questions, model):
+        seen.append({"state": state, "questions": questions, "model": model})
+        return {"model": "jev-1.13.0", "answers": {"q": {"noul": 0.2}}}
+
+    state = {"summary": f"prefix {configured} and {env_key} suffix"}
+    questions = {"q": {"instructions": f"keep {configured} out"}}
+    client = JevClient(SystemOneConfig(api_key=configured), caller=caller)
+    answers = client.system_one(state=state, questions=questions)
+    assert answers == {"q": {"noul": 0.2}}
+    rendered = json.dumps(seen)
+    assert configured not in rendered
+    assert env_key not in rendered
+    assert f"[REDACTED:{hashlib.sha256(configured.encode()).hexdigest()[:8]}]" in rendered
+    assert f"[REDACTED:{hashlib.sha256(env_key.encode()).hexdigest()[:8]}]" in rendered
+    assert configured in state["summary"]
+    assert env_key in state["summary"]
+
+
+def test_short_configured_api_key_is_not_a_substring_scrub(monkeypatch):
+    monkeypatch.delenv("TYPESAFE_API_KEY", raising=False)
+    assert redact_serialized({"summary": "abacus"}, api_key="ab")["summary"] == "abacus"
+    assert redact_serialized({"summary": "ab"}, api_key="ab")["summary"].startswith("[REDACTED:")
+
+    env_key = "env-live-secret-value"
+    monkeypatch.setenv("TYPESAFE_API_KEY", env_key)
+    redacted = redact_serialized(
+        {"summary": f"abacus {env_key}"},
+        api_key="ab",
+    )["summary"]
+    assert redacted.startswith("abacus ")
+    assert env_key not in redacted
 
 
 def test_serialized_json_string_is_walked():
