@@ -305,19 +305,24 @@ class PolicyConformanceChain:
                 if getattr(request, "gate", "") == "output"
                 else getattr(request, "input_cid", None)
             )
-            material = policy_cid_material(
-                canonical_json_bytes(
-                    [clause_document(clause) for clause in exact.residual]
-                ),
-                None if content is None else str(content),
-            )
-            answers = load_or_store(
-                self.config,
-                stage=STAGE_POLICY,
-                questions=questions,
-                cid_material=material,
-                fetch=lambda: self.client.system_one(state=state, questions=questions),
-            )
+            content_cid = None if content is None else str(content)
+            # None and a blank CID share one cache suffix, so do not store either.
+            if content_cid is None or content_cid.strip() == "":
+                answers = self.client.system_one(state=state, questions=questions)
+            else:
+                material = policy_cid_material(
+                    canonical_json_bytes(
+                        [clause_document(clause) for clause in exact.residual]
+                    ),
+                    content_cid,
+                )
+                answers = load_or_store(
+                    self.config,
+                    stage=STAGE_POLICY,
+                    questions=questions,
+                    cid_material=material,
+                    fetch=lambda: self.client.system_one(state=state, questions=questions),
+                )
             fuzzy = _fuzzy_from(answers, exact.residual) if residual_on else None
             hazard = hazard_slice(answers, request.gate) if hazard_on else None
             authorizing = combine_policy(

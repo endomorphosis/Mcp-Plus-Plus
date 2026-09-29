@@ -41,7 +41,7 @@ def _request(**overrides):
     request.subject = overrides.get("subject", "did:key:worker")
     request.resource = overrides.get("resource", None)
     request.intent_cid = "bafkreiintent"
-    request.input_cid = "bafkreiinput"
+    request.input_cid = overrides.get("input_cid", "bafkreiinput")
     request.output_cid = overrides.get("output_cid")
     request.proofs_checked = overrides.get("proofs_checked", [])
     request.require_proofs = overrides.get("require_proofs", False)
@@ -561,6 +561,62 @@ def test_cached_noul_changes_the_verdict_without_a_second_call(tmp_path):
     assert len(caller.calls) == 1
     assert second.authorizing.witness["cause"] == "prohibition_deny"
     assert second.display_cause == "prohibition_deny"
+
+
+def _uncached_content_cid(tmp_path, **request_fields):
+    chain, caller = _chain(
+        [
+            _response(
+                {
+                    "c0": {"noul": 0.40},
+                    "severity": {"score": 0.0},
+                }
+            ),
+            _response(
+                {
+                    "c0": {"noul": 0.40},
+                    "severity": {"score": 0.0},
+                }
+            ),
+        ],
+        hazard=False,
+        cache_dir=str(tmp_path),
+        trust_domain="local",
+    )
+    request = _request(
+        clauses=(_prohibition(semantic="outside the topics"),),
+        **request_fields,
+    )
+    first = chain.admit(request)
+    second = chain.admit(request)
+    assert len(caller.calls) == 2
+    assert first.authorizing.witness["disposition"] == "review"
+    assert second.authorizing.witness["cause"] == "policy"
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_blank_input_cid_is_not_cached(tmp_path):
+    _uncached_content_cid(tmp_path, input_cid="")
+
+
+def test_missing_input_cid_is_not_cached(tmp_path):
+    _uncached_content_cid(tmp_path, input_cid=None)
+
+
+def test_whitespace_input_cid_is_not_cached(tmp_path):
+    _uncached_content_cid(tmp_path, input_cid="  ")
+
+
+def test_blank_output_cid_is_not_cached(tmp_path):
+    _uncached_content_cid(tmp_path, gate="output", output_cid="")
+
+
+def test_missing_output_cid_is_not_cached(tmp_path):
+    _uncached_content_cid(tmp_path, gate="output", output_cid=None)
+
+
+def test_whitespace_output_cid_is_not_cached(tmp_path):
+    _uncached_content_cid(tmp_path, gate="output", output_cid="  ")
 
 
 def test_huge_severity_does_not_flip_an_allow():
