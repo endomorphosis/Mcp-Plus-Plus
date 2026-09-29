@@ -5,7 +5,8 @@ from datetime import datetime, timezone
 from mcp_pp_system_one.chain import ToolSliceChain
 from mcp_pp_system_one.combiner import PolicyConformanceChain
 from mcp_pp_system_one.config import SystemOneConfig
-from mcp_pp_system_one.exact_policy import Policy
+from mcp_pp_system_one.exact_policy import Policy, clause_document
+from mcp_pp_system_one.witness import policy_document_cid, policy_preimage
 from mcp_pp_system_one.jev_client import JevClient
 from mcp_pp_system_one.metrics import log_fields
 from mcp_pp_system_one.ports import StageKind, StageOutcome, ToolSlice, ToolSliceRequest
@@ -129,7 +130,7 @@ def test_ranker_halt_in_the_pool_is_counted():
         "methods": [{"name": "status", "description": "report status"}],
         "requires": [],
     }
-    chain = ToolSliceChain(ranker=Ranker())
+    chain = ToolSliceChain(ranker=Ranker(), config=SystemOneConfig(enabled=True))
     selected = chain.select(ToolSliceRequest(descriptors=(descriptor,), task_hint="list"))
     assert selected.interface_cids == (cid,)
     assert chain.metrics.get("system_one_stage_total", stage="tool", result="halt") == 1
@@ -187,3 +188,57 @@ def test_log_fields_drop_the_key_and_the_secret():
     rendered = str(fields)
     assert "sk-test-secret" not in rendered
     assert fields == {"stage": "tool", "model": "jev-1.13.0"}
+
+
+def test_master_switch_off_skips_an_installed_middle_stage():
+    class Ranker:
+        def run(self, request, prior):
+            raise AssertionError("ranker must not run")
+
+    config = SystemOneConfig.from_env(
+        {
+            "MCPPP_SYSTEM_ONE": "0",
+            "MCPPP_SYSTEM_ONE_TOOL_RANK": "1",
+            "MCPPP_SYSTEM_ONE_POLICY_RESIDUAL": "1",
+            "MCPPP_SYSTEM_ONE_HAZARD": "1",
+        }
+    )
+    clause = Policy(
+        "prohibition",
+        "dataset.read",
+        subject="did:key:worker",
+        conditions={"semantic": "outside the topics"},
+        clause_id="c0",
+    )
+    caller = ScriptedCaller([{"model": config.model, "answers": {"c0": {"noul": 0.99}}}])
+    tool = ToolSliceChain(ranker=Ranker(), config=config)
+    policy = PolicyConformanceChain(config, JevClient(config, caller=caller))
+
+    class Request:
+        clauses = (clause,)
+        policy_cid = policy_document_cid(policy_preimage("v1", [clause_document(clause)]))
+        policy_version = "v1"
+        now = datetime(2026, 9, 29, tzinfo=timezone.utc)
+        gate = "input"
+        payload = "read"
+        action = "dataset.read"
+        subject = "did:key:worker"
+        resource = None
+        intent_cid = None
+        input_cid = None
+        output_cid = None
+        proofs_checked = []
+        require_proofs = False
+        interface_cid = None
+        method = None
+        size_bytes = None
+        secret_in_output = False
+
+    selected = tool.select(ToolSliceRequest(task_hint="list"))
+    admission = policy.admit(Request())
+    assert config.enabled is False
+    assert selected.interface_cids == ()
+    assert selected.abstained is True
+    assert caller.calls == []
+    assert admission.authorizing.decision == "deny"
+    assert admission.authorizing.witness["cause"] == "unresolved"

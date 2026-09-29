@@ -4,11 +4,12 @@ import hashlib
 import json
 import os
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any
 
 from mcp_pp_system_one.config import SystemOneConfig
+from mcp_pp_system_one.witness import question_set_hash
 
 STAGE_TOOL_RANK = "tool-rank"
 STAGE_POLICY = "policy"
@@ -176,3 +177,37 @@ class AnswerCache:
         os.chmod(temporary, 0o600)
         os.replace(temporary, path)
         os.chmod(path, 0o600)
+
+
+def load_or_store(
+    config: SystemOneConfig,
+    *,
+    stage: str,
+    questions: Mapping[str, Any],
+    cid_material: str,
+    fetch: Callable[[], Any],
+) -> Any:
+    """Return cached raw answers, or call ``fetch`` and store a dict.
+
+    Thresholds are not in the key. The caller reapplies them. A hit does
+    not call ``fetch``. The cache stays off without a directory and a
+    trust domain.
+    """
+    domain = config.trust_domain
+    cache = AnswerCache(config)
+    if not cache.enabled or not isinstance(domain, str) or domain.strip() == "":
+        return fetch()
+    key = cache_key(
+        trust_domain=domain,
+        model_id=config.model,
+        question_set_hash=question_set_hash(questions),
+        stage=stage,
+        cid_material=cid_material,
+    )
+    found = cache.get(key, stage=stage)
+    if isinstance(found, dict):
+        return found
+    answers = fetch()
+    if isinstance(answers, dict):
+        cache.put(key, answers, stage=stage, model_id=config.model)
+    return answers

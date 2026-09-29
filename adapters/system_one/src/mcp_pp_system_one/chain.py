@@ -70,9 +70,11 @@ class ToolSliceChain:
                 self.metrics.inc("system_one_stage_total", stage="tool", result="abstain")
                 return self.abstain.halt(prior)
             prior = self.structural.filter(request)
-            if self.ranker is None:
+            # MCPPP_SYSTEM_ONE=0 leaves enabled false and drops the middle stage.
+            ranker = self.ranker if self.config.enabled else None
+            if ranker is None:
                 return self.abstain.halt(prior)
-            outcome = self.ranker.run(request, prior)
+            outcome = ranker.run(request, prior)
             if outcome.kind is StageKind.ABSTAIN:
                 stuck = replace(
                     prior,

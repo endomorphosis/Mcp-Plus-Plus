@@ -3,6 +3,7 @@
 import math
 from typing import Any
 
+from mcp_pp_system_one.cache import STAGE_TOOL_RANK, descriptor_cid_material, load_or_store
 from mcp_pp_system_one.config import SystemOneConfig
 from mcp_pp_system_one.jev_client import Abstain, JevClient
 from mcp_pp_system_one.ports import (
@@ -120,7 +121,7 @@ class ToolRanker:
         ]
         shortlisted: list[str] = []
         for views in chunks:
-            answers = self._ask(*pass1(hint, views))
+            answers = self._ask(*pass1(hint, views), hint_cid=request.task_hint_cid)
             if isinstance(answers, Abstain):
                 return self._abstain(frozenset(excluded), *reasons, reason(answers.code))
             for index, view in enumerate(views):
@@ -145,7 +146,7 @@ class ToolRanker:
         if not shortlisted:
             return self._empty(excluded, reasons)
         merge_views = [_view(by_cid[cid], prior, excerpt=False) for cid in shortlisted]
-        answers = self._ask(*merge_choice(hint, merge_views))
+        answers = self._ask(*merge_choice(hint, merge_views), hint_cid=request.task_hint_cid)
         if isinstance(answers, Abstain):
             return self._abstain(frozenset(excluded), *reasons, reason(answers.code))
         which = answers.get("which") if isinstance(answers, dict) else None
@@ -166,7 +167,7 @@ class ToolRanker:
         if not survivors:
             return self._empty(excluded, reasons)
         pass2_views = [_view(by_cid[cid], prior, excerpt=True) for cid in survivors]
-        answers = self._ask(*pass2(hint, pass2_views))
+        answers = self._ask(*pass2(hint, pass2_views), hint_cid=request.task_hint_cid)
         if isinstance(answers, Abstain):
             return self._abstain(frozenset(excluded), *reasons, reason(answers.code))
         for index, view in enumerate(pass2_views):
@@ -246,8 +247,25 @@ class ToolRanker:
             chunks.append(current)
         return chunks, too_large
 
-    def _ask(self, state: dict[str, Any], questions: dict[str, Any]) -> Any:
-        return self.client.system_one(state=state, questions=questions)
+    def _ask(
+        self,
+        state: dict[str, Any],
+        questions: dict[str, Any],
+        *,
+        hint_cid: str | None,
+    ) -> Any:
+        descriptors = state.get("descriptors") or []
+        ids = [str(item.get("id", "")) for item in descriptors if isinstance(item, dict)]
+        if not isinstance(hint_cid, str) or hint_cid.strip() == "":
+            return self.client.system_one(state=state, questions=questions)
+        material = descriptor_cid_material(hint_cid, ",".join(ids))
+        return load_or_store(
+            self.config,
+            stage=STAGE_TOOL_RANK,
+            questions=questions,
+            cid_material=material,
+            fetch=lambda: self.client.system_one(state=state, questions=questions),
+        )
 
     def _empty(self, excluded: set[str], reasons: list[SliceReason]) -> StageOutcome:
         return StageOutcome(

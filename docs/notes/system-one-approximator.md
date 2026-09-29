@@ -2,7 +2,7 @@
 
 This note is not part of the MCP++ profile registry. It is not a wire type, not an `initialize` capability, and not a proof. Peers that never configure it keep baseline MCP and profiles A–H.
 
-The code lives in `adapters/system_one`. Defaults leave the ranker unset and leave residual scoring and hazard screening off. `MCPPP_SYSTEM_ONE_POLICY_RESIDUAL` and `MCPPP_SYSTEM_ONE_HAZARD` turn those two gates on. A truthy `MCPPP_SYSTEM_ONE` only sets `enabled`, which these chains do not consult. Importing the package does not import a vendor SDK.
+The code lives in `adapters/system_one`. Defaults leave the ranker unset and leave residual scoring and hazard screening off. `MCPPP_SYSTEM_ONE=0` leaves `enabled` false, and a false `enabled` drops the Jev middle stage even when a ranker or client object is installed. `MCPPP_SYSTEM_ONE_POLICY_RESIDUAL` and `MCPPP_SYSTEM_ONE_HAZARD` turn those two gates on only while `enabled` is also on. Importing the package does not import a vendor SDK.
 
 Two local ports sit in front of the existing shapes:
 

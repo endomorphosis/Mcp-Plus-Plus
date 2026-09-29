@@ -77,7 +77,7 @@ def _response(answers):
 
 def _chain(steps, **config):
     caller = ScriptedCaller(steps)
-    fields = {"hazard": True, "policy_residual": True}
+    fields = {"enabled": True, "hazard": True, "policy_residual": True}
     fields.update(config)
     cfg = SystemOneConfig(**fields)
     client = JevClient(cfg, caller=caller)
@@ -525,6 +525,32 @@ def test_non_string_residual_denies_before_http():
     assert admission.authorizing.decision == "deny"
     assert admission.authorizing.witness["cause"] == "exact_deny"
     assert caller.calls == []
+
+
+def test_cached_noul_changes_the_verdict_without_a_second_call(tmp_path):
+    chain, caller = _chain(
+        [
+            _response(
+                {
+                    "c0": {"noul": 0.40},
+                    "severity": {"score": 0.0},
+                }
+            )
+        ],
+        hazard=False,
+        cache_dir=str(tmp_path),
+        trust_domain="local",
+    )
+    request = _request(clauses=(_prohibition(semantic="outside the topics"),))
+    first = chain.admit(request)
+    assert len(caller.calls) == 1
+    assert first.authorizing.witness["disposition"] == "review"
+    assert first.authorizing.witness["cause"] == "policy"
+    object.__setattr__(chain.config, "prohibition_deny", 0.30)
+    second = chain.admit(request)
+    assert len(caller.calls) == 1
+    assert second.authorizing.witness["cause"] == "prohibition_deny"
+    assert second.display_cause == "prohibition_deny"
 
 
 def test_huge_severity_does_not_flip_an_allow():

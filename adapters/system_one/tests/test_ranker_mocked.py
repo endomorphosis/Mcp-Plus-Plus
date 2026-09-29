@@ -123,7 +123,7 @@ def test_override_excludes_only_the_jailbreak_index():
         descriptors=(_desc(good), _desc(bad, summary=JAILBREAK)),
         task_hint="list the files",
     )
-    chain = ToolSliceChain(ranker=ranker)
+    chain = ToolSliceChain(ranker=ranker, config=SystemOneConfig(enabled=True))
     selected = chain.select(request)
     assert bad not in selected.interface_cids
     instruction = caller.calls[0]["questions"]["override[1]"]["instructions"]
@@ -181,7 +181,7 @@ def test_vendor_errors_return_an_empty_slice():
         VendorError(529),
     ):
         ranker, _client, caller = _ranker([failure])
-        chain = ToolSliceChain(ranker=ranker)
+        chain = ToolSliceChain(ranker=ranker, config=SystemOneConfig(enabled=True))
         selected = chain.select(request)
         assert selected.interface_cids == ()
         assert len(caller.calls) == 1
@@ -190,7 +190,9 @@ def test_vendor_errors_return_an_empty_slice():
         def run(self, request, prior):
             raise RuntimeError("ranker blew up")
 
-    selected = ToolSliceChain(ranker=Exploding()).select(request)
+    selected = ToolSliceChain(
+        ranker=Exploding(), config=SystemOneConfig(enabled=True)
+    ).select(request)
     assert selected.interface_cids == ()
 
 
@@ -224,7 +226,7 @@ def test_nonfinite_fits_does_not_expose_a_write():
             ]
         )
         request = ToolSliceRequest(descriptors=(_desc(cid),), task_hint="delete the branch")
-        selected = ToolSliceChain(ranker=ranker).select(request)
+        selected = ToolSliceChain(ranker=ranker, config=SystemOneConfig(enabled=True)).select(request)
         assert selected.interface_cids == ()
 
 
@@ -281,6 +283,30 @@ def test_tool_list_redacts_and_truncates_the_judged_excerpt():
     rendered = str(tools)
     assert "sk-test-secret" not in rendered
     assert len(tools[0]["description"]) <= 700
+
+
+def test_cached_tool_chunk_is_not_requested_twice(tmp_path):
+    cid = "bafycache"
+    ranker, _client, caller = _ranker(
+        [
+            _response(cid, {cid: 1.0, "none": 0.0}, 0.95, overrides=(0.0,)),
+            _response(cid, {cid: 1.0, "none": 0.0}, 0.95),
+            _response(cid, {cid: 1.0, "none": 0.0}, 0.95, fits=(0.9,), overrides=(0.0,)),
+        ],
+        cache_dir=str(tmp_path),
+        trust_domain="local",
+    )
+    request = ToolSliceRequest(
+        descriptors=(_desc(cid),),
+        task_hint="list the files",
+        task_hint_cid="bafyhint",
+    )
+    prior = _prior((cid,))
+    first = ranker.run(request, prior)
+    second = ranker.run(request, prior)
+    assert len(caller.calls) == 3
+    assert first.slice is not None and first.slice.interface_cids == (cid,)
+    assert second.slice is not None and second.slice.interface_cids == (cid,)
 
 
 def test_retry_policy_does_not_honor_retry_after():

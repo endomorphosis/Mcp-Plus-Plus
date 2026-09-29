@@ -3,8 +3,9 @@
 from dataclasses import dataclass
 from typing import Any
 
+from mcp_pp_system_one.cache import STAGE_POLICY, load_or_store, policy_cid_material
 from mcp_pp_system_one.config import SystemOneConfig
-from mcp_pp_system_one.exact_policy import ExactReport, ExactStage, Policy
+from mcp_pp_system_one.exact_policy import ExactReport, ExactStage, Policy, clause_document
 from mcp_pp_system_one.hazard import (
     HazardReport,
     _finite,
@@ -16,7 +17,7 @@ from mcp_pp_system_one.jev_client import Abstain, JevClient
 from mcp_pp_system_one.metrics import Metrics
 from mcp_pp_system_one.redact import redact_serialized
 from mcp_pp_system_one.residual import compile_residual, residual_state
-from mcp_pp_system_one.witness import decision_preimage, seal_decision_witness
+from mcp_pp_system_one.witness import canonical_json_bytes, decision_preimage, seal_decision_witness
 
 PRECEDENCE = ("exact_deny", "unresolved", "prohibition_deny", "severity", "review")
 
@@ -284,10 +285,9 @@ class PolicyConformanceChain:
             if _final_exact_deny(exact):
                 authorizing = combine_policy(exact, None, self.config, residual_enabled=False)
                 return self.display(authorizing, None, self.config)
-            residual_on = bool(
-                self.config.policy_residual and exact.residual and self.client is not None
-            )
-            hazard_on = bool(self.config.hazard and self.client is not None)
+            master = self.config.enabled and self.client is not None
+            residual_on = bool(master and self.config.policy_residual and exact.residual)
+            hazard_on = bool(master and self.config.hazard)
             if not residual_on and not hazard_on:
                 authorizing = combine_policy(exact, None, self.config, residual_enabled=False)
                 return self.display(authorizing, None, self.config)
@@ -298,7 +298,24 @@ class PolicyConformanceChain:
                 state = residual_state(request.payload, exact.residual)
             if hazard_on:
                 questions.update(hazard_questions(request.gate))
-            answers = self.client.system_one(state=state, questions=questions)
+            content = (
+                getattr(request, "output_cid", None)
+                if getattr(request, "gate", "") == "output"
+                else getattr(request, "input_cid", None)
+            )
+            material = policy_cid_material(
+                canonical_json_bytes(
+                    [clause_document(clause) for clause in exact.residual]
+                ),
+                None if content is None else str(content),
+            )
+            answers = load_or_store(
+                self.config,
+                stage=STAGE_POLICY,
+                questions=questions,
+                cid_material=material,
+                fetch=lambda: self.client.system_one(state=state, questions=questions),
+            )
             fuzzy = _fuzzy_from(answers, exact.residual) if residual_on else None
             hazard = hazard_slice(answers, request.gate) if hazard_on else None
             authorizing = combine_policy(

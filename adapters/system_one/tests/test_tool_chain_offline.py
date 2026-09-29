@@ -222,7 +222,9 @@ def test_excluded_cid_absent_from_slice():
         def run(self, request, prior):
             return outcome
 
-    through_chain = ToolSliceChain(ranker=_Halt()).select(request)
+    through_chain = ToolSliceChain(
+        ranker=_Halt(), config=SystemOneConfig(enabled=True)
+    ).select(request)
     assert through_chain.interface_cids == ("bafykept",)
     assert "bafybad" not in through_chain.interface_cids
 
@@ -281,11 +283,15 @@ def test_ranker_runtime_error_and_abstain_do_not_expose():
             )
 
     request = ToolSliceRequest(descriptors=(_desc("bafykept"),))
-    crashed = ToolSliceChain(ranker=_Boom()).select(request)
+    crashed = ToolSliceChain(
+        ranker=_Boom(), config=SystemOneConfig(enabled=True)
+    ).select(request)
     assert crashed.interface_cids == ()
     assert crashed.abstained is True
 
-    abstained = ToolSliceChain(ranker=_Abstain()).select(request)
+    abstained = ToolSliceChain(
+        ranker=_Abstain(), config=SystemOneConfig(enabled=True)
+    ).select(request)
     assert abstained.interface_cids == ()
     assert "bafykept" not in abstained.interface_cids
     assert abstained.abstained is True
