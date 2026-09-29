@@ -48,6 +48,7 @@ class SystemOneConfig:
     policy_deadline_s: float = 0.80
     max_peers: int = 32
     max_descriptors: int = 1024
+    max_system_one_calls: int = 34
     chunk: int = 32
     rerank_k: int = 3
     max_exposed: int = 3
@@ -96,6 +97,7 @@ class SystemOneConfig:
             policy_deadline_s=_float(env, "MCPPP_SYSTEM_ONE_POLICY_DEADLINE_S", 0.80),
             max_peers=_int(env, "MCPPP_SYSTEM_ONE_MAX_PEERS", 32),
             max_descriptors=_int(env, "MCPPP_SYSTEM_ONE_MAX_DESCRIPTORS", 1024),
+            max_system_one_calls=_int(env, "MCPPP_SYSTEM_ONE_MAX_CALLS", 34),
             chunk=_int(env, "MCPPP_SYSTEM_ONE_CHUNK", 32),
             rerank_k=_int(env, "MCPPP_SYSTEM_ONE_RERANK_K", 3),
             max_exposed=_int(env, "MCPPP_SYSTEM_ONE_MAX_EXPOSED", 3),

@@ -95,14 +95,19 @@ def confidence_for(which: dict[str, Any]) -> float | None:
     return _unit(which.get("confidence"))
 
 
+_OVER_CALL_BUDGET = object()
+
+
 class ToolRanker:
     implementation_id = "system-one-ranker/v1"
 
     def __init__(self, config: SystemOneConfig, client: JevClient) -> None:
         self.config = config
         self.client = client
+        self._system_one_calls = 0
 
     def run(self, request: ToolSliceRequest, prior: Prior) -> StageOutcome:
+        self._system_one_calls = 0
         hint = (request.task_hint or "").strip()
         if not hint:
             return self._abstain(frozenset(), reason("missing_task_hint"))
@@ -122,6 +127,8 @@ class ToolRanker:
         shortlisted: list[str] = []
         for views in chunks:
             answers = self._ask(*pass1(hint, views), hint_cid=request.task_hint_cid)
+            if answers is _OVER_CALL_BUDGET:
+                return self._empty(excluded, reasons)
             if isinstance(answers, Abstain):
                 return self._abstain(frozenset(excluded), *reasons, reason(answers.code))
             for index, view in enumerate(views):
@@ -145,8 +152,13 @@ class ToolRanker:
                     shortlisted.append(cid)
         if not shortlisted:
             return self._empty(excluded, reasons)
+        # `_which` adds `none`, and a Choice allows at most 255 options.
+        if len(shortlisted) + 1 > 255:
+            return self._empty(excluded, reasons)
         merge_views = [_view(by_cid[cid], prior, excerpt=False) for cid in shortlisted]
         answers = self._ask(*merge_choice(hint, merge_views), hint_cid=request.task_hint_cid)
+        if answers is _OVER_CALL_BUDGET:
+            return self._empty(excluded, reasons)
         if isinstance(answers, Abstain):
             return self._abstain(frozenset(excluded), *reasons, reason(answers.code))
         which = answers.get("which") if isinstance(answers, dict) else None
@@ -168,6 +180,8 @@ class ToolRanker:
             return self._empty(excluded, reasons)
         pass2_views = [_view(by_cid[cid], prior, excerpt=True) for cid in survivors]
         answers = self._ask(*pass2(hint, pass2_views), hint_cid=request.task_hint_cid)
+        if answers is _OVER_CALL_BUDGET:
+            return self._empty(excluded, reasons)
         if isinstance(answers, Abstain):
             return self._abstain(frozenset(excluded), *reasons, reason(answers.code))
         for index, view in enumerate(pass2_views):
@@ -256,15 +270,23 @@ class ToolRanker:
     ) -> Any:
         descriptors = state.get("descriptors") or []
         ids = [str(item.get("id", "")) for item in descriptors if isinstance(item, dict)]
-        if not isinstance(hint_cid, str) or hint_cid.strip() == "":
+
+        def fetch() -> Any:
+            # Cache hits never reach here, so they do not spend a call.
+            if self._system_one_calls >= self.config.max_system_one_calls:
+                return _OVER_CALL_BUDGET
+            self._system_one_calls += 1
             return self.client.system_one(state=state, questions=questions)
+
+        if not isinstance(hint_cid, str) or hint_cid.strip() == "":
+            return fetch()
         material = descriptor_cid_material(hint_cid, ",".join(ids), views=descriptors)
         return load_or_store(
             self.config,
             stage=STAGE_TOOL_RANK,
             questions=questions,
             cid_material=material,
-            fetch=lambda: self.client.system_one(state=state, questions=questions),
+            fetch=fetch,
         )
 
     def _empty(self, excluded: set[str], reasons: list[SliceReason]) -> StageOutcome:

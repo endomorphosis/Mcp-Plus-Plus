@@ -8,7 +8,7 @@ from mcp_pp_system_one.config import SystemOneConfig
 from mcp_pp_system_one.context_builder import build_tool_list
 from mcp_pp_system_one.jev_client import JevClient
 from mcp_pp_system_one.chain import ToolSliceChain
-from mcp_pp_system_one.ports import Prior, ToolSlice, ToolSliceRequest
+from mcp_pp_system_one.ports import Prior, StageKind, ToolSlice, ToolSliceRequest
 from mcp_pp_system_one.questions import NONE_CRITERION
 from mcp_pp_system_one.ranker import ToolRanker, confidence_for
 from tests.fakes import ScriptedCaller, VendorError
@@ -354,6 +354,140 @@ def test_changed_summary_is_not_reused_from_the_tool_rank_cache(tmp_path):
     assert BEARER not in stored
     assert "sk-test-secret" not in stored
     assert rewritten not in stored
+
+
+def test_call_budget_stops_before_the_next_call_and_keeps_exclusions():
+    first = "bafyfirst"
+    blocked = "bafyblocked"
+    second = "bafysecond"
+    ranker, _client, caller = _ranker(
+        [
+            _response(
+                first,
+                {first: 0.8, blocked: 0.2, "none": 0.0},
+                0.95,
+                overrides=(0.0, 0.9),
+            ),
+            _response(second, {second: 1.0, "none": 0.0}, 0.95, overrides=(0.0,)),
+            _response(first, {first: 1.0, "none": 0.0}, 0.99),
+            _response(
+                first,
+                {first: 1.0, "none": 0.0},
+                0.99,
+                fits=(0.9,),
+                overrides=(0.0,),
+            ),
+        ],
+        chunk=2,
+        max_system_one_calls=1,
+    )
+    request = ToolSliceRequest(
+        descriptors=(
+            _desc(first),
+            _desc(blocked, summary=JAILBREAK),
+            _desc(second),
+        ),
+        task_hint="list the files",
+    )
+    outcome = ranker.run(request, _prior((first, blocked, second)))
+    assert len(caller.calls) == 1
+    sent = [item["id"] for item in caller.calls[0]["state"]["descriptors"]]
+    assert sent == [first, blocked]
+    assert outcome.kind == StageKind.HALT
+    assert outcome.slice is not None
+    assert outcome.slice.interface_cids == ()
+    assert outcome.slice.abstained is False
+    assert outcome.slice.implementation_id == "system-one-ranker/v1"
+    assert blocked in outcome.excluded
+    assert any(
+        item.code == "descriptor_override" and item.interface_cid == blocked
+        for item in outcome.slice.reasons
+    )
+
+
+def test_merge_over_255_options_halts_without_a_merge_call():
+    count = 255
+    cids = [f"bafy{index:04d}" for index in range(count)]
+    winner = cids[0]
+    steps = [
+        _response(cid, {cid: 1.0, "none": 0.0}, 0.95, overrides=(0.0,))
+        for cid in cids
+    ]
+    steps.append(_response(winner, {winner: 1.0, "none": 0.0}, 0.99))
+    steps.append(
+        _response(
+            winner,
+            {winner: 1.0, "none": 0.0},
+            0.99,
+            fits=(0.9,),
+            overrides=(0.0,),
+        )
+    )
+    ranker, _client, caller = _ranker(
+        steps,
+        chunk=1,
+        max_system_one_calls=count + 2,
+    )
+    request = ToolSliceRequest(
+        descriptors=tuple(_desc(cid) for cid in cids),
+        task_hint="list the files",
+    )
+    outcome = ranker.run(request, _prior(cids))
+    assert len(caller.calls) == count
+    assert "gate_act" in caller.calls[-1]["questions"]
+    assert outcome.kind == StageKind.HALT
+    assert outcome.slice is not None
+    assert outcome.slice.interface_cids == ()
+    assert outcome.slice.abstained is False
+    assert outcome.slice.implementation_id == "system-one-ranker/v1"
+
+
+def test_cache_hit_does_not_spend_the_call_budget(tmp_path):
+    cid = "bafycache"
+    request = ToolSliceRequest(
+        descriptors=(_desc(cid),),
+        task_hint="list the files",
+        task_hint_cid="bafyhint",
+    )
+    prior = _prior((cid,))
+    warm, _client, warm_caller = _ranker(
+        [
+            _response(cid, {cid: 1.0, "none": 0.0}, 0.95, overrides=(0.0,)),
+            _response(cid, {cid: 1.0, "none": 0.0}, 0.95),
+            _response(cid, {cid: 1.0, "none": 0.0}, 0.95, fits=(0.9,), overrides=(0.0,)),
+        ],
+        cache_dir=str(tmp_path),
+        trust_domain="local",
+    )
+    first = warm.run(request, prior)
+    assert len(warm_caller.calls) == 3
+    assert first.slice is not None and first.slice.interface_cids == (cid,)
+
+    ranker, _client, caller = _ranker(
+        [],
+        cache_dir=str(tmp_path),
+        trust_domain="local",
+        max_system_one_calls=0,
+    )
+    second = ranker.run(request, prior)
+    assert caller.calls == []
+    assert second.slice is not None
+    assert second.slice.interface_cids == (cid,)
+    assert second.slice.abstained is False
+    assert second.slice.implementation_id == "system-one-ranker/v1"
+
+
+def test_max_system_one_calls_defaults_and_env():
+    assert SystemOneConfig().max_system_one_calls == 34
+    assert SystemOneConfig.from_env({}).max_system_one_calls == 34
+    assert (
+        SystemOneConfig.from_env({"MCPPP_SYSTEM_ONE_MAX_CALLS": "7"}).max_system_one_calls
+        == 7
+    )
+    assert (
+        SystemOneConfig.from_env({"MCPPP_SYSTEM_ONE_MAX_CALLS": "  "}).max_system_one_calls
+        == 34
+    )
 
 
 def test_retry_policy_does_not_honor_retry_after():
