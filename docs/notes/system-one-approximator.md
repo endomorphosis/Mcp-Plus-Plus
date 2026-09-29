@@ -13,4 +13,4 @@ Jev output, when a caller configures it, is a probability witness. `verified` an
 
 Closed arguments (enums, booleans, arrays of enums) can be filled locally. Open strings and numbers are not invented. A score does not raise a UCAN budget or an x402 amount.
 
-A past tool deadline returns an empty slice. A past policy deadline returns deny. `disable_jev()` drops an installed ranker and clears `enabled`, `tool_rank`, `policy_residual`, and `hazard` on the shared config, so a policy chain holding that same object stops calling out. The port types stay the same.
+A past policy deadline returns deny. `disable_jev()` drops an installed ranker and clears `enabled`, `tool_rank`, `policy_residual`, and `hazard` on the shared config, so a policy chain holding that same object stops calling out. The port types stay the same.
