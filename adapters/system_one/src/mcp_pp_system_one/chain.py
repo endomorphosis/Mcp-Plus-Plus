@@ -46,13 +46,11 @@ class ToolSliceChain:
 
     def disable_jev(self) -> None:
         self.ranker = None
-        self.config = replace(
-            self.config,
-            enabled=False,
-            tool_rank=False,
-            policy_residual=False,
-            hazard=False,
-        )
+        # replace() would leave a policy chain holding the old config.
+        object.__setattr__(self.config, "enabled", False)
+        object.__setattr__(self.config, "tool_rank", False)
+        object.__setattr__(self.config, "policy_residual", False)
+        object.__setattr__(self.config, "hazard", False)
 
     def _past_tool_deadline(self) -> bool:
         if self.clock is None:
@@ -60,11 +58,6 @@ class ToolSliceChain:
         return self.clock() - self.started_at > self.config.tool_deadline_s
 
     def select(self, request: ToolSliceRequest) -> ToolSlice:
-        if self._past_tool_deadline():
-            self.metrics.inc("system_one_stage_total", stage="tool", result="abstain")
-            return self.abstain.halt(
-                Prior((), frozenset(), (), {}, {})
-            )
         prior = Prior(
             pool=(),
             excluded=frozenset(),
@@ -73,6 +66,11 @@ class ToolSliceChain:
             cost_tokens={},
         )
         try:
+            if self._past_tool_deadline():
+                self.metrics.inc("system_one_stage_total", stage="tool", result="abstain")
+                return self.abstain.halt(
+                    Prior((), frozenset(), (), {}, {})
+                )
             prior = self.structural.filter(request)
             if self.ranker is None:
                 return self.abstain.halt(prior)
@@ -84,6 +82,8 @@ class ToolSliceChain:
                     reasons=prior.reasons + outcome.reasons,
                 )
                 return self.abstain.halt(stuck)
-            return intersect_halt(outcome, prior)
+            halted = intersect_halt(outcome, prior)
+            self.metrics.inc("system_one_stage_total", stage="tool", result="halt")
+            return halted
         except Exception:  # noqa: BLE001 - every failure fails over to an empty slice
             return self.abstain.halt(prior)

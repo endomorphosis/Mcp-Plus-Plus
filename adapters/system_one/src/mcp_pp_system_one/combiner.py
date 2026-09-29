@@ -7,6 +7,7 @@ from mcp_pp_system_one.config import SystemOneConfig
 from mcp_pp_system_one.exact_policy import ExactReport, ExactStage, Policy
 from mcp_pp_system_one.hazard import HazardReport, hazard_questions, hazard_slice
 from mcp_pp_system_one.jev_client import Abstain, JevClient
+from mcp_pp_system_one.metrics import Metrics
 from mcp_pp_system_one.redact import redact_serialized
 from mcp_pp_system_one.residual import compile_residual, residual_state
 from mcp_pp_system_one.witness import decision_preimage, seal_decision_witness
@@ -250,7 +251,7 @@ class PolicyConformanceChain:
         self.client = client
         self.exact = exact or ExactStage()
         self.display = display or reduce_display
-        self.metrics = None
+        self.metrics = Metrics()
         self.clock = None
         self.started_at = 0.0
 
@@ -264,6 +265,7 @@ class PolicyConformanceChain:
         authorizing: PolicyDecision | None = None
         try:
             if self.clock is not None and self.clock() - self.started_at > self.config.policy_deadline_s:
+                self.metrics.inc("system_one_stage_total", stage="policy", result="deny")
                 return GateAdmission(False, self._deny_unresolved(request), "deadline")
             if request.gate == "output" and _changed_by_redaction(request.payload):
                 request.secret_in_output = True

@@ -3,6 +3,7 @@
 from typing import Any
 
 from mcp_pp_system_one.config import SystemOneConfig
+from mcp_pp_system_one.metrics import Metrics
 from mcp_pp_system_one.redact import redact_serialized
 
 
@@ -14,9 +15,15 @@ class Abstain:
 class JevClient:
     """One call, then Abstain. Retry-After is not honored."""
 
-    def __init__(self, config: SystemOneConfig, caller: Any = None) -> None:
+    def __init__(
+        self,
+        config: SystemOneConfig,
+        caller: Any = None,
+        metrics: Metrics | None = None,
+    ) -> None:
         self.config = config
         self._caller = caller
+        self.metrics = metrics if metrics is not None else Metrics()
         self.retry_policy = {
             "http_statuses": {429, 529},
             "respect_retry_after": False,
@@ -42,7 +49,10 @@ class JevClient:
                 )
             else:
                 response = self._sdk_call(body)
-        except Exception:
+        except Exception as exc:
+            status = getattr(exc, "status", None)
+            if isinstance(status, int) and not isinstance(status, bool):
+                self.metrics.inc("system_one_http_total", status=str(status))
             return Abstain("vendor")
         if isinstance(response, Abstain):
             return response
