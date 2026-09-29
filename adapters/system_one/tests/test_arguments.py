@@ -551,3 +551,125 @@ def test_call_strength_is_min_of_contributed_values_only():
     assert result.arguments == {"include_volume": True, "symbol": "NVDA"}
     assert result.call_strength == 0.95
     assert not math.isnan(result.call_strength)
+
+
+def test_huge_int_noul_does_not_raise():
+    result = fill(
+        _enum_schema(),
+        {"symbol?": {"type": "noul", "noul": 10**1000}, "symbol": _choice()},
+        side_effect="read",
+        ucan_budget=3,
+        x402_amount=10,
+    )
+    assert result.called is False
+    assert "symbol" not in result.arguments
+    assert result.ucan_budget == 3
+    assert result.x402_amount == 10
+
+
+def test_enum_without_type_and_string_union_are_closed_choices():
+    for prop in (
+        {"enum": ["NVDA", "AMD"]},
+        {"type": ["string", "null"], "enum": ["NVDA", "AMD"]},
+    ):
+        schema = {"type": "object", "required": ["symbol"], "properties": {"symbol": prop}}
+        questions = questions_for(schema)
+        assert questions["symbol"]["type"] == "choice"
+        assert questions["symbol"]["criteria"] == {"NVDA": None, "AMD": None}
+        result = fill(
+            schema,
+            {"symbol?": {"type": "noul", "noul": 0.95}, "symbol": _choice()},
+            side_effect="read",
+        )
+        assert result.called is True
+        assert result.arguments["symbol"] == "NVDA"
+
+
+def test_required_unrecognized_property_does_not_call():
+    schema = {
+        "type": "object",
+        "required": ["symbol", "note"],
+        "properties": {
+            "symbol": {"type": "string", "enum": ["NVDA"]},
+            "note": {"oneOf": [{"type": "string", "enum": ["a"]}]},
+        },
+    }
+    result = fill(
+        schema,
+        {
+            "symbol?": {"type": "noul", "noul": 0.95},
+            "symbol": {"type": "choice", "choice": "NVDA", "confidence": 0.99},
+        },
+        side_effect="read",
+        ucan_budget=3,
+        x402_amount=10,
+    )
+    assert result.called is False
+    assert result.reason == "closed_argument_unstated"
+    assert "note" not in result.arguments
+    assert result.ucan_budget == 3
+    omitted = fill(
+        {
+            "type": "object",
+            "required": ["note", "symbol"],
+            "properties": {"symbol": {"type": "string", "enum": ["NVDA"]}},
+        },
+        {
+            "symbol?": {"type": "noul", "noul": 0.95},
+            "symbol": {"type": "choice", "choice": "NVDA", "confidence": 0.99},
+        },
+        side_effect="write",
+    )
+    assert omitted.called is False
+    assert "note" not in omitted.arguments
+
+
+def test_tuple_items_and_bad_nodes_do_not_raise():
+    schema = {
+        "type": "object",
+        "properties": {
+            "pair": {"type": "array", "items": [{"type": "string"}, {"type": "string"}]},
+            "flag": {"type": "boolean"},
+            "weird": True,
+            "count": {"type": "string", "enum": 1},
+        },
+    }
+    questions = questions_for(schema)
+    assert "flag" in questions
+    assert "flag?" in questions
+    assert all(not key.startswith("pair") for key in questions)
+    assert "count" not in questions
+    result = fill(schema, {}, side_effect="read")
+    assert result.called is False
+    assert questions_for(None) == {}
+    bare = fill(None, {}, side_effect="read", ucan_budget=1, x402_amount=2)
+    assert bare.called is False
+    assert bare.ucan_budget == 1
+    assert bare.x402_amount == 2
+
+
+def test_list_and_object_defaults_are_copied():
+    array_prop = {"type": "array", "default": ["z"]}
+    object_prop = {"type": "object", "default": {"a": 1}}
+    schema = {
+        "type": "object",
+        "required": ["note", "meta", "symbol"],
+        "properties": {
+            "note": array_prop,
+            "meta": object_prop,
+            "symbol": {"type": "string", "enum": ["NVDA"]},
+        },
+    }
+    result = fill(
+        schema,
+        {
+            "symbol?": {"type": "noul", "noul": 0.95},
+            "symbol": _choice(),
+        },
+        side_effect="read",
+    )
+    assert result.called is True
+    result.arguments["note"].append("extra")
+    result.arguments["meta"]["a"] = 2
+    assert array_prop["default"] == ["z"]
+    assert object_prop["default"] == {"a": 1}
