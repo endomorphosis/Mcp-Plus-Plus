@@ -1,5 +1,4 @@
 """Acceptance and publication tests for the SVD-090 benchmark suite."""
-
 from __future__ import annotations
 
 import json
@@ -11,12 +10,7 @@ import pytest
 TESTS = Path(__file__).parent.parent
 sys.path.insert(0, str(TESTS))
 
-from benchmarks.profile_g_performance import (
-    ProfileGBenchmark,
-    render_dashboard,
-    render_report,
-    write_outputs,
-)
+from benchmarks.profile_g_performance import ProfileGBenchmark, render_dashboard, render_report, write_outputs
 
 
 WORKLOAD = TESTS / "benchmarks" / "profile_g_workload.json"
@@ -34,9 +28,7 @@ def result(tmp_path_factory: pytest.TempPathFactory, workload: dict) -> dict:
 
 def test_published_workload_meets_every_pre_agreed_gate(result: dict):
     assert result["schema"] == "mcp++/profile-g/performance-report@1"
-    assert result["accepted"], {
-        name: passed for name, passed in result["checks"].items() if not passed
-    }
+    assert result["accepted"], {name: passed for name, passed in result["checks"].items() if not passed}
     assert all(result["checks"].values())
 
 

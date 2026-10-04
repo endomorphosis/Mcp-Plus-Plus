@@ -3,7 +3,6 @@
 Every spec validator (py/ts/rs/go) consumes the same conformance/vectors/*.json
 so the four mirrors cannot drift. This is the Python side.
 """
-
 import json
 import os
 import sys

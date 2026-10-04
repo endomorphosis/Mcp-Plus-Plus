@@ -304,10 +304,10 @@ validator = MCPTypedValidator()
 
 # Runtime validation
 payload = {
-    "jsonrpc": "2.0",
-    "method": "tools/call",
-    "params": {"name": "test", "arguments": {}},
-    "id": 1,
+    'jsonrpc': '2.0',
+    'method': 'tools/call',
+    'params': {'name': 'test', 'arguments': {}},
+    'id': 1
 }
 result = validator.validate_request(payload)
 print(result.is_valid)  # True

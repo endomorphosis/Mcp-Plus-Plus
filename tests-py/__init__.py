@@ -1,7 +1,6 @@
 """
 MCP++ Testing Framework
 """
-
 import sys
 from pathlib import Path
 

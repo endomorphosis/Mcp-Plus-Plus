@@ -26,12 +26,10 @@ The MCP++ testing framework now includes two parallel implementations with advan
 ```python
 from pydantic import BaseModel, Field, ConfigDict
 
-
 class JSONRPCRequest(BaseModel):
     """Strict JSON-RPC request with no extra fields."""
-
-    model_config = ConfigDict(extra="forbid", strict=True)
-
+    model_config = ConfigDict(extra='forbid', strict=True)
+    
     jsonrpc: Literal["2.0"] = Field(..., description="JSON-RPC version")
     method: str = Field(..., min_length=1, description="Method name")
     params: Optional[Dict[str, Any]] = Field(default_factory=dict)
@@ -68,10 +66,8 @@ warn_unused_ignores = True
 ```python
 from typing import Protocol
 
-
 class MCPMessage(Protocol):
     """Structural type for MCP messages."""
-
     jsonrpc: str
 ```
 
@@ -85,10 +81,9 @@ class MCPMessage(Protocol):
 ```python
 from typing import TypeGuard
 
-
 def is_request(payload: Dict[str, Any]) -> TypeGuard[Dict[str, Any]]:
     """Type guard to check if payload is a request."""
-    return "method" in payload and "id" in payload
+    return 'method' in payload and 'id' in payload
 ```
 
 **Benefits:**
@@ -101,12 +96,10 @@ def is_request(payload: Dict[str, Any]) -> TypeGuard[Dict[str, Any]]:
 ```python
 from typing import TypeVar, Generic
 
-T = TypeVar("T", bound=BaseModel)
-
+T = TypeVar('T', bound=BaseModel)
 
 class Validator(Generic[T]):
     """Generic validator for any Pydantic model."""
-
     def validate(self, data: Dict[str, Any]) -> T:
         return self.model_class.model_validate(data)
 ```
@@ -118,10 +111,10 @@ from validators.base_mcp_typed import MCPTypedValidator
 
 validator = MCPTypedValidator()
 payload = {
-    "jsonrpc": "2.0",
-    "method": "tools/call",
-    "params": {"name": "test", "arguments": {}},
-    "id": 1,
+    'jsonrpc': '2.0',
+    'method': 'tools/call',
+    'params': {'name': 'test', 'arguments': {}},
+    'id': 1
 }
 
 # Runtime validation with Pydantic
@@ -329,8 +322,7 @@ const invalid: JSONRPCRequest = {
 def process(req: JSONRPCRequest) -> None:
     pass
 
-
-process({"jsonrpc": "2.0", "id": 1})  # mypy error: missing 'method'
+process({'jsonrpc': '2.0', 'id': 1})  # mypy error: missing 'method'
 ```
 
 ### 2. Prevent Invalid Data
@@ -422,12 +414,10 @@ No test changes required - validators have compatible interfaces.
 ```python
 # Old (still works)
 from validators.base_mcp import MCPValidator
-
 validator = MCPValidator()
 
 # New (type-safe)
 from validators.base_mcp_typed import MCPTypedValidator
-
 validator = MCPTypedValidator()
 
 # API is identical

@@ -342,7 +342,13 @@ MCP supports multiple authentication mechanisms:
 
 3. **OAuth 2.0**
    ```python
-   server = Server(name="secure-server", auth=OAuth2Auth(client_id="...", client_secret="..."))
+   server = Server(
+       name="secure-server",
+       auth=OAuth2Auth(
+           client_id="...",
+           client_secret="..."
+       )
+   )
    ```
 
 ### Authorization
@@ -373,7 +379,6 @@ Always validate inputs:
 def validate_input(schema: dict, data: dict) -> bool:
     """Validate input against JSON schema."""
     from jsonschema import validate
-
     validate(instance=data, schema=schema)
     return True
 ```
@@ -386,11 +391,10 @@ Sanitize sensitive data:
 def sanitize_output(data: str) -> str:
     """Remove sensitive information from output."""
     import re
-
     # Remove API keys
-    data = re.sub(r'api[_-]?key["\s:=]+[\w-]+', "[REDACTED]", data, flags=re.I)
+    data = re.sub(r'api[_-]?key["\s:=]+[\w-]+', '[REDACTED]', data, flags=re.I)
     # Remove tokens
-    data = re.sub(r'token["\s:=]+[\w-]+', "[REDACTED]", data, flags=re.I)
+    data = re.sub(r'token["\s:=]+[\w-]+', '[REDACTED]', data, flags=re.I)
     return data
 ```
 
@@ -430,7 +434,10 @@ async def list_capabilities():
         "tools": {},
         "resources": {},
         "prompts": {},
-        "custom": {"streaming": True, "batch_operations": True},
+        "custom": {
+            "streaming": True,
+            "batch_operations": True
+        }
     }
 ```
 
@@ -443,11 +450,10 @@ class LoggingMiddleware:
     async def process_request(self, request: Request) -> Request:
         logger.info(f"Request: {request.method}")
         return request
-
+    
     async def process_response(self, response: Response) -> Response:
         logger.info(f"Response: {response.result}")
         return response
-
 
 server.add_middleware(LoggingMiddleware())
 ```
@@ -472,7 +478,6 @@ class ConnectionPool:
 
 ```python
 from functools import lru_cache
-
 
 @lru_cache(maxsize=100)
 async def get_resource(uri: str):

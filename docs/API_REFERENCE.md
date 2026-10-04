@@ -711,7 +711,6 @@ from mcp.types import Tool, Resource, Prompt, TextContent
 
 server = Server("example-server")
 
-
 @server.list_tools()
 async def list_tools() -> list[Tool]:
     return [
@@ -720,12 +719,13 @@ async def list_tools() -> list[Tool]:
             description="An example tool",
             inputSchema={
                 "type": "object",
-                "properties": {"param": {"type": "string"}},
-                "required": ["param"],
-            },
+                "properties": {
+                    "param": {"type": "string"}
+                },
+                "required": ["param"]
+            }
         )
     ]
-
 
 @server.call_tool()
 async def call_tool(name: str, arguments: dict) -> list[TextContent]:
@@ -733,18 +733,21 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
         return [TextContent(type="text", text=f"Result: {arguments['param']}")]
     raise ValueError(f"Unknown tool: {name}")
 
-
 @server.list_resources()
 async def list_resources() -> list[Resource]:
-    return [Resource(uri="file:///example.txt", name="Example Resource", mimeType="text/plain")]
-
+    return [
+        Resource(
+            uri="file:///example.txt",
+            name="Example Resource",
+            mimeType="text/plain"
+        )
+    ]
 
 @server.read_resource()
 async def read_resource(uri: str) -> str:
     if uri == "file:///example.txt":
         return "Example content"
     raise ValueError(f"Resource not found: {uri}")
-
 
 async def main():
     async with stdio_server() as (read, write):

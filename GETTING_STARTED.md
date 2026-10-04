@@ -72,7 +72,6 @@ from mcp.types import Tool, TextContent
 # Initialize the server
 server = Server("weather-server")
 
-
 # Define available tools
 @server.list_tools()
 async def list_tools() -> list[Tool]:
@@ -84,19 +83,21 @@ async def list_tools() -> list[Tool]:
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "location": {"type": "string", "description": "City name or location"},
+                    "location": {
+                        "type": "string",
+                        "description": "City name or location"
+                    },
                     "unit": {
                         "type": "string",
                         "enum": ["celsius", "fahrenheit"],
                         "description": "Temperature unit",
-                        "default": "celsius",
-                    },
+                        "default": "celsius"
+                    }
                 },
-                "required": ["location"],
-            },
+                "required": ["location"]
+            }
         )
     ]
-
 
 # Implement tool functionality
 @server.call_tool()
@@ -105,25 +106,28 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
     if name == "get_temperature":
         location = arguments.get("location")
         unit = arguments.get("unit", "celsius")
-
+        
         # In a real implementation, you would call a weather API here
         # For demo purposes, we'll return mock data
         temp = 72 if unit == "fahrenheit" else 22
-
+        
         return [
             TextContent(
-                type="text", text=f"The temperature in {location} is {temp}°{unit[0].upper()}"
+                type="text",
+                text=f"The temperature in {location} is {temp}°{unit[0].upper()}"
             )
         ]
-
+    
     raise ValueError(f"Unknown tool: {name}")
-
 
 async def main():
     """Run the server."""
     async with stdio_server() as (read_stream, write_stream):
-        await server.run(read_stream, write_stream, server.create_initialization_options())
-
+        await server.run(
+            read_stream,
+            write_stream,
+            server.create_initialization_options()
+        )
 
 if __name__ == "__main__":
     asyncio.run(main())
@@ -228,27 +232,29 @@ import asyncio
 from mcp.client import Client
 from mcp.client.stdio import stdio_client
 
-
 async def main():
     # Connect to the server
-    server_params = {"command": "python", "args": ["weather_server.py"]}
-
+    server_params = {
+        "command": "python",
+        "args": ["weather_server.py"]
+    }
+    
     async with stdio_client(server_params) as (read, write):
         async with Client(read, write) as client:
             # Initialize the connection
             await client.initialize()
-
+            
             # List available tools
             tools = await client.list_tools()
             print(f"Available tools: {[tool.name for tool in tools.tools]}")
-
+            
             # Call the temperature tool
             result = await client.call_tool(
-                "get_temperature", {"location": "San Francisco", "unit": "celsius"}
+                "get_temperature",
+                {"location": "San Francisco", "unit": "celsius"}
             )
-
+            
             print(f"Result: {result.content[0].text}")
-
 
 if __name__ == "__main__":
     asyncio.run(main())
@@ -403,7 +409,6 @@ Enable debug logging:
 ```python
 # Python
 import logging
-
 logging.basicConfig(level=logging.DEBUG)
 ```
 
