@@ -1,4 +1,5 @@
 """Cross-language Profile H vectors (Python side)."""
+
 from __future__ import annotations
 
 import copy
@@ -32,8 +33,13 @@ BY_ID = {case["id"]: case for case in VALID["cases"]}
 
 @pytest.mark.parametrize("case", VALID["cases"], ids=lambda case: case["id"])
 def test_artifact_vector(case):
-    assert validate_profile_h_artifact(case["kind"], case["payload"], now_ms=case.get("now_ms")) == VALID["expected_cids"][case["id"]]
-    assert canonical_profile_h_bytes(case["payload"]).decode("utf-8") == json.dumps(case["payload"], ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    assert (
+        validate_profile_h_artifact(case["kind"], case["payload"], now_ms=case.get("now_ms"))
+        == VALID["expected_cids"][case["id"]]
+    )
+    assert canonical_profile_h_bytes(case["payload"]).decode("utf-8") == json.dumps(
+        case["payload"], ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    )
 
 
 @pytest.mark.parametrize("case", TRANSPORT["cases"], ids=lambda case: case["id"])
@@ -63,7 +69,9 @@ def invoke_invalid(case):
     if case.get("append_requirement"):
         payload["requirements"].append(copy.deepcopy(payload["requirements"][0]))
     if operation in ("artifact", "artifact-mutate", "artifact-redaction"):
-        validate_profile_h_artifact(source["kind"], payload, case.get("limits"), now_ms=case.get("now_ms"))
+        validate_profile_h_artifact(
+            source["kind"], payload, case.get("limits"), now_ms=case.get("now_ms")
+        )
     elif operation == "binding":
         validate_request_binding(case["expected_request_cid"], payload)
 
