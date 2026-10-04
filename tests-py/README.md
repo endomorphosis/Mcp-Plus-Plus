@@ -134,11 +134,11 @@ All validators return a `ValidationResult` object:
 ```python
 @dataclass
 class ValidationResult:
-    is_valid: bool              # Overall validation status
-    message_type: str           # Type of message validated
-    errors: List[str]           # Validation errors (make is_valid=False)
-    warnings: List[str]         # Non-fatal warnings
-    metadata: Dict[str, Any]    # Additional validation metadata
+    is_valid: bool  # Overall validation status
+    message_type: str  # Type of message validated
+    errors: List[str]  # Validation errors (make is_valid=False)
+    warnings: List[str]  # Non-fatal warnings
+    metadata: Dict[str, Any]  # Additional validation metadata
 ```
 
 ### Available Validators
@@ -164,10 +164,7 @@ payload = {
     "jsonrpc": "2.0",
     "id": 1,
     "method": "tools/call",
-    "params": {
-        "name": "get_weather",
-        "arguments": {"location": "Tokyo"}
-    }
+    "params": {"name": "get_weather", "arguments": {"location": "Tokyo"}},
 }
 
 result = validator.validate_request(payload)
@@ -194,7 +191,7 @@ descriptor = {
     "methods": [...],
     "errors": [],
     "requires": [],
-    "compatibility": {}
+    "compatibility": {},
 }
 
 result = validator.validate_descriptor(descriptor)
@@ -212,10 +209,7 @@ from validators.transport import TransportValidator
 validator = TransportValidator()
 
 # Validate protocol framing
-frame = {
-    "length": 256,
-    "message": {"jsonrpc": "2.0", "id": 1, "method": "tools/list"}
-}
+frame = {"length": 256, "message": {"jsonrpc": "2.0", "id": 1, "method": "tools/list"}}
 
 result = validator.validate_message_framing(frame)
 
