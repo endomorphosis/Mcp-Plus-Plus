@@ -1,4 +1,5 @@
 """SVD-089 three-peer Profile G scheduling conformance proof."""
+
 from __future__ import annotations
 
 import json
@@ -31,7 +32,9 @@ def cluster(tmp_path: Path, scenario: dict) -> ThreePeerHarness:
 
 def _claim(cluster: ThreePeerHarness, task_cid: str, spec: dict, epoch: int = 1):
     return cluster.claim(
-        spec["peer_id"], task_cid, logical_epoch=epoch,
+        spec["peer_id"],
+        task_cid,
+        logical_epoch=epoch,
         risk_bucket=spec["risk_bucket"],
         capability_fit_millionths=spec["capability_fit_millionths"],
         expected_finish_ms=cluster.clock.now_ms + spec["expected_finish_offset_ms"],
@@ -43,11 +46,15 @@ def test_simultaneous_claim_has_deterministic_winner_and_conflict_evidence(clust
     first, second = (_claim(cluster, task, spec) for spec in scenario["claims"])
     resolution = cluster.resolve(scenario["peer_ids"][2], task, 1)
 
-    winner = next(event for event in (first, second)
-                  if event["payload"]["claim_cid"] == resolution["payload"]["accepted_claim_cid"])
+    winner = next(
+        event
+        for event in (first, second)
+        if event["payload"]["claim_cid"] == resolution["payload"]["accepted_claim_cid"]
+    )
     assert winner["payload"]["claimant_did"] == scenario["expected"]["epoch_1_winner"]
     assert set(resolution["payload"]["considered_claim_cids"]) == {
-        first["payload"]["claim_cid"], second["payload"]["claim_cid"]
+        first["payload"]["claim_cid"],
+        second["payload"]["claim_cid"],
     }
     conflicts = cluster.peers[scenario["peer_ids"][0]].events_of_type("claim_conflicted", task)
     assert len(conflicts) == 1
@@ -88,8 +95,11 @@ def test_expired_takeover_conflicting_completion_and_idempotent_reconciliation(c
     claim_events = [_claim(cluster, task, spec) for spec in scenario["claims"]]
     epoch1 = cluster.resolve(scenario["peer_ids"][2], task, 1)
     old_claim = epoch1["payload"]["accepted_claim_cid"]
-    old_worker = next(event["payload"]["claimant_did"] for event in claim_events
-                      if event["payload"]["claim_cid"] == old_claim)
+    old_worker = next(
+        event["payload"]["claimant_did"]
+        for event in claim_events
+        if event["payload"]["claim_cid"] == old_claim
+    )
 
     # Keep the old worker isolated. The majority expires epoch 1 and issues a
     # strictly newer fence; the isolated worker can retain evidence but cannot
@@ -109,13 +119,31 @@ def test_expired_takeover_conflicting_completion_and_idempotent_reconciliation(c
     assert stale["event_type"] == "task_reconciled"
     assert stale["payload"]["reason"] == "G_STALE_FENCE"
 
-    accepted = cluster.complete(majority[0], task, takeover_claim["payload"]["claim_cid"], 2,
-                                scenario["outputs"]["accepted"])
+    accepted = cluster.complete(
+        majority[0],
+        task,
+        takeover_claim["payload"]["claim_cid"],
+        2,
+        scenario["outputs"]["accepted"],
+    )
     assert accepted["event_type"] == "task_completed"
-    assert cluster.complete(majority[0], task, takeover_claim["payload"]["claim_cid"], 2,
-                            scenario["outputs"]["accepted"])["event_cid"] == accepted["event_cid"]
-    conflicting = cluster.complete(majority[0], task, takeover_claim["payload"]["claim_cid"], 2,
-                                   scenario["outputs"]["conflicting"])
+    assert (
+        cluster.complete(
+            majority[0],
+            task,
+            takeover_claim["payload"]["claim_cid"],
+            2,
+            scenario["outputs"]["accepted"],
+        )["event_cid"]
+        == accepted["event_cid"]
+    )
+    conflicting = cluster.complete(
+        majority[0],
+        task,
+        takeover_claim["payload"]["claim_cid"],
+        2,
+        scenario["outputs"]["conflicting"],
+    )
     assert conflicting["payload"]["reason"] == "G_COMPLETION_CONFLICT"
 
     first = cluster.reconcile()
@@ -129,8 +157,10 @@ def test_expired_takeover_conflicting_completion_and_idempotent_reconciliation(c
     validation = EventDAGValidator().validate_dag(evidence)
     assert validation.is_valid, validation.errors
     assert not validation.warnings, validation.warnings
-    assert all(set(event["parents"]) <= {prior["event_cid"] for prior in evidence[:index]}
-               for index, event in enumerate(evidence))
+    assert all(
+        set(event["parents"]) <= {prior["event_cid"] for prior in evidence[:index]}
+        for index, event in enumerate(evidence)
+    )
 
     report = cluster.conformance_report(task)
     expected = scenario["expected"]

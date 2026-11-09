@@ -5,6 +5,7 @@ uses declared task service time, making the baseline comparison reproducible
 across hosts. Harness execution throughput is reported separately and is never
 used to claim a scheduling gain.
 """
+
 from __future__ import annotations
 
 import html
@@ -55,16 +56,26 @@ class ProfileGBenchmark:
         faults = workload.get("fault_task_indexes")
         if not isinstance(count, int) or count < len(peers):
             raise ValueError("task_count must be an integer at least as large as peer_count")
-        if not isinstance(cycle, list) or not cycle or any(not isinstance(value, int) or value <= 0 for value in cycle):
+        if (
+            not isinstance(cycle, list)
+            or not cycle
+            or any(not isinstance(value, int) or value <= 0 for value in cycle)
+        ):
             raise ValueError("service_time_ms_cycle must contain positive integers")
-        if not isinstance(faults, list) or len(set(faults)) != len(faults) or any(
-            not isinstance(index, int) or index < 0 or index >= count for index in faults
+        if (
+            not isinstance(faults, list)
+            or len(set(faults)) != len(faults)
+            or any(not isinstance(index, int) or index < 0 or index >= count for index in faults)
         ):
             raise ValueError("fault_task_indexes must be unique valid task indexes")
         if workload.get("lease_ms", 0) < 5000:
             raise ValueError("lease_ms must satisfy the Profile G minimum")
         baseline = workload.get("baseline")
-        if not isinstance(baseline, dict) or baseline.get("parallelism") != 1 or not baseline.get("name"):
+        if (
+            not isinstance(baseline, dict)
+            or baseline.get("parallelism") != 1
+            or not baseline.get("name")
+        ):
             raise ValueError("baseline must name a single-owner scheduler with parallelism 1")
         acceptance = workload.get("acceptance")
         required_gates = {
@@ -76,13 +87,21 @@ class ProfileGBenchmark:
             "maximum_policy_bypasses",
             "maximum_starved_tasks",
         }
-        if not isinstance(acceptance, dict) or set(acceptance) != required_gates or any(
-            isinstance(value, bool) or not isinstance(value, (int, float)) or value < 0
-            for value in acceptance.values()
+        if (
+            not isinstance(acceptance, dict)
+            or set(acceptance) != required_gates
+            or any(
+                isinstance(value, bool) or not isinstance(value, (int, float)) or value < 0
+                for value in acceptance.values()
+            )
         ):
-            raise ValueError("acceptance must define every non-negative performance and safety gate")
+            raise ValueError(
+                "acceptance must define every non-negative performance and safety gate"
+            )
         if acceptance["minimum_throughput_gain"] <= 1 or acceptance["minimum_jain_fairness"] > 1:
-            raise ValueError("acceptance throughput gain must exceed 1 and Jain fairness cannot exceed 1")
+            raise ValueError(
+                "acceptance throughput gain must exceed 1 and Jain fairness cannot exceed 1"
+            )
 
     def run(self) -> dict[str, Any]:
         workload = self.workload
@@ -126,7 +145,11 @@ class ProfileGBenchmark:
                 )
             resolution = cluster.resolve(peers[(preferred_index + 1) % len(peers)], task_cid, 1)
             accepted_claim = resolution["payload"]["accepted_claim_cid"]
-            winner = next(peer_id for peer_id, claim in claims.items() if claim["payload"]["claim_cid"] == accepted_claim)
+            winner = next(
+                peer_id
+                for peer_id, claim in claims.items()
+                if claim["payload"]["claim_cid"] == accepted_claim
+            )
             executor = winner
 
             if index in fault_indexes:
@@ -157,25 +180,40 @@ class ProfileGBenchmark:
                     requested_lease_ms=lease_ms,
                 )
                 takeover_resolution = cluster.resolve(majority[0], task_cid, 2)
-                stale = cluster.complete(winner, task_cid, accepted_claim, 1, profile_g_artifact_cid({"task": task_cid, "stale": True}))
+                stale = cluster.complete(
+                    winner,
+                    task_cid,
+                    accepted_claim,
+                    1,
+                    profile_g_artifact_cid({"task": task_cid, "stale": True}),
+                )
                 if stale["payload"].get("reason") != "G_STALE_FENCE":
                     policy_bypasses += 1
                 completion = cluster.complete(
-                    executor, task_cid, takeover["payload"]["claim_cid"],
-                    takeover_resolution["payload"]["fencing_token"], output_cid,
+                    executor,
+                    task_cid,
+                    takeover["payload"]["claim_cid"],
+                    takeover_resolution["payload"]["fencing_token"],
+                    output_cid,
                 )
-                recoveries.append({
-                    "task_index": index,
-                    "failed_peer": winner,
-                    "takeover_peer": executor,
-                    "recovery_ms": lease_ms + 1,
-                    "stale_fence_rejected": stale["payload"].get("reason") == "G_STALE_FENCE",
-                    "new_fencing_token": takeover_resolution["payload"]["fencing_token"],
-                })
+                recoveries.append(
+                    {
+                        "task_index": index,
+                        "failed_peer": winner,
+                        "takeover_peer": executor,
+                        "recovery_ms": lease_ms + 1,
+                        "stale_fence_rejected": stale["payload"].get("reason") == "G_STALE_FENCE",
+                        "new_fencing_token": takeover_resolution["payload"]["fencing_token"],
+                    }
+                )
                 cluster.reconcile()
             else:
                 completion = cluster.complete(
-                    winner, task_cid, accepted_claim, resolution["payload"]["fencing_token"], output_cid,
+                    winner,
+                    task_cid,
+                    accepted_claim,
+                    resolution["payload"]["fencing_token"],
+                    output_cid,
                 )
 
             waits.append(lane_load_ms[executor])
@@ -259,14 +297,19 @@ class ProfileGBenchmark:
         }
         acceptance = workload["acceptance"]
         checks = {
-            "throughput_gain": metrics["profile_g"]["throughput_gain"] >= acceptance["minimum_throughput_gain"],
-            "fairness": min(metrics["fairness"]["jain_index"], metrics["fairness"]["service_jain_index"]) >= acceptance["minimum_jain_fairness"],
+            "throughput_gain": metrics["profile_g"]["throughput_gain"]
+            >= acceptance["minimum_throughput_gain"],
+            "fairness": min(
+                metrics["fairness"]["jain_index"], metrics["fairness"]["service_jain_index"]
+            )
+            >= acceptance["minimum_jain_fairness"],
             "bounded_wait": metrics["fairness"]["maximum_wait_ms"] <= acceptance["maximum_wait_ms"],
             "no_starvation": starvation <= acceptance["maximum_starved_tasks"],
             "bounded_recovery": max_recovery <= acceptance["maximum_recovery_ms"],
             "all_faults_recovered": len(recoveries) == len(fault_indexes),
             "no_policy_bypass": policy_bypasses <= acceptance["maximum_policy_bypasses"],
-            "bounded_duplicates": duplicate_completion_events <= acceptance["maximum_duplicate_completion_events"],
+            "bounded_duplicates": duplicate_completion_events
+            <= acceptance["maximum_duplicate_completion_events"],
             "converged": reconciliation["converged"],
         }
         return {
@@ -303,16 +346,16 @@ def render_report(result: Mapping[str, Any]) -> str:
     )
     return f"""# Profile G throughput, fairness, and recovery report
 
-Published {result['publication_date']} for workload `{result['workload_id']}`. **Overall: {status}.**
+Published {result["publication_date"]} for workload `{result["workload_id"]}`. **Overall: {status}.**
 
 ## Baseline comparison
 
 | Scheduler | Parallelism | Scheduled makespan | Scheduled throughput |
 | --- | ---: | ---: | ---: |
-| {metrics['baseline']['name']} | {metrics['baseline']['parallelism']} | {metrics['baseline']['scheduled_makespan_ms']} ms | {metrics['baseline']['scheduled_throughput_tasks_per_second']} tasks/s |
-| Profile G | {metrics['profile_g']['parallelism']} | {metrics['profile_g']['scheduled_makespan_ms']} ms | {metrics['profile_g']['scheduled_throughput_tasks_per_second']} tasks/s |
+| {metrics["baseline"]["name"]} | {metrics["baseline"]["parallelism"]} | {metrics["baseline"]["scheduled_makespan_ms"]} ms | {metrics["baseline"]["scheduled_throughput_tasks_per_second"]} tasks/s |
+| Profile G | {metrics["profile_g"]["parallelism"]} | {metrics["profile_g"]["scheduled_makespan_ms"]} ms | {metrics["profile_g"]["scheduled_throughput_tasks_per_second"]} tasks/s |
 
-The deterministic scheduled-capacity gain is **{metrics['profile_g']['throughput_gain']}x**, against a pre-agreed minimum of {result['acceptance_thresholds']['minimum_throughput_gain']}x. The durable harness processed {result['task_count']} tasks at {metrics['profile_g']['harness_tasks_per_second']} tasks/s on the publication host; this wall-clock diagnostic is not used for the gain claim.
+The deterministic scheduled-capacity gain is **{metrics["profile_g"]["throughput_gain"]}x**, against a pre-agreed minimum of {result["acceptance_thresholds"]["minimum_throughput_gain"]}x. The durable harness processed {result["task_count"]} tasks at {metrics["profile_g"]["harness_tasks_per_second"]} tasks/s on the publication host; this wall-clock diagnostic is not used for the gain claim.
 
 ## Fairness and starvation
 
@@ -320,11 +363,11 @@ The deterministic scheduled-capacity gain is **{metrics['profile_g']['throughput
 | --- | ---: | ---: |
 {peer_rows}
 
-Jain's completion fairness index is **{fairness['jain_index']}** and service-allocation fairness is **{fairness['service_jain_index']}**. Maximum queue wait is **{fairness['maximum_wait_ms']} ms** and starved task count is **{fairness['starved_tasks']}**.
+Jain's completion fairness index is **{fairness["jain_index"]}** and service-allocation fairness is **{fairness["service_jain_index"]}**. Maximum queue wait is **{fairness["maximum_wait_ms"]} ms** and starved task count is **{fairness["starved_tasks"]}**.
 
 ## Fault recovery and safety
 
-All {recovery['injected_faults']} injected lease-holder isolations recovered. Maximum successor-fence time was **{recovery['maximum_recovery_ms']} ms**. The run recorded {safety['policy_denials']} fail-closed majority denials, **{safety['policy_bypasses']} policy bypasses**, {safety['duplicate_attempts']} duplicate attempts, and **{safety['duplicate_completion_events']} duplicate completion events**. Event frontiers converged: **{str(safety['frontiers_converged']).lower()}**.
+All {recovery["injected_faults"]} injected lease-holder isolations recovered. Maximum successor-fence time was **{recovery["maximum_recovery_ms"]} ms**. The run recorded {safety["policy_denials"]} fail-closed majority denials, **{safety["policy_bypasses"]} policy bypasses**, {safety["duplicate_attempts"]} duplicate attempts, and **{safety["duplicate_completion_events"]} duplicate completion events**. Event frontiers converged: **{str(safety["frontiers_converged"]).lower()}**.
 
 ## Acceptance gate
 
@@ -364,6 +407,8 @@ document.getElementById('checks').innerHTML='<table><tbody>'+Object.entries(r.ch
 def write_outputs(result: Mapping[str, Any], output_dir: Path) -> None:
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    (output_dir / "results.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    (output_dir / "results.json").write_text(
+        json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     (output_dir / "report.md").write_text(render_report(result), encoding="utf-8")
     (output_dir / "dashboard.html").write_text(render_dashboard(result), encoding="utf-8")
