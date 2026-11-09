@@ -6,6 +6,7 @@ used at HTTP and Profile E boundaries.  Cryptographic signature verification
 belongs to the seller runtime; this codec only enforces the wire encoding and
 all pre-crypto bounds.
 """
+
 from __future__ import annotations
 
 import base64
@@ -61,9 +62,18 @@ FIELDS = {
 FIELDS = {key: value.split() for key, value in FIELDS.items()}
 COMMON_FIELDS = ("schema", "createdAt", "parents", "correlationId")
 FORBIDDEN_KEYS = {
-    "privatekey", "seedphrase", "mnemonic", "authenticationcookie",
-    "fullucan", "requestarguments", "paymentsignature", "paymentpayload",
-    "facilitatorresponse", "walletaddress", "transactionhash", "rawsignature",
+    "privatekey",
+    "seedphrase",
+    "mnemonic",
+    "authenticationcookie",
+    "fullucan",
+    "requestarguments",
+    "paymentsignature",
+    "paymentpayload",
+    "facilitatorresponse",
+    "walletaddress",
+    "transactionhash",
+    "rawsignature",
 }
 CID_RE = re.compile(r"b[a-z2-7]+")
 CAIP2_RE = re.compile(r"[a-z0-9-]{3,8}:[A-Za-z0-9_-]{1,32}")
@@ -92,7 +102,12 @@ def _object(value: Any, path: str = "") -> dict[str, Any]:
 
 
 def _string(value: Any, path: str, limit: int = 8_192, *, empty: bool = False) -> str:
-    if not isinstance(value, str) or (not empty and not value) or "\x00" in value or len(value.encode("utf-8")) > limit:
+    if (
+        not isinstance(value, str)
+        or (not empty and not value)
+        or "\x00" in value
+        or len(value.encode("utf-8")) > limit
+    ):
         _fail(path, "invalid string")
     return value
 
@@ -152,7 +167,9 @@ def _walk_json(value: Any, limits: Mapping[str, int], path: str = "", depth: int
 def canonical_profile_h_bytes(value: Any, limits: Mapping[str, int] | None = None) -> bytes:
     negotiated = _limits(limits)
     _walk_json(value, negotiated)
-    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
+    return json.dumps(
+        value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False
+    ).encode("utf-8")
 
 
 def profile_h_artifact_cid(value: Any, limits: Mapping[str, int] | None = None) -> str:
@@ -167,7 +184,7 @@ def _read_varint(raw: bytes, offset: int) -> tuple[int, int]:
     while offset < len(raw) and shift < 56:
         byte = raw[offset]
         offset += 1
-        value |= (byte & 0x7f) << shift
+        value |= (byte & 0x7F) << shift
         if not byte & 0x80:
             return value, offset
         shift += 7
@@ -221,14 +238,20 @@ def _redaction_scan(value: Any, path: str = "") -> None:
         for key, item in value.items():
             normalized = re.sub(r"[^a-z0-9]", "", key.lower())
             if normalized in FORBIDDEN_KEYS:
-                _fail(f"{path}/{key}", "sensitive field is forbidden in a Profile H artifact", "H_INVALID_PAYMENT_MESSAGE")
+                _fail(
+                    f"{path}/{key}",
+                    "sensitive field is forbidden in a Profile H artifact",
+                    "H_INVALID_PAYMENT_MESSAGE",
+                )
             _redaction_scan(item, f"{path}/{key}")
     elif isinstance(value, list):
         for index, item in enumerate(value):
             _redaction_scan(item, f"{path}/{index}")
 
 
-def validate_profile_h_artifact(kind: str, value: Any, limits: Mapping[str, int] | None = None, *, now_ms: int | None = None) -> str:
+def validate_profile_h_artifact(
+    kind: str, value: Any, limits: Mapping[str, int] | None = None, *, now_ms: int | None = None
+) -> str:
     negotiated = _limits(limits)
     if kind not in SCHEMAS:
         _fail("/kind", "unknown Profile H artifact kind")
@@ -258,53 +281,155 @@ def validate_profile_h_artifact(kind: str, value: Any, limits: Mapping[str, int]
     return profile_h_artifact_cid(obj, negotiated)
 
 
-def _validate_artifact_specific(kind: str, obj: dict[str, Any], limits: Mapping[str, int], now_ms: int | None) -> None:
+def _validate_artifact_specific(
+    kind: str, obj: dict[str, Any], limits: Mapping[str, int], now_ms: int | None
+) -> None:
     c = lambda name: _cid(obj[name], f"/{name}")
     s = lambda name, size=8_192: _string(obj[name], f"/{name}", size)
     i = lambda name, low=0, high=MAX_SAFE: _integer(obj[name], f"/{name}", low, high)
     if kind == "PaidCapability":
-        _did(obj["serverDid"], "/serverDid"); c("descriptorCid"); c("interfaceCid")
-        _enum(obj["operationKind"], "/operationKind", ("tool", "resource", "prompt", "http")); s("operationName", 256)
-        if obj["httpMethod"] is not None: _enum(obj["httpMethod"], "/httpMethod", ("GET", "POST", "PUT", "PATCH", "DELETE"))
-        if obj["httpRoute"] is not None: s("httpRoute", 512)
-        s("catalogVersion", 64); s("ability", 256); c("policyCid"); c("termsCid"); s("scheme", 64); _network(obj["network"], "/network")
-        s("asset", 256); _amount(obj["amount"], "/amount"); s("payee", 256); i("validFrom"); i("expiresAt")
-        if obj["expiresAt"] <= obj["validFrom"]: _fail("/expiresAt", "expiry must follow validity start", "H_QUOTE_EXPIRED")
-        _enum(obj["settlementTiming"], "/settlementTiming", ("immediate", "metered", "batched")); _did(obj["sellerDid"], "/sellerDid"); _enum(obj["signatureAlg"], "/signatureAlg", ("Ed25519",)); _signature(obj["signature"], "/signature")
+        _did(obj["serverDid"], "/serverDid")
+        c("descriptorCid")
+        c("interfaceCid")
+        _enum(obj["operationKind"], "/operationKind", ("tool", "resource", "prompt", "http"))
+        s("operationName", 256)
+        if obj["httpMethod"] is not None:
+            _enum(obj["httpMethod"], "/httpMethod", ("GET", "POST", "PUT", "PATCH", "DELETE"))
+        if obj["httpRoute"] is not None:
+            s("httpRoute", 512)
+        s("catalogVersion", 64)
+        s("ability", 256)
+        c("policyCid")
+        c("termsCid")
+        s("scheme", 64)
+        _network(obj["network"], "/network")
+        s("asset", 256)
+        _amount(obj["amount"], "/amount")
+        s("payee", 256)
+        i("validFrom")
+        i("expiresAt")
+        if obj["expiresAt"] <= obj["validFrom"]:
+            _fail("/expiresAt", "expiry must follow validity start", "H_QUOTE_EXPIRED")
+        _enum(obj["settlementTiming"], "/settlementTiming", ("immediate", "metered", "batched"))
+        _did(obj["sellerDid"], "/sellerDid")
+        _enum(obj["signatureAlg"], "/signatureAlg", ("Ed25519",))
+        _signature(obj["signature"], "/signature")
     elif kind == "PaymentQuote":
-        for name in ("capabilityCid", "catalogCid", "descriptorCid", "requestCid"): c(name)
+        for name in ("capabilityCid", "catalogCid", "descriptorCid", "requestCid"):
+            c(name)
         requirements = obj["requirements"]
-        if not isinstance(requirements, list) or not 1 <= len(requirements) <= limits["max_requirements"]:
-            _fail("/requirements", "requirements count exceeds negotiated bound", "H_LIMIT_EXCEEDED")
-        for index, requirement in enumerate(requirements): _validate_requirement(requirement, f"/requirements/{index}")
-        s("nonce", 128); i("expiresAt"); s("idempotencyKey", 128); _did(obj["sellerDid"], "/sellerDid"); _enum(obj["signatureAlg"], "/signatureAlg", ("Ed25519",)); _signature(obj["signature"], "/signature")
-        if obj["expiresAt"] <= obj["createdAt"] or obj["expiresAt"] - obj["createdAt"] > limits["max_quote_lifetime_ms"] or (now_ms is not None and now_ms >= obj["expiresAt"]):
-            _fail("/expiresAt", "quote is expired or exceeds negotiated lifetime", "H_QUOTE_EXPIRED")
+        if (
+            not isinstance(requirements, list)
+            or not 1 <= len(requirements) <= limits["max_requirements"]
+        ):
+            _fail(
+                "/requirements", "requirements count exceeds negotiated bound", "H_LIMIT_EXCEEDED"
+            )
+        for index, requirement in enumerate(requirements):
+            _validate_requirement(requirement, f"/requirements/{index}")
+        s("nonce", 128)
+        i("expiresAt")
+        s("idempotencyKey", 128)
+        _did(obj["sellerDid"], "/sellerDid")
+        _enum(obj["signatureAlg"], "/signatureAlg", ("Ed25519",))
+        _signature(obj["signature"], "/signature")
+        if (
+            obj["expiresAt"] <= obj["createdAt"]
+            or obj["expiresAt"] - obj["createdAt"] > limits["max_quote_lifetime_ms"]
+            or (now_ms is not None and now_ms >= obj["expiresAt"])
+        ):
+            _fail(
+                "/expiresAt", "quote is expired or exceeds negotiated lifetime", "H_QUOTE_EXPIRED"
+            )
     elif kind == "PaymentAuthorization":
-        c("quoteCid"); c("requestCid"); i("requirementIndex", 0, limits["max_requirements"] - 1)
-        for name in ("paymentPayloadCid", "payerCommitment", "signedPayloadCommitment", "signatureCommitment"): c(name)
+        c("quoteCid")
+        c("requestCid")
+        i("requirementIndex", 0, limits["max_requirements"] - 1)
+        for name in (
+            "paymentPayloadCid",
+            "payerCommitment",
+            "signedPayloadCommitment",
+            "signatureCommitment",
+        ):
+            c(name)
     elif kind == "PaymentVerification":
-        c("authorizationCid"); _did(obj["verifierDid"], "/verifierDid"); _enum(obj["decision"], "/decision", ("verified", "rejected")); s("reasonCode", 128); i("verifiedAt"); i("expiresAt"); c("evidenceCid")
-        if obj["expiresAt"] <= obj["verifiedAt"] or (now_ms is not None and now_ms >= obj["expiresAt"]): _fail("/expiresAt", "verification freshness expired", "H_VERIFICATION_FAILED")
+        c("authorizationCid")
+        _did(obj["verifierDid"], "/verifierDid")
+        _enum(obj["decision"], "/decision", ("verified", "rejected"))
+        s("reasonCode", 128)
+        i("verifiedAt")
+        i("expiresAt")
+        c("evidenceCid")
+        if obj["expiresAt"] <= obj["verifiedAt"] or (
+            now_ms is not None and now_ms >= obj["expiresAt"]
+        ):
+            _fail("/expiresAt", "verification freshness expired", "H_VERIFICATION_FAILED")
     elif kind == "SettlementReceipt":
-        c("verificationCid"); _enum(obj["outcome"], "/outcome", ("settled", "failed", "pending", "reconciliation-required", "refunded")); _amount(obj["amount"], "/amount"); _network(obj["network"], "/network"); c("networkReferenceCommitment"); _enum(obj["disclosurePolicy"], "/disclosurePolicy", ("commitment-only", "authorized", "public")); c("paymentResponseCid"); i("settledAt")
+        c("verificationCid")
+        _enum(
+            obj["outcome"],
+            "/outcome",
+            ("settled", "failed", "pending", "reconciliation-required", "refunded"),
+        )
+        _amount(obj["amount"], "/amount")
+        _network(obj["network"], "/network")
+        c("networkReferenceCommitment")
+        _enum(
+            obj["disclosurePolicy"],
+            "/disclosurePolicy",
+            ("commitment-only", "authorized", "public"),
+        )
+        c("paymentResponseCid")
+        i("settledAt")
     elif kind == "PaidEntitlement":
-        c("settlementCid"); c("subjectCommitment"); c("capabilityCid"); i("quotaUnits"); i("consumedUnits"); s("unit", 128); i("expiresAt")
-        if obj["consumedUnits"] > obj["quotaUnits"]: _fail("/consumedUnits", "entitlement quota exhausted", "H_ENTITLEMENT_EXHAUSTED")
-        if now_ms is not None and now_ms >= obj["expiresAt"]: _fail("/expiresAt", "entitlement expired", "H_ENTITLEMENT_EXHAUSTED")
+        c("settlementCid")
+        c("subjectCommitment")
+        c("capabilityCid")
+        i("quotaUnits")
+        i("consumedUnits")
+        s("unit", 128)
+        i("expiresAt")
+        if obj["consumedUnits"] > obj["quotaUnits"]:
+            _fail("/consumedUnits", "entitlement quota exhausted", "H_ENTITLEMENT_EXHAUSTED")
+        if now_ms is not None and now_ms >= obj["expiresAt"]:
+            _fail("/expiresAt", "entitlement expired", "H_ENTITLEMENT_EXHAUSTED")
     elif kind == "UsageRecord":
-        c("entitlementCid"); s("unit", 128); c("inputCid"); c("outputCid"); i("units", 1); i("recordedAt")
+        c("entitlementCid")
+        s("unit", 128)
+        c("inputCid")
+        c("outputCid")
+        i("units", 1)
+        i("recordedAt")
     elif kind == "RefundRecord":
-        c("settlementCid"); c("requestCid"); _enum(obj["decision"], "/decision", ("requested", "approved", "denied")); _enum(obj["outcome"], "/outcome", ("pending", "refunded", "failed", "not-applicable")); c("evidenceCid"); i("requestedAt"); i("decidedAt")
-        if obj["decidedAt"] < obj["requestedAt"]: _fail("/decidedAt", "decision precedes request")
+        c("settlementCid")
+        c("requestCid")
+        _enum(obj["decision"], "/decision", ("requested", "approved", "denied"))
+        _enum(obj["outcome"], "/outcome", ("pending", "refunded", "failed", "not-applicable"))
+        c("evidenceCid")
+        i("requestedAt")
+        i("decidedAt")
+        if obj["decidedAt"] < obj["requestedAt"]:
+            _fail("/decidedAt", "decision precedes request")
     else:
-        s("operationName", 256); c("requestCid")
-        for name in ("ucanDecisionCid", "policyDecisionCid", "leaseDecisionCid", "commercialEvidenceCid"): 
-            if obj[name] is not None: c(name)
+        s("operationName", 256)
+        c("requestCid")
+        for name in (
+            "ucanDecisionCid",
+            "policyDecisionCid",
+            "leaseDecisionCid",
+            "commercialEvidenceCid",
+        ):
+            if obj[name] is not None:
+                c(name)
         _enum(obj["decision"], "/decision", ("allow", "deny"))
-        if obj["resultCid"] is not None: c("resultCid")
-        s("reasonCode", 128); i("decidedAt")
-        if obj["decision"] == "allow" and (obj["commercialEvidenceCid"] is None or obj["resultCid"] is None): _fail("/commercialEvidenceCid", "allow requires commercial evidence and result")
+        if obj["resultCid"] is not None:
+            c("resultCid")
+        s("reasonCode", 128)
+        i("decidedAt")
+        if obj["decision"] == "allow" and (
+            obj["commercialEvidenceCid"] is None or obj["resultCid"] is None
+        ):
+            _fail("/commercialEvidenceCid", "allow requires commercial evidence and result")
 
 
 def _validate_requirement(value: Any, path: str) -> None:
@@ -312,7 +437,13 @@ def _validate_requirement(value: Any, path: str) -> None:
     required = {"scheme", "network", "asset", "amount", "payTo", "maxTimeoutSeconds", "extra"}
     if set(obj) != required:
         _fail(path, "invalid x402 requirement fields")
-    _string(obj["scheme"], path + "/scheme", 64); _network(obj["network"], path + "/network"); _string(obj["asset"], path + "/asset", 256); _amount(obj["amount"], path + "/amount"); _string(obj["payTo"], path + "/payTo", 256); _integer(obj["maxTimeoutSeconds"], path + "/maxTimeoutSeconds", 1, 3600); _object(obj["extra"], path + "/extra")
+    _string(obj["scheme"], path + "/scheme", 64)
+    _network(obj["network"], path + "/network")
+    _string(obj["asset"], path + "/asset", 256)
+    _amount(obj["amount"], path + "/amount")
+    _string(obj["payTo"], path + "/payTo", 256)
+    _integer(obj["maxTimeoutSeconds"], path + "/maxTimeoutSeconds", 1, 3600)
+    _object(obj["extra"], path + "/extra")
 
 
 def _no_duplicate_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -324,10 +455,23 @@ def _no_duplicate_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     return result
 
 
-def decode_x402_header(kind: str, encoded: str, limits: Mapping[str, int] | None = None) -> dict[str, Any]:
+def decode_x402_header(
+    kind: str, encoded: str, limits: Mapping[str, int] | None = None
+) -> dict[str, Any]:
     negotiated = _limits(limits)
-    if not isinstance(encoded, str) or not encoded or re.search(r"\s", encoded) or len(encoded) > ((negotiated["max_x402_bytes"] + 2) // 3) * 4:
-        _fail("/header", "invalid or oversized base64", "H_LIMIT_EXCEEDED" if isinstance(encoded, str) and encoded else "H_INVALID_PAYMENT_MESSAGE")
+    if (
+        not isinstance(encoded, str)
+        or not encoded
+        or re.search(r"\s", encoded)
+        or len(encoded) > ((negotiated["max_x402_bytes"] + 2) // 3) * 4
+    ):
+        _fail(
+            "/header",
+            "invalid or oversized base64",
+            "H_LIMIT_EXCEEDED"
+            if isinstance(encoded, str) and encoded
+            else "H_INVALID_PAYMENT_MESSAGE",
+        )
     try:
         raw = base64.b64decode(encoded, validate=True)
     except (binascii.Error, ValueError):
@@ -336,7 +480,12 @@ def decode_x402_header(kind: str, encoded: str, limits: Mapping[str, int] | None
         _fail("/header", "decoded x402 object exceeds negotiated bound", "H_LIMIT_EXCEEDED")
     try:
         text = raw.decode("utf-8", "strict")
-        value = json.loads(text, object_pairs_hook=_no_duplicate_pairs, parse_float=lambda _: _fail("", "floats are forbidden"), parse_constant=lambda _: _fail("", "non-finite number"))
+        value = json.loads(
+            text,
+            object_pairs_hook=_no_duplicate_pairs,
+            parse_float=lambda _: _fail("", "floats are forbidden"),
+            parse_constant=lambda _: _fail("", "non-finite number"),
+        )
     except UnicodeDecodeError:
         _fail("/header", "invalid UTF-8")
     except json.JSONDecodeError:
@@ -361,11 +510,20 @@ def encode_x402_header(kind: str, value: Any, limits: Mapping[str, int] | None =
 
 def _validate_x402_object(kind: str, obj: dict[str, Any], limits: Mapping[str, int]) -> None:
     if kind == "PaymentRequired":
-        allowed, required = {"x402Version", "error", "resource", "accepts", "extensions"}, {"x402Version", "accepts"}
+        allowed, required = (
+            {"x402Version", "error", "resource", "accepts", "extensions"},
+            {"x402Version", "accepts"},
+        )
     elif kind == "PaymentPayload":
-        allowed, required = {"x402Version", "resource", "accepted", "payload", "extensions"}, {"x402Version", "accepted", "payload"}
+        allowed, required = (
+            {"x402Version", "resource", "accepted", "payload", "extensions"},
+            {"x402Version", "accepted", "payload"},
+        )
     elif kind == "SettlementResponse":
-        allowed, required = {"success", "errorReason", "transaction", "network", "payer", "extensions"}, {"success", "network"}
+        allowed, required = (
+            {"success", "errorReason", "transaction", "network", "payer", "extensions"},
+            {"success", "network"},
+        )
     else:
         _fail("/kind", "unknown x402 object kind")
     if not required <= set(obj) or set(obj) - allowed:
@@ -377,13 +535,17 @@ def _validate_x402_object(kind: str, obj: dict[str, Any], limits: Mapping[str, i
         accepts = obj["accepts"]
         if not isinstance(accepts, list) or not 1 <= len(accepts) <= limits["max_requirements"]:
             _fail("/accepts", "requirements count exceeds negotiated bound", "H_LIMIT_EXCEEDED")
-        for index, requirement in enumerate(accepts): _validate_requirement(requirement, f"/accepts/{index}")
+        for index, requirement in enumerate(accepts):
+            _validate_requirement(requirement, f"/accepts/{index}")
     elif kind == "PaymentPayload":
-        _validate_requirement(obj["accepted"], "/accepted"); _object(obj["payload"], "/payload")
+        _validate_requirement(obj["accepted"], "/accepted")
+        _object(obj["payload"], "/payload")
     else:
-        if not isinstance(obj["success"], bool): _fail("/success", "must be boolean")
+        if not isinstance(obj["success"], bool):
+            _fail("/success", "must be boolean")
         _network(obj["network"], "/network")
-        if obj.get("transaction") is not None: _string(obj["transaction"], "/transaction", 512)
+        if obj.get("transaction") is not None:
+            _string(obj["transaction"], "/transaction", 512)
 
 
 def validate_request_binding(expected_request_cid: str, artifact: Mapping[str, Any]) -> None:
@@ -399,8 +561,14 @@ def validate_replay(seen_commitments: set[str], commitment: str) -> None:
 
 
 __all__ = [
-    "DEFAULT_LIMITS", "HARD_LIMITS", "ProfileHValidationError",
-    "canonical_profile_h_bytes", "profile_h_artifact_cid",
-    "validate_profile_h_artifact", "decode_x402_header", "encode_x402_header",
-    "validate_request_binding", "validate_replay",
+    "DEFAULT_LIMITS",
+    "HARD_LIMITS",
+    "ProfileHValidationError",
+    "canonical_profile_h_bytes",
+    "profile_h_artifact_cid",
+    "validate_profile_h_artifact",
+    "decode_x402_header",
+    "encode_x402_header",
+    "validate_request_binding",
+    "validate_replay",
 ]
