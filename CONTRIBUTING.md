@@ -223,31 +223,34 @@ mvn test
 import pytest
 from weather_server import WeatherServer
 
+
 @pytest.fixture
 def server():
     """Create a test server instance."""
     return WeatherServer()
+
 
 @pytest.mark.asyncio
 async def test_get_temperature_success(server):
     """Test successful temperature retrieval."""
     # Arrange
     location = "San Francisco"
-    
+
     # Act
     result = await server.get_temperature(location)
-    
+
     # Assert
     assert result.location == location
     assert isinstance(result.temperature, float)
     assert result.temperature > -100  # Sanity check
+
 
 @pytest.mark.asyncio
 async def test_get_temperature_invalid_location(server):
     """Test error handling for invalid location."""
     # Arrange
     location = ""
-    
+
     # Act & Assert
     with pytest.raises(ValueError, match="Invalid location"):
         await server.get_temperature(location)
@@ -271,18 +274,16 @@ async def test_full_client_server_flow():
     async with create_test_server() as server:
         # Create client
         client = create_test_client(server.address)
-        
+
         # Test initialization
         await client.initialize()
-        
+
         # Test tool listing
         tools = await client.list_tools()
         assert len(tools) > 0
-        
+
         # Test tool execution
-        result = await client.call_tool("get_temperature", {
-            "location": "Tokyo"
-        })
+        result = await client.call_tool("get_temperature", {"location": "Tokyo"})
         assert "Tokyo" in result.content[0].text
 ```
 
@@ -292,29 +293,29 @@ async def test_full_client_server_flow():
 import time
 import asyncio
 
+
 @pytest.mark.performance
 async def test_tool_execution_latency():
     """Test tool execution completes within acceptable time."""
     server = WeatherServer()
-    
+
     start = time.time()
     await server.get_temperature("New York")
     duration = time.time() - start
-    
+
     assert duration < 1.0, f"Tool took {duration}s (should be < 1s)"
+
 
 @pytest.mark.performance
 async def test_concurrent_tool_calls():
     """Test handling of concurrent tool calls."""
     server = WeatherServer()
     locations = ["NYC", "LA", "Chicago", "Houston", "Phoenix"]
-    
+
     start = time.time()
-    results = await asyncio.gather(*[
-        server.get_temperature(loc) for loc in locations
-    ])
+    results = await asyncio.gather(*[server.get_temperature(loc) for loc in locations])
     duration = time.time() - start
-    
+
     assert len(results) == len(locations)
     assert duration < 2.0, f"Concurrent calls took {duration}s"
 ```
@@ -462,18 +463,16 @@ Follow [PEP 8](https://pep8.org/) and use type hints:
 ```python
 from typing import Optional, List, Dict
 
-async def process_data(
-    items: List[str],
-    config: Optional[Dict[str, any]] = None
-) -> Dict[str, any]:
+
+async def process_data(items: List[str], config: Optional[Dict[str, any]] = None) -> Dict[str, any]:
     """Process a list of items with optional configuration."""
     config = config or {}
-    
+
     results = []
     for item in items:
         result = await process_item(item, config)
         results.append(result)
-    
+
     return {"results": results, "count": len(results)}
 ```
 
