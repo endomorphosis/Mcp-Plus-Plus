@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Run and publish the SVD-090 Profile G performance workload."""
+
 from __future__ import annotations
 
 import argparse
@@ -16,9 +17,19 @@ from benchmarks.profile_g_performance import ProfileGBenchmark, write_outputs
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--workload", type=Path, default=Path(__file__).with_name("profile_g_workload.json"))
-    parser.add_argument("--output-dir", type=Path, default=Path(__file__).parents[2] / "docs" / "testing" / "profile-g-performance")
-    parser.add_argument("--store-dir", type=Path, help="retain peer stores here (a temporary directory is used by default)")
+    parser.add_argument(
+        "--workload", type=Path, default=Path(__file__).with_name("profile_g_workload.json")
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=Path(__file__).parents[2] / "docs" / "testing" / "profile-g-performance",
+    )
+    parser.add_argument(
+        "--store-dir",
+        type=Path,
+        help="retain peer stores here (a temporary directory is used by default)",
+    )
     args = parser.parse_args()
     temporary = None
     store_dir = args.store_dir
